@@ -9,7 +9,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var store: HistoryStore!
     private var capturesStore: CapturesStore!
+    private var snippetsStore: SnippetsStore!
     private var monitor: ClipboardMonitor!
+    /// The app that was frontmost when the panel opened — the paste target.
+    private var previousApp: NSRunningApplication?
     private let captureService = CaptureService()
     private let ocrService = OCRService()
     private let hotkeys = HotkeyManager()
@@ -22,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         store = HistoryStore(directory: appSupport)
         capturesStore = CapturesStore(directory: appSupport)
+        snippetsStore = SnippetsStore(directory: appSupport)
         monitor = ClipboardMonitor(
             store: store,
             ignoreRules: IgnoreRules.load(from: ignoreRulesURL))
@@ -39,10 +43,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: HistoryView(
                 store: store,
                 capturesStore: capturesStore,
+                snippetsStore: snippetsStore,
                 ignoreRulesURL: ignoreRulesURL,
                 onCopy: { [weak self] item in
                     self?.monitor.copyToPasteboard(item)
                     self?.popover.performClose(nil)
+                },
+                onPaste: { [weak self] item in
+                    self?.paste { self?.monitor.copyToPasteboard(item) }
+                },
+                onCopySnippet: { [weak self] snippet in
+                    guard let self else { return }
+                    self.setPasteboardString(self.snippetsStore.render(snippet))
+                    self.popover.performClose(nil)
+                },
+                onPasteSnippet: { [weak self] snippet in
+                    guard let self else { return }
+                    // Render before paste() replaces the clipboard %CLIPBOARD%
+                    // would otherwise read from.
+                    let rendered = self.snippetsStore.render(snippet)
+                    self.paste { self.setPasteboardString(rendered) }
                 },
                 onCapture: { [weak self] mode in self?.capture(mode) },
                 onCaptureText: { [weak self] in self?.captureText() },
@@ -60,9 +80,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if popover.isShown {
             popover.performClose(nil)
         } else if let button = statusItem.button {
+            previousApp = NSWorkspace.shared.frontmostApplication
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
         }
+    }
+
+    /// Puts content on the clipboard, then synthesizes ⌘V in the app that was
+    /// frontmost before the panel opened. Requests the Accessibility
+    /// permission lazily on first use; until granted, the content is on the
+    /// clipboard so a manual ⌘V still works.
+    private func paste(_ populateClipboard: () -> Void) {
+        populateClipboard()
+        popover.performClose(nil)
+        guard PasteService.isTrusted else {
+            PasteService.requestTrust()
+            return
+        }
+        previousApp?.activate()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            PasteService.synthesizePaste()
+        }
+    }
+
+    private func setPasteboardString(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
     }
 
     private func captureText() {

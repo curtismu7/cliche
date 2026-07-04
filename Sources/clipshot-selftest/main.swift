@@ -270,6 +270,38 @@ do {
         "captures store remove keeps file when asked")
 }
 
+// snippetRendering
+do {
+    let date = Date(timeIntervalSince1970: 1_783_180_800)  // 2026-07-04 UTC
+    let rendered = SnippetsStore.render(
+        template: "Hi! Today is %DATE% at %TIME%. You copied: %CLIPBOARD%",
+        clipboard: "lorem",
+        date: date)
+    expect(!rendered.contains("%DATE%") && !rendered.contains("%TIME%")
+        && rendered.contains("lorem") && rendered.hasPrefix("Hi! Today is "),
+        "snippet variables render")
+    expect(SnippetsStore.render(template: "plain", clipboard: "x", date: date) == "plain",
+        "snippet without variables unchanged")
+}
+
+// snippetsStoreCRUDPersistence
+do {
+    let dir = makeTempDir()
+    let store = SnippetsStore(directory: dir)
+    store.add(name: "Sig", template: "Curtis / %DATE%")
+    store.add(name: "Addr", template: "42 Main St")
+    var edited = store.snippets[0]
+    edited.template = "Coach Curtis / %DATE%"
+    store.update(edited)
+    store.remove(store.snippets[1])
+
+    let reloaded = SnippetsStore(directory: dir)
+    expect(reloaded.snippets.count == 1
+        && reloaded.snippets[0].name == "Sig"
+        && reloaded.snippets[0].template == "Coach Curtis / %DATE%",
+        "snippets store add/update/remove persists")
+}
+
 // ocrRecognizesRenderedText
 do {
     let size = NSSize(width: 700, height: 140)

@@ -5,8 +5,12 @@ import SwiftUI
 struct HistoryView: View {
     let store: HistoryStore
     let capturesStore: CapturesStore
+    let snippetsStore: SnippetsStore
     let ignoreRulesURL: URL
     let onCopy: (ClipItem) -> Void
+    let onPaste: (ClipItem) -> Void
+    let onCopySnippet: (SnippetsStore.Snippet) -> Void
+    let onPasteSnippet: (SnippetsStore.Snippet) -> Void
     let onCapture: (CaptureMode) -> Void
     let onCaptureText: () -> Void
     let onQuit: () -> Void
@@ -14,6 +18,7 @@ struct HistoryView: View {
     private enum Tab: String, CaseIterable {
         case clipboard = "Clipboard"
         case captures = "Captures"
+        case snippets = "Snippets"
     }
 
     @State private var tab: Tab = .clipboard
@@ -43,6 +48,11 @@ struct HistoryView: View {
             switch tab {
             case .clipboard: clipboardTab
             case .captures: CapturesGrid(store: capturesStore)
+            case .snippets:
+                SnippetsList(
+                    store: snippetsStore,
+                    onCopy: onCopySnippet,
+                    onPaste: onPasteSnippet)
             }
             Divider()
             footer
@@ -74,6 +84,14 @@ struct HistoryView: View {
                 .onSubmit {
                     guard visibleItems.indices.contains(selectedIndex) else { return }
                     onCopy(visibleItems[selectedIndex])
+                }
+                .onKeyPress(.return) {
+                    // ⌥Return pastes into the previous app; plain Return
+                    // falls through to onSubmit (copy).
+                    guard NSEvent.modifierFlags.contains(.option) else { return .ignored }
+                    guard visibleItems.indices.contains(selectedIndex) else { return .handled }
+                    onPaste(visibleItems[selectedIndex])
+                    return .handled
                 }
                 .onKeyPress(.downArrow) {
                     selectedIndex = min(selectedIndex + 1, visibleItems.count - 1)
@@ -118,6 +136,7 @@ struct HistoryView: View {
                             shortcutNumber: index < 9 ? index + 1 : nil,
                             imageData: { store.imageData(for: item) },
                             onCopy: { onCopy(item) },
+                            onPaste: { onPaste(item) },
                             onPin: { store.togglePin(item) },
                             onFloat: {
                                 if let data = store.imageData(for: item),
@@ -246,6 +265,7 @@ private struct ItemRow: View {
     let shortcutNumber: Int?
     let imageData: () -> Data?
     let onCopy: () -> Void
+    let onPaste: () -> Void
     let onPin: () -> Void
     let onFloat: () -> Void
     let onDelete: () -> Void
@@ -262,6 +282,10 @@ private struct ItemRow: View {
             content
             Spacer(minLength: 4)
             if isHovering {
+                RowButton(
+                    symbol: "arrow.turn.down.left",
+                    help: "Paste into previous app (⌥Return)",
+                    action: onPaste)
                 if isImage {
                     RowButton(symbol: "pip", help: "Float on top", action: onFloat)
                 }
@@ -292,7 +316,14 @@ private struct ItemRow: View {
                     : isHovering ? Color.primary.opacity(0.08) : Color.clear)
         )
         .contentShape(Rectangle())
-        .onTapGesture(perform: onCopy)
+        .onTapGesture {
+            // ⌥-click pastes into the previous app; plain click copies.
+            if NSEvent.modifierFlags.contains(.option) {
+                onPaste()
+            } else {
+                onCopy()
+            }
+        }
         .onHover { isHovering = $0 }
     }
 
@@ -332,6 +363,157 @@ private struct RowButton: View {
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
         .help(help)
+    }
+}
+
+// MARK: Snippets tab
+
+private struct SnippetsList: View {
+    let store: SnippetsStore
+    let onCopy: (SnippetsStore.Snippet) -> Void
+    let onPaste: (SnippetsStore.Snippet) -> Void
+
+    @State private var editing: SnippetsStore.Snippet?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Click to copy · ⌥-click to paste · %DATE% %TIME% %CLIPBOARD%")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                Spacer()
+                Button {
+                    editing = SnippetsStore.Snippet(name: "", template: "")
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help("New snippet")
+            }
+            .padding(8)
+            if store.snippets.isEmpty {
+                VStack(spacing: 6) {
+                    Spacer()
+                    Image(systemName: "text.badge.plus")
+                        .font(.largeTitle)
+                        .foregroundStyle(.tertiary)
+                    Text("Reusable text templates live here")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 2) {
+                        ForEach(store.snippets) { snippet in
+                            SnippetRow(
+                                snippet: snippet,
+                                onCopy: { onCopy(snippet) },
+                                onPaste: { onPaste(snippet) },
+                                onEdit: { editing = snippet },
+                                onDelete: { store.remove(snippet) })
+                        }
+                    }
+                    .padding(6)
+                }
+            }
+        }
+        .sheet(item: $editing) { snippet in
+            SnippetEditor(snippet: snippet) { edited in
+                if store.snippets.contains(where: { $0.id == edited.id }) {
+                    store.update(edited)
+                } else {
+                    store.add(name: edited.name, template: edited.template)
+                }
+            }
+        }
+    }
+}
+
+private struct SnippetRow: View {
+    let snippet: SnippetsStore.Snippet
+    let onCopy: () -> Void
+    let onPaste: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(snippet.name.isEmpty ? "Untitled" : snippet.name)
+                    .font(.callout.weight(.medium))
+                Text(snippet.template)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if isHovering {
+                RowButton(
+                    symbol: "arrow.turn.down.left",
+                    help: "Paste into previous app",
+                    action: onPaste)
+                RowButton(symbol: "pencil", help: "Edit", action: onEdit)
+                RowButton(symbol: "trash", help: "Delete", action: onDelete)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isHovering ? Color.primary.opacity(0.08) : Color.clear)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if NSEvent.modifierFlags.contains(.option) {
+                onPaste()
+            } else {
+                onCopy()
+            }
+        }
+        .onHover { isHovering = $0 }
+    }
+}
+
+private struct SnippetEditor: View {
+    @State private var draft: SnippetsStore.Snippet
+    let onSave: (SnippetsStore.Snippet) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    init(snippet: SnippetsStore.Snippet, onSave: @escaping (SnippetsStore.Snippet) -> Void) {
+        _draft = State(initialValue: snippet)
+        self.onSave = onSave
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            TextField("Name", text: $draft.name)
+            TextEditor(text: $draft.template)
+                .font(.body)
+                .frame(height: 100)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(.quaternary))
+            Text("Variables: %DATE%, %TIME%, %CLIPBOARD%")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Save") {
+                    onSave(draft)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(draft.template.isEmpty)
+            }
+        }
+        .padding(14)
+        .frame(width: 300)
     }
 }
 

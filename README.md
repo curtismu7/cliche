@@ -12,6 +12,13 @@ A macOS menu bar app combining a clipboard history manager and screen capture.
 - **Keyboard navigation** — `↑`/`↓` select, `Return` copies the selection,
   `⌘1`–`⌘9` copy the first nine items, `⌘⌫` deletes and `⌘P` pins the
   selection. Everything is always copied as plain text — no formatting.
+- **Paste directly** — `⌥Return`, `⌥-click`, or a row's ↵ hover button pastes
+  the item straight into the app you were using (works for images too).
+  Requires the Accessibility permission, requested only on first use; until
+  granted, the item is on the clipboard for a manual `⌘V`.
+- **Snippets** — reusable text templates in their own tab, with `%DATE%`,
+  `%TIME%`, and `%CLIPBOARD%` variables rendered at copy time. Click to copy,
+  ⌥-click to paste directly.
 - **Screen capture** — region, window, or full screen via the native macOS
   capture UI. Screenshots land on the Desktop as PNG and on the clipboard
   (so they also appear in history).
