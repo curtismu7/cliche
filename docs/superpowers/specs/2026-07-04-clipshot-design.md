@@ -18,9 +18,11 @@ A macOS menu bar utility combining a clipboard history manager and screen captur
 ### Clipboard history
 - Poll `NSPasteboard.general.changeCount` every 0.5 s (macOS has no change notification API).
 - Record plain text and images (PNG/TIFF). Skip transient/concealed pasteboard types (e.g. password managers marking `org.nspasteboard.ConcealedType`).
-- Deduplicate consecutive identical items; cap history at 50 items (oldest evicted).
+- Deduplicate identical items (re-copy moves the item to the front); caps: 150 text items and 50 images (oldest unpinned evicted per kind).
 - Click a history row → item is written back to the clipboard.
-- "Clear" button empties history (and persisted files).
+- Pin items (hover button): pinned items are never evicted, survive Clear History, and show in a Pinned section.
+- Remove individual items (hover trash button).
+- "Clear" button empties unpinned history (and persisted files).
 - Persistence: text items in `history.json`, images as PNG files, both under `~/Library/Application Support/ClipShot/`. Loaded on launch.
 
 ### Screen capture
