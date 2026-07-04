@@ -46,7 +46,7 @@ public final class CaptureService {
         }
     }
 
-    static func outputURL() -> URL {
+    public static func outputURL() -> URL {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd 'at' HH.mm.ss"
         let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]

@@ -119,11 +119,66 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func capture(_ mode: CaptureMode) {
         // Close the panel first so it isn't part of the screenshot.
         popover.performClose(nil)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            [captureService, capturesStore] in
-            captureService.capture(mode) { url in
-                capturesStore?.add(path: url.path)
+        switch mode {
+        case .fullScreen:
+            let screen = Self.screenUnderMouse()
+            captureWithEngine(screen: screen, rect: nil, cliFallback: .fullScreen)
+        case .region:
+            RegionSelector.begin { [weak self] selection in
+                guard let self, let selection else { return }
+                self.captureWithEngine(
+                    screen: selection.screen, rect: selection.rect, cliFallback: .region)
+            }
+        case .window:
+            // ScreenCaptureKit has no window-picker UI; keep the native one.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                [captureService, capturesStore] in
+                captureService.capture(.window) { url in
+                    capturesStore?.add(path: url.path)
+                }
             }
         }
+    }
+
+    /// In-process ScreenCaptureKit capture; falls back to the `screencapture`
+    /// CLI when the engine fails (e.g. Screen Recording not yet granted, so
+    /// the user still gets the system permission flow).
+    private func captureWithEngine(screen: NSScreen, rect: CGRect?, cliFallback: CaptureMode) {
+        guard let displayID = screen.displayID else {
+            captureWithCLI(cliFallback)
+            return
+        }
+        let scale = screen.backingScaleFactor
+        Task { @MainActor [capturesStore] in
+            do {
+                let image = try await ScreenshotEngine.captureImage(
+                    displayID: displayID, sourceRect: rect, scale: scale)
+                if let url = CaptureDelivery.deliver(image) {
+                    capturesStore?.add(path: url.path)
+                }
+            } catch {
+                NSLog("ClipShot: ScreenCaptureKit failed (\(error)); using screencapture CLI")
+                self.captureWithCLI(cliFallback)
+            }
+        }
+    }
+
+    private func captureWithCLI(_ mode: CaptureMode) {
+        captureService.capture(mode) { [weak self] url in
+            self?.capturesStore.add(path: url.path)
+        }
+    }
+
+    private static func screenUnderMouse() -> NSScreen {
+        let mouse = NSEvent.mouseLocation
+        return NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) }
+            ?? NSScreen.main ?? NSScreen.screens[0]
+    }
+}
+
+extension NSScreen {
+    var displayID: CGDirectDisplayID? {
+        (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?
+            .uint32Value
     }
 }

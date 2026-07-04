@@ -302,6 +302,22 @@ do {
         "snippets store add/update/remove persists")
 }
 
+// captureDeliveryPNGRoundTrip
+do {
+    let context = CGContext(
+        data: nil, width: 12, height: 8, bitsPerComponent: 8, bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    context.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1))
+    context.fill(CGRect(x: 0, y: 0, width: 12, height: 8))
+    let cgImage = context.makeImage()!
+
+    let png = CaptureDelivery.pngData(from: cgImage)
+    let decoded = png.flatMap { NSBitmapImageRep(data: $0) }
+    expect(decoded?.pixelsWide == 12 && decoded?.pixelsHigh == 8,
+        "capture delivery encodes CGImage to decodable PNG")
+}
+
 // ocrRecognizesRenderedText
 do {
     let size = NSSize(width: 700, height: 140)

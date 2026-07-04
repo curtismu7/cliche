@@ -19,9 +19,13 @@ A macOS menu bar app combining a clipboard history manager and screen capture.
 - **Snippets** — reusable text templates in their own tab, with `%DATE%`,
   `%TIME%`, and `%CLIPBOARD%` variables rendered at copy time. Click to copy,
   ⌥-click to paste directly.
-- **Screen capture** — region, window, or full screen via the native macOS
-  capture UI. Screenshots land on the Desktop as PNG and on the clipboard
-  (so they also appear in history).
+- **Screen capture** — region and full-screen captures run in-process via
+  ScreenCaptureKit (instant, silent, ClipShot's own windows excluded); region
+  selection uses ClipShot's crosshair overlay (drag to select, Esc cancels).
+  Window capture uses the native macOS picker. Screenshots land on the
+  Desktop as PNG and on the clipboard (so they also appear in history).
+  If ScreenCaptureKit is unavailable, capture falls back to the system
+  `screencapture` tool automatically.
 - **Copy text from screen (OCR)** — the Text button (or `⌃⌥⌘6`) lets you
   select any region; the text in it is recognized on-device with Apple's
   Vision framework and copied to the clipboard. Beeps if no text was found.
