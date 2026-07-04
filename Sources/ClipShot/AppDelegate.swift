@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let popover = NSPopover()
 
     private var store: HistoryStore!
+    private var capturesStore: CapturesStore!
     private var monitor: ClipboardMonitor!
     private let captureService = CaptureService()
     private let hotkeys = HotkeyManager()
@@ -16,8 +17,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let appSupport = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("ClipShot", isDirectory: true)
+        let ignoreRulesURL = appSupport.appendingPathComponent("ignore-rules.json")
+
         store = HistoryStore(directory: appSupport)
-        monitor = ClipboardMonitor(store: store)
+        capturesStore = CapturesStore(directory: appSupport)
+        monitor = ClipboardMonitor(
+            store: store,
+            ignoreRules: IgnoreRules.load(from: ignoreRulesURL))
         monitor.start()
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -31,7 +37,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentViewController = NSHostingController(
             rootView: HistoryView(
                 store: store,
-                onCopy: { [weak self] item in self?.monitor.copyToPasteboard(item) },
+                capturesStore: capturesStore,
+                ignoreRulesURL: ignoreRulesURL,
+                onCopy: { [weak self] item in
+                    self?.monitor.copyToPasteboard(item)
+                    self?.popover.performClose(nil)
+                },
                 onCapture: { [weak self] mode in self?.capture(mode) },
                 onQuit: { NSApp.terminate(nil) }
             ))
@@ -54,8 +65,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func capture(_ mode: CaptureMode) {
         // Close the panel first so it isn't part of the screenshot.
         popover.performClose(nil)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [captureService] in
-            captureService.capture(mode)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            [captureService, capturesStore] in
+            captureService.capture(mode) { url in
+                capturesStore?.add(path: url.path)
+            }
         }
     }
 }

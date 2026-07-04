@@ -3,18 +3,23 @@ import AppKit
 /// Watches the general pasteboard by polling `changeCount` (macOS offers no
 /// change notification) and feeds new text/image contents into a HistoryStore.
 public final class ClipboardMonitor {
-    private static let skippedTypes = [
-        NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType"),
-        NSPasteboard.PasteboardType("org.nspasteboard.TransientType"),
-    ]
-
     private let store: HistoryStore
+    private let ignoreRules: IgnoreRules
+    private let frontmostBundleID: () -> String?
     private let pasteboard = NSPasteboard.general
     private var timer: Timer?
     private var lastChangeCount: Int
 
-    public init(store: HistoryStore) {
+    public init(
+        store: HistoryStore,
+        ignoreRules: IgnoreRules = .default,
+        frontmostBundleID: @escaping () -> String? = {
+            NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        }
+    ) {
         self.store = store
+        self.ignoreRules = ignoreRules
+        self.frontmostBundleID = frontmostBundleID
         self.lastChangeCount = pasteboard.changeCount
     }
 
@@ -47,8 +52,10 @@ public final class ClipboardMonitor {
         guard pasteboard.changeCount != lastChangeCount else { return }
         lastChangeCount = pasteboard.changeCount
 
-        let types = pasteboard.types ?? []
-        guard !types.contains(where: Self.skippedTypes.contains) else { return }
+        let types = (pasteboard.types ?? []).map(\.rawValue)
+        guard !ignoreRules.shouldIgnore(
+            types: types, frontmostBundleID: frontmostBundleID())
+        else { return }
 
         if let png = pasteboard.data(forType: .png) {
             store.addImage(png)

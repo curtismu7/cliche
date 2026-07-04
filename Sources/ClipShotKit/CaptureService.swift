@@ -12,7 +12,9 @@ public enum CaptureMode {
 public final class CaptureService {
     public init() {}
 
-    public func capture(_ mode: CaptureMode, completion: (() -> Void)? = nil) {
+    /// `onSaved` runs on the main queue with the file URL when a screenshot
+    /// was actually written (not when the user cancels with Esc).
+    public func capture(_ mode: CaptureMode, onSaved: ((URL) -> Void)? = nil) {
         let outputURL = Self.outputURL()
         var arguments: [String]
         switch mode {
@@ -33,8 +35,8 @@ public final class CaptureService {
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
                     pasteboard.setData(data, forType: .png)
+                    onSaved?(outputURL)
                 }
-                completion?()
             }
         }
         do {
