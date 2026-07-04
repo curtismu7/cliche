@@ -131,11 +131,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         case .window:
             // ScreenCaptureKit has no window-picker UI; keep the native one.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                [captureService, capturesStore] in
-                captureService.capture(.window) { url in
-                    capturesStore?.add(path: url.path)
-                }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                self?.captureWithCLI(.window)
             }
         }
     }
@@ -155,6 +152,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     displayID: displayID, sourceRect: rect, scale: scale)
                 if let url = CaptureDelivery.deliver(image) {
                     capturesStore?.add(path: url.path)
+                    CaptureOverlay.show(fileURL: url) { AnnotationEditor.open(fileURL: $0) }
                 }
             } catch {
                 NSLog("ClipShot: ScreenCaptureKit failed (\(error)); using screencapture CLI")
@@ -166,6 +164,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func captureWithCLI(_ mode: CaptureMode) {
         captureService.capture(mode) { [weak self] url in
             self?.capturesStore.add(path: url.path)
+            CaptureOverlay.show(fileURL: url) { AnnotationEditor.open(fileURL: $0) }
         }
     }
 

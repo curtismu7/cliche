@@ -29,8 +29,15 @@ A macOS menu bar app combining a clipboard history manager and screen capture.
 - **Copy text from screen (OCR)** — the Text button (or `⌃⌥⌘6`) lets you
   select any region; the text in it is recognized on-device with Apple's
   Vision framework and copied to the clipboard. Beeps if no text was found.
+- **Quick Access Overlay** — after each capture a small thumbnail floats in
+  the bottom-left corner: drag it straight into another app, click it to
+  annotate, or let it auto-dismiss after a few seconds.
+- **Annotation editor** — arrows, rectangles, text labels, pixelate/redact,
+  and auto-numbered counter badges. ⌘Z undoes, Copy puts the annotated image
+  on the clipboard, Save overwrites the capture file. Open it from the
+  overlay or any capture's ✏️ button.
 - **Captures tab** — a thumbnail grid of past screenshots with copy,
-  show-in-Finder, move-to-Trash, and float actions.
+  annotate, show-in-Finder, move-to-Trash, and float actions.
 - **Float on top** — pin any screenshot or history image as an always-on-top
   window for reference while you work.
 - **Launch at login** — toggle in the gear menu (System Settings shows it

@@ -318,6 +318,85 @@ do {
         "capture delivery encodes CGImage to decodable PNG")
 }
 
+// annotationRenderer
+do {
+    // 200x150 base: left half white, with black/white 1px vertical stripes
+    // in the 20...120 x band (for the blur test).
+    let width = 200, height = 150
+    let context = CGContext(
+        data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+    context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+    context.setFillColor(CGColor(red: 0, green: 0, blue: 0, alpha: 1))
+    for x in stride(from: 20, to: 120, by: 2) {
+        context.fill(CGRect(x: x, y: 0, width: 1, height: height))
+    }
+    let base = context.makeImage()!
+
+    func bitmap(_ image: CGImage) -> NSBitmapImageRep { NSBitmapImageRep(cgImage: image) }
+    // Sample using CG (bottom-left) coordinates.
+    func color(_ rep: NSBitmapImageRep, _ x: Int, _ y: Int) -> NSColor {
+        rep.colorAt(x: x, y: height - 1 - y)!.usingColorSpace(.deviceRGB)!
+    }
+    func isRed(_ c: NSColor) -> Bool { c.redComponent > 0.6 && c.greenComponent < 0.4 }
+
+    // Rectangle: stroke visible along the left edge at x=150.
+    let rectAnnotation = Annotation(
+        kind: .rectangle, start: CGPoint(x: 150, y: 30), end: CGPoint(x: 190, y: 120))
+    let rectOut = bitmap(AnnotationRenderer.render(base: base, annotations: [rectAnnotation])!)
+    expect(isRed(color(rectOut, 150, 75)), "renderer draws rectangle stroke")
+
+    // Arrow: midpoint of the shaft is red.
+    let arrow = Annotation(
+        kind: .arrow, start: CGPoint(x: 130, y: 20), end: CGPoint(x: 190, y: 20))
+    let arrowOut = bitmap(AnnotationRenderer.render(base: base, annotations: [arrow])!)
+    expect(isRed(color(arrowOut, 160, 20)), "renderer draws arrow shaft")
+
+    // Counter: ring of points just inside the badge circle is red.
+    let counter = Annotation(
+        kind: .counter(3), start: CGPoint(x: 160, y: 75), end: CGPoint(x: 160, y: 75))
+    let counterOut = bitmap(AnnotationRenderer.render(base: base, annotations: [counter])!)
+    let ringRed = [(154, 75), (166, 75), (160, 69), (160, 81)]
+        .filter { isRed(color(counterOut, $0.0, $0.1)) }.count
+    expect(ringRed >= 3, "renderer draws counter badge")
+
+    // Blur: pixelation flattens the stripe pattern — adjacent columns that
+    // differ in the base become mostly equal after pixelating.
+    let blur = Annotation(
+        kind: .blur, start: CGPoint(x: 30, y: 30), end: CGPoint(x: 110, y: 120))
+    let blurOut = bitmap(AnnotationRenderer.render(base: base, annotations: [blur])!)
+    let baseRep = bitmap(base)
+    var equalPairsAfter = 0, differingPairsBefore = 0
+    for x in 55...64 {
+        let beforeA = color(baseRep, x, 75), beforeB = color(baseRep, x + 1, 75)
+        if abs(beforeA.redComponent - beforeB.redComponent) > 0.5 { differingPairsBefore += 1 }
+        let afterA = color(blurOut, x, 75), afterB = color(blurOut, x + 1, 75)
+        if abs(afterA.redComponent - afterB.redComponent) < 0.1 { equalPairsAfter += 1 }
+    }
+    expect(differingPairsBefore >= 4 && equalPairsAfter >= 5,
+        "renderer pixelates blur region")
+
+    // Text: red pixels appear near the anchor point.
+    let text = Annotation(
+        kind: .text("X"), start: CGPoint(x: 140, y: 100), end: CGPoint(x: 140, y: 100))
+    let textOut = bitmap(AnnotationRenderer.render(base: base, annotations: [text])!)
+    var foundTextPixel = false
+    for x in 140...175 where !foundTextPixel {
+        for y in 100...130 where isRed(color(textOut, x, y)) {
+            foundTextPixel = true
+            break
+        }
+    }
+    expect(foundTextPixel, "renderer draws text label")
+
+    // Renderer output round-trips to PNG.
+    let png = AnnotationRenderer.pngData(base: base, annotations: [rectAnnotation, arrow])
+    expect(png != nil && NSBitmapImageRep(data: png!)?.pixelsWide == width,
+        "renderer exports annotated PNG")
+}
+
 // ocrRecognizesRenderedText
 do {
     let size = NSSize(width: 700, height: 140)

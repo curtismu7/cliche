@@ -585,6 +585,10 @@ private struct CapturesGrid: View {
                                     NSPasteboard.general.setData(data, forType: .png)
                                 }
                             }
+                            RowButton(symbol: "pencil.tip.crop.circle", help: "Annotate") {
+                                AnnotationEditor.open(
+                                    fileURL: URL(fileURLWithPath: capture.path))
+                            }
                             RowButton(symbol: "pip", help: "Float on top") {
                                 if let image = NSImage(contentsOfFile: capture.path) {
                                     FloatingImageWindow.show(image: image)
