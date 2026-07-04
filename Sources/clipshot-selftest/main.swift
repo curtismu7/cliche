@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import ClipShotKit
 
@@ -267,6 +268,30 @@ do {
     reloaded.remove(reloaded.captures[0], deleteFile: false)
     expect(reloaded.captures.isEmpty && FileManager.default.fileExists(atPath: fileB.path),
         "captures store remove keeps file when asked")
+}
+
+// ocrRecognizesRenderedText
+do {
+    let size = NSSize(width: 700, height: 140)
+    let image = NSImage(size: size)
+    image.lockFocus()
+    NSColor.white.setFill()
+    NSRect(origin: .zero, size: size).fill()
+    ("Hello ClipShot 42" as NSString).draw(
+        at: NSPoint(x: 24, y: 40),
+        withAttributes: [
+            .font: NSFont.systemFont(ofSize: 48, weight: .bold),
+            .foregroundColor: NSColor.black,
+        ])
+    image.unlockFocus()
+    let png = NSBitmapImageRep(data: image.tiffRepresentation!)!
+        .representation(using: .png, properties: [:])!
+    let url = makeTempDir().appendingPathComponent("text.png")
+    try! png.write(to: url)
+
+    let recognized = (try? OCRService.recognizeText(in: url)) ?? ""
+    expect(recognized.lowercased().contains("clipshot")
+        && recognized.contains("42"), "OCR recognizes rendered text")
 }
 
 // clipItemCodableRoundTrip

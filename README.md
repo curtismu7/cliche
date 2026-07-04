@@ -15,6 +15,9 @@ A macOS menu bar app combining a clipboard history manager and screen capture.
 - **Screen capture** — region, window, or full screen via the native macOS
   capture UI. Screenshots land on the Desktop as PNG and on the clipboard
   (so they also appear in history).
+- **Copy text from screen (OCR)** — the Text button (or `⌃⌥⌘6`) lets you
+  select any region; the text in it is recognized on-device with Apple's
+  Vision framework and copied to the clipboard. Beeps if no text was found.
 - **Captures tab** — a thumbnail grid of past screenshots with copy,
   show-in-Finder, move-to-Trash, and float actions.
 - **Float on top** — pin any screenshot or history image as an always-on-top
@@ -25,6 +28,7 @@ A macOS menu bar app combining a clipboard history manager and screen capture.
   - `⌃⌥⌘C` — open/close the history panel
   - `⌃⌥⌘4` — capture region
   - `⌃⌥⌘5` — capture window
+  - `⌃⌥⌘6` — copy text from screen (OCR)
 
 History persists across restarts in `~/Library/Application Support/ClipShot/`.
 Content marked concealed/transient/auto-generated (e.g. password managers) is

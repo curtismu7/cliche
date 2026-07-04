@@ -8,6 +8,7 @@ struct HistoryView: View {
     let ignoreRulesURL: URL
     let onCopy: (ClipItem) -> Void
     let onCapture: (CaptureMode) -> Void
+    let onCaptureText: () -> Void
     let onQuit: () -> Void
 
     private enum Tab: String, CaseIterable {
@@ -151,6 +152,8 @@ struct HistoryView: View {
             CaptureButton(title: "Screen", symbol: "display") {
                 onCapture(.fullScreen)
             }
+            CaptureButton(title: "Text", symbol: "text.viewfinder", action: onCaptureText)
+                .help("Copy text from screen (OCR)")
             Spacer()
             Button(action: onQuit) {
                 Image(systemName: "power")
