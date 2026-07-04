@@ -7,7 +7,8 @@ public final class HistoryStore {
     public private(set) var items: [ClipItem] = []
 
     public let directory: URL
-    public let maxItems: Int
+    public let maxTexts: Int
+    public let maxImages: Int
 
     private var imagesDirectory: URL {
         directory.appendingPathComponent("images", isDirectory: true)
@@ -16,9 +17,10 @@ public final class HistoryStore {
         directory.appendingPathComponent("history.json")
     }
 
-    public init(directory: URL, maxItems: Int = 50) {
+    public init(directory: URL, maxTexts: Int = 150, maxImages: Int = 50) {
         self.directory = directory
-        self.maxItems = maxItems
+        self.maxTexts = maxTexts
+        self.maxImages = maxImages
         try? FileManager.default.createDirectory(
             at: imagesDirectory, withIntermediateDirectories: true)
         load()
@@ -78,13 +80,21 @@ public final class HistoryStore {
             items.remove(at: index)
         }
         items.insert(item, at: 0)
-        // The cap applies to unpinned items; pinned items are never evicted.
-        while items.filter({ !$0.pinned }).count > maxItems {
-            if let last = items.lastIndex(where: { !$0.pinned }) {
-                deleteImageFile(of: items.remove(at: last))
-            }
-        }
+        // Caps are per kind and apply to unpinned items only; pinned items
+        // are never evicted.
+        evictOldest(where: { if case .text = $0.kind { return true }; return false },
+                    cap: maxTexts)
+        evictOldest(where: { if case .image = $0.kind { return true }; return false },
+                    cap: maxImages)
         save()
+    }
+
+    private func evictOldest(where matches: (ClipItem) -> Bool, cap: Int) {
+        while items.filter({ !$0.pinned && matches($0) }).count > cap {
+            guard let last = items.lastIndex(where: { !$0.pinned && matches($0) })
+            else { return }
+            deleteImageFile(of: items.remove(at: last))
+        }
     }
 
     private func deleteImageFile(of item: ClipItem) {

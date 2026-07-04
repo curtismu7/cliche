@@ -55,13 +55,27 @@ do {
         && store.items[1].kind == .text("b"), "dedupes text and moves to front")
 }
 
-// capsAtMaxItems
+// capsTextsAtMaxTexts
 do {
-    let store = HistoryStore(directory: makeTempDir(), maxItems: 3)
+    let store = HistoryStore(directory: makeTempDir(), maxTexts: 3)
     for i in 1...5 { store.addText("item \(i)") }
     expect(store.items.count == 3
         && store.items[0].kind == .text("item 5")
-        && store.items[2].kind == .text("item 3"), "caps at maxItems")
+        && store.items[2].kind == .text("item 3"), "caps texts at maxTexts")
+}
+
+// textAndImageCapsAreIndependent
+do {
+    let store = HistoryStore(directory: makeTempDir(), maxTexts: 2, maxImages: 2)
+    // Three distinct "image" payloads (store hashes bytes, no PNG validation).
+    store.addImage(pngData)
+    store.addImage(pngData + Data([1]))
+    store.addImage(pngData + Data([2]))
+    for i in 1...3 { store.addText("t\(i)") }
+    let texts = store.items.filter { if case .text = $0.kind { return true }; return false }
+    let images = store.items.filter { if case .image = $0.kind { return true }; return false }
+    expect(texts.count == 2 && images.count == 2,
+        "text and image caps are independent")
 }
 
 // imageRoundTrip
@@ -111,12 +125,12 @@ do {
 // evictionDeletesImageFile
 do {
     let dir = makeTempDir()
-    let store = HistoryStore(directory: dir, maxItems: 1)
+    let store = HistoryStore(directory: dir, maxImages: 1)
     store.addImage(pngData)
-    store.addText("pushes image out")
-    let images = (try? FileManager.default.contentsOfDirectory(
+    store.addImage(pngData + Data([1]))  // evicts the first image
+    let files = (try? FileManager.default.contentsOfDirectory(
         atPath: dir.appendingPathComponent("images").path)) ?? []
-    expect(store.items.count == 1 && images.isEmpty, "eviction deletes image file")
+    expect(store.items.count == 1 && files.count == 1, "eviction deletes image file")
 }
 
 // removeDeletesItemAndFile
@@ -147,7 +161,7 @@ do {
 
 // pinnedNotEvictedByCap
 do {
-    let store = HistoryStore(directory: makeTempDir(), maxItems: 2)
+    let store = HistoryStore(directory: makeTempDir(), maxTexts: 2)
     store.addText("pinned")
     store.togglePin(store.items[0])
     for i in 1...4 { store.addText("item \(i)") }
