@@ -4,8 +4,9 @@
 
 <h1 align="center">Cliché</h1>
 
-<p align="center"><b>Clipboard history + screen capture for macOS, in one menu bar app.</b><br>
-Think Maccy and CleanShot had a French child. Free, open source, 100% local — no accounts, no network, no telemetry.</p>
+<p align="center"><b>The free, open-source Mac menu bar app that combines clipboard history (like Maccy) with screen capture and annotation (like CleanShot X).</b><br>
+Pin and search everything you copy · capture, mark up, redact, record, and measure anything on screen.<br>
+100% local and private — no accounts, no network, no telemetry. Grab the zip from <a href="https://github.com/curtismu7/cliche/releases/latest">Releases</a>, or build from source.</p>
 
 ---
 
