@@ -1,4 +1,4 @@
-.PHONY: build test app run install clean
+.PHONY: build test app run install dist clean
 
 build:
 	swift build
@@ -18,6 +18,10 @@ install: app
 	sleep 1
 	ditto build/Cliche.app ~/Applications/Cliche.app
 	open ~/Applications/Cliche.app
+
+# Shareable zip for other Macs (app + installer + readme).
+dist:
+	Scripts/make-dist.sh
 
 clean:
 	rm -rf .build build

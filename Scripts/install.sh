@@ -1,0 +1,54 @@
+#!/bin/bash
+# Cliché installer — shipped inside the distribution zip as
+# "Install Cliché.command" so recipients can just double-click it.
+set -euo pipefail
+cd "$(dirname "$0")"
+
+echo "── Installing Cliché ──────────────────────────────"
+
+if [ ! -d "Cliche.app" ]; then
+    echo "❌ Cliche.app not found next to this script."
+    echo "   Unzip the whole folder first, then run this again."
+    exit 1
+fi
+
+DEST="$HOME/Applications"
+mkdir -p "$DEST"
+
+# Quit any running copy before replacing it.
+pkill -f 'Cliche.app/Contents/MacOS/Cliche' 2>/dev/null || true
+sleep 1
+
+rm -rf "$DEST/Cliche.app"
+ditto "Cliche.app" "$DEST/Cliche.app"
+
+# The app is signed ad hoc (no Apple Developer certificate), so macOS
+# quarantines it after download. Clear that so it can launch.
+xattr -dr com.apple.quarantine "$DEST/Cliche.app" 2>/dev/null || true
+
+read -r -p "Launch Cliché automatically at login? [y/N] " REPLY || REPLY=""
+if [[ "$REPLY" =~ ^[Yy] ]]; then
+    osascript -e "tell application \"System Events\" to if not (exists login item \"Cliche\") then make login item at end with properties {path:\"$DEST/Cliche.app\", hidden:false}" >/dev/null 2>&1 \
+        && echo "   Added to Login Items." \
+        || echo "   Could not add login item (you can do it in System Settings → Login Items)."
+fi
+
+open "$DEST/Cliche.app"
+
+cat <<'EOF'
+
+✅ Cliché is installed (~/Applications/Cliche.app) and running —
+   look for its icons in the menu bar.
+
+First-run permissions (macOS asks once each):
+  • Screen Recording — prompted at your first screenshot
+    (System Settings → Privacy & Security → Screen & System Audio Recording,
+     then quit and reopen Cliché)
+  • Accessibility — only if you use direct paste (⌥-click / ⌥Return)
+
+Getting started:
+  ⌃⌥⌘C  clipboard panel        ⌥1  floating clipboard list
+  ⌃⌥⌘4  capture a region       ⌃⌥⌘6  copy text from screen (OCR)
+  The ? button in the panel lists everything; hotkeys are
+  customizable under the gear icon.
+EOF

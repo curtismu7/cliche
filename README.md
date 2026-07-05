@@ -93,6 +93,15 @@ make run    # build and launch
 The first screen capture prompts for the Screen Recording permission
 (System Settings → Privacy & Security → Screen & System Audio Recording).
 
+## Sharing with others
+
+`make dist` produces `build/Cliche-<version>.zip` containing the app, a
+double-clickable installer ("Install Cliché.command"), and a readme.
+Send the zip; recipients unzip and run the installer — it copies the app
+to `~/Applications`, clears the Gatekeeper quarantine (the app is ad-hoc
+signed, not notarized), optionally adds a login item, and launches it.
+If macOS blocks the installer itself, right-click → Open once.
+
 ## Development
 
 - `Sources/ClicheKit` — library: history store, clipboard monitor,
