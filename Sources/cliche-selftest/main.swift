@@ -664,6 +664,31 @@ do {
         "beautify pads with gradient and keeps screenshot centered")
 }
 
+// beautifyConfigModel
+do {
+    // Identity renders nothing → empty gradient.
+    expect(BeautifyConfig.identity.isIdentity, "identity config is identity")
+
+    // Built-ins: None + 5 gradients, first is identity.
+    let builtins = BeautifyConfig.builtInPresets
+    expect(builtins.count == 6, "six built-in presets (None + 5 gradients)")
+    expect(builtins.first?.config.isIdentity == true, "first built-in is None/identity")
+    expect(builtins.contains { $0.name == "Indigo" }, "built-ins include Indigo")
+
+    // Codable round-trip preserves value equality.
+    let indigo = builtins.first { $0.name == "Indigo" }!.config
+    let data = try! JSONEncoder().encode(indigo)
+    let decoded = try! JSONDecoder().decode(BeautifyConfig.self, from: data)
+    expect(decoded == indigo, "BeautifyConfig JSON round-trips to an equal value")
+
+    // CanvasSize round-trips including the fixed case.
+    let canvas = CanvasSize.fixed(width: 1600, height: 900, label: "X · 1600 × 900")
+    let cdata = try! JSONEncoder().encode(canvas)
+    let cdecoded = try! JSONDecoder().decode(CanvasSize.self, from: cdata)
+    expect(cdecoded == canvas, "CanvasSize.fixed round-trips")
+    expect(CanvasSize.socialPresets.first == .free, "social presets start with .free")
+}
+
 // sensitiveTextDetection
 do {
     let width = 900, height = 120
