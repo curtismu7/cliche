@@ -247,7 +247,16 @@ struct HistoryView: View {
             Spacer()
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+    }
+
+    private var footerCount: String {
+        switch effectiveTab {
+        case .clipboard: return "\(store.items.count) items"
+        case .captures: return "\(capturesStore.captures.count) screenshots"
+        case .snippets: return "\(snippetsStore.snippets.count) snippets"
+        }
     }
 
     private var footer: some View {
@@ -270,7 +279,7 @@ struct HistoryView: View {
             .foregroundStyle(.secondary)
             .help("Shortcuts & help")
 
-            Text("\(store.items.count) items")
+            Text(footerCount)
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -618,6 +627,9 @@ private struct CapturesGrid: View {
                     .foregroundStyle(.tertiary)
                 Text("Screenshots you take appear here")
                     .foregroundStyle(.secondary)
+                Text("⌃⌥⌘4 for a region, or use the buttons above")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
                 Spacer()
             }
             .frame(maxWidth: .infinity)
