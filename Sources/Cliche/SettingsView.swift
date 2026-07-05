@@ -44,6 +44,17 @@ struct SettingsView: View {
                     Toggle("Show mouse pointer", isOn: $settings.showCursor)
                     Toggle("Window capture keeps shadow", isOn: $settings.windowShadow)
                 }
+                Section("Menu Bar") {
+                    Picker("Icons", selection: $settings.menuBarStyle) {
+                        Text("One combined icon").tag(AppSettings.MenuBarStyle.combined)
+                        Text("Split: clipboard + capture").tag(AppSettings.MenuBarStyle.split)
+                    }
+                    Text(settings.menuBarStyle == .combined
+                        ? "One icon opens everything."
+                        : "Two icons: 📋 opens clipboard history & snippets, 📷 opens capture tools & screenshots.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Section("General") {
                     Toggle("Launch at login", isOn: $launchAtLogin)
                         .onChange(of: launchAtLogin) { _, wanted in
@@ -60,6 +71,6 @@ struct SettingsView: View {
             }
             .formStyle(.grouped)
         }
-        .frame(width: 340, height: 440)
+        .frame(width: 340, height: 500)
     }
 }

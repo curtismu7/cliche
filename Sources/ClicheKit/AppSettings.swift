@@ -36,6 +36,23 @@ public final class AppSettings {
         didSet { defaults.set(windowShadow, forKey: "windowShadow") }
     }
 
+    public enum MenuBarStyle: String, CaseIterable {
+        /// One icon opening the full panel.
+        case combined
+        /// Two icons — clipboard history and screen capture — each opening
+        /// its own focused panel.
+        case split
+    }
+
+    public static let menuBarStyleChanged = Notification.Name("ClicheMenuBarStyleChanged")
+
+    public var menuBarStyle: MenuBarStyle {
+        didSet {
+            defaults.set(menuBarStyle.rawValue, forKey: "menuBarStyle")
+            NotificationCenter.default.post(name: Self.menuBarStyleChanged, object: nil)
+        }
+    }
+
     private let defaults: UserDefaults
 
     public init(defaults: UserDefaults = .standard) {
@@ -47,6 +64,8 @@ public final class AppSettings {
         self.timerSeconds = defaults.object(forKey: "timerSeconds") as? Int ?? 0
         self.showCursor = defaults.object(forKey: "showCursor") as? Bool ?? false
         self.windowShadow = defaults.object(forKey: "windowShadow") as? Bool ?? false
+        self.menuBarStyle = defaults.string(forKey: "menuBarStyle")
+            .flatMap(MenuBarStyle.init(rawValue:)) ?? .combined
     }
 
     // MARK: Last capture region (for repeat-area capture)

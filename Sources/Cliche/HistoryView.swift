@@ -2,7 +2,17 @@ import AppKit
 import ClicheKit
 import SwiftUI
 
+enum PanelLayout {
+    /// Everything in one panel (combined menu bar icon).
+    case full
+    /// Clipboard + snippets only (split mode, clipboard icon).
+    case clipboardOnly
+    /// Capture toolbar + captures grid only (split mode, capture icon).
+    case captureOnly
+}
+
 struct HistoryView: View {
+    var layout: PanelLayout = .full
     let store: HistoryStore
     let capturesStore: CapturesStore
     let snippetsStore: SnippetsStore
@@ -40,18 +50,37 @@ struct HistoryView: View {
         return filtered.filter(\.pinned) + filtered.filter { !$0.pinned }
     }
 
+    private var availableTabs: [Tab] {
+        switch layout {
+        case .full: return [.clipboard, .captures, .snippets]
+        case .clipboardOnly: return [.clipboard, .snippets]
+        case .captureOnly: return [.captures]
+        }
+    }
+
+    /// The state `tab` can be outside this layout's tabs (fresh default);
+    /// fall back to the first available.
+    private var effectiveTab: Tab {
+        availableTabs.contains(tab) ? tab : availableTabs[0]
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            captureBar
-            Picker("", selection: $tab) {
-                ForEach(Tab.allCases, id: \.self) { Text($0.rawValue) }
+            if layout != .clipboardOnly {
+                captureBar
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding(.horizontal, 10)
-            .padding(.bottom, 8)
+            if availableTabs.count > 1 {
+                Picker("", selection: $tab) {
+                    ForEach(availableTabs, id: \.self) { Text($0.rawValue) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .padding(.horizontal, 10)
+                .padding(.vertical, layout == .clipboardOnly ? 8 : 0)
+                .padding(.bottom, layout == .clipboardOnly ? 0 : 8)
+            }
             Divider()
-            switch tab {
+            switch effectiveTab {
             case .clipboard: clipboardTab
             case .captures: CapturesGrid(store: capturesStore)
             case .snippets:
@@ -63,7 +92,7 @@ struct HistoryView: View {
             Divider()
             footer
         }
-        .frame(width: 340, height: 460)
+        .frame(width: 340, height: layout == .captureOnly ? 380 : 460)
         .background(shortcutButtons)
         .sheet(isPresented: $showingHelp) { HelpView() }
         .sheet(isPresented: $showingSettings) {
@@ -245,7 +274,7 @@ struct HistoryView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer()
-            if tab == .clipboard {
+            if effectiveTab == .clipboard {
                 Button("Clear History") { store.clear() }
                     .font(.caption)
             }

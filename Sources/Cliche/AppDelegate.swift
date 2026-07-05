@@ -4,8 +4,11 @@ import ClicheKit
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private var statusItem: NSStatusItem!
-    private let popover = NSPopover()
+    private var clipboardItem: NSStatusItem?
+    private var captureItem: NSStatusItem?
+    private let popover = NSPopover()          // full or clipboard-only panel
+    private let capturePopover = NSPopover()   // split mode: capture panel
+    private var ignoreRulesURL: URL!
 
     private var store: HistoryStore!
     private var capturesStore: CapturesStore!
@@ -31,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
            FileManager.default.fileExists(atPath: legacySupport.path) {
             try? FileManager.default.moveItem(at: legacySupport, to: appSupport)
         }
-        let ignoreRulesURL = appSupport.appendingPathComponent("ignore-rules.json")
+        ignoreRulesURL = appSupport.appendingPathComponent("ignore-rules.json")
 
         store = HistoryStore(directory: appSupport)
         capturesStore = CapturesStore(directory: appSupport)
@@ -41,49 +44,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ignoreRules: IgnoreRules.load(from: ignoreRulesURL))
         monitor.start()
 
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        statusItem.button?.image = NSImage(
-            systemSymbolName: "scissors.badge.ellipsis",
-            accessibilityDescription: "Cliché")
-        statusItem.button?.action = #selector(togglePopover)
-        statusItem.button?.target = self
-
         popover.behavior = .transient
-        popover.contentViewController = NSHostingController(
-            rootView: HistoryView(
-                store: store,
-                capturesStore: capturesStore,
-                snippetsStore: snippetsStore,
-                settings: settings,
-                ignoreRulesURL: ignoreRulesURL,
-                onCopy: { [weak self] item in
-                    self?.monitor.copyToPasteboard(item)
-                    self?.popover.performClose(nil)
-                },
-                onPaste: { [weak self] item in
-                    self?.paste { self?.monitor.copyToPasteboard(item) }
-                },
-                onCopySnippet: { [weak self] snippet in
-                    guard let self else { return }
-                    self.setPasteboardString(self.snippetsStore.render(snippet))
-                    self.popover.performClose(nil)
-                },
-                onPasteSnippet: { [weak self] snippet in
-                    guard let self else { return }
-                    // Render before paste() replaces the clipboard %CLIPBOARD%
-                    // would otherwise read from.
-                    let rendered = self.snippetsStore.render(snippet)
-                    self.paste { self.setPasteboardString(rendered) }
-                },
-                onCapture: { [weak self] mode in self?.capture(mode) },
-                onCaptureText: { [weak self] in self?.captureText() },
-                onPickColor: { [weak self] in self?.pickColor() },
-                onRepeatRegion: { [weak self] in
-                    self?.popover.performClose(nil)
-                    self?.repeatLastRegion()
-                },
-                onQuit: { NSApp.terminate(nil) }
-            ))
+        capturePopover.behavior = .transient
+        configureMenuBar()
+        NotificationCenter.default.addObserver(
+            forName: AppSettings.menuBarStyleChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.closeAllPopovers()
+                self?.configureMenuBar()
+            }
+        }
 
         // ⌃⌥⌘: C panel, 4 region, 5 window, 6 OCR, R repeat last region
         hotkeys.register(keyCode: kVK_ANSI_C) { [weak self] in self?.togglePopover() }
@@ -93,13 +64,108 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeys.register(keyCode: kVK_ANSI_R) { [weak self] in self?.repeatLastRegion() }
     }
 
+    // MARK: Menu bar
+
+    /// Builds the status item(s) for the current menu bar style. Called at
+    /// launch and whenever the setting changes.
+    private func configureMenuBar() {
+        [clipboardItem, captureItem].compactMap { $0 }
+            .forEach(NSStatusBar.system.removeStatusItem)
+        clipboardItem = nil
+        captureItem = nil
+
+        switch settings.menuBarStyle {
+        case .combined:
+            popover.contentViewController = NSHostingController(
+                rootView: makeHistoryView(layout: .full))
+            clipboardItem = makeStatusItem(
+                symbol: "scissors.badge.ellipsis", description: "Cliché",
+                action: #selector(togglePopover))
+        case .split:
+            popover.contentViewController = NSHostingController(
+                rootView: makeHistoryView(layout: .clipboardOnly))
+            capturePopover.contentViewController = NSHostingController(
+                rootView: makeHistoryView(layout: .captureOnly))
+            // Items added later sit further left; add capture first so the
+            // clipboard icon stays in the accustomed spot.
+            captureItem = makeStatusItem(
+                symbol: "camera.viewfinder", description: "Cliché Capture",
+                action: #selector(toggleCapturePopover))
+            clipboardItem = makeStatusItem(
+                symbol: "doc.on.clipboard", description: "Cliché Clipboard",
+                action: #selector(togglePopover))
+        }
+    }
+
+    private func makeStatusItem(
+        symbol: String, description: String, action: Selector
+    ) -> NSStatusItem {
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        item.button?.image = NSImage(
+            systemSymbolName: symbol, accessibilityDescription: description)
+        item.button?.action = action
+        item.button?.target = self
+        return item
+    }
+
+    private func makeHistoryView(layout: PanelLayout) -> HistoryView {
+        HistoryView(
+            layout: layout,
+            store: store,
+            capturesStore: capturesStore,
+            snippetsStore: snippetsStore,
+            settings: settings,
+            ignoreRulesURL: ignoreRulesURL,
+            onCopy: { [weak self] item in
+                self?.monitor.copyToPasteboard(item)
+                self?.popover.performClose(nil)
+            },
+            onPaste: { [weak self] item in
+                self?.paste { self?.monitor.copyToPasteboard(item) }
+            },
+            onCopySnippet: { [weak self] snippet in
+                guard let self else { return }
+                self.setPasteboardString(self.snippetsStore.render(snippet))
+                self.popover.performClose(nil)
+            },
+            onPasteSnippet: { [weak self] snippet in
+                guard let self else { return }
+                // Render before paste() replaces the clipboard %CLIPBOARD%
+                // would otherwise read from.
+                let rendered = self.snippetsStore.render(snippet)
+                self.paste { self.setPasteboardString(rendered) }
+            },
+            onCapture: { [weak self] mode in self?.capture(mode) },
+            onCaptureText: { [weak self] in self?.captureText() },
+            onPickColor: { [weak self] in self?.pickColor() },
+            onRepeatRegion: { [weak self] in
+                self?.closeAllPopovers()
+                self?.repeatLastRegion()
+            },
+            onQuit: { NSApp.terminate(nil) }
+        )
+    }
+
+    private func closeAllPopovers() {
+        popover.performClose(nil)
+        capturePopover.performClose(nil)
+    }
+
     @objc private func togglePopover() {
         if popover.isShown {
             popover.performClose(nil)
-        } else if let button = statusItem.button {
+        } else if let button = clipboardItem?.button {
             previousApp = NSWorkspace.shared.frontmostApplication
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
+        }
+    }
+
+    @objc private func toggleCapturePopover() {
+        if capturePopover.isShown {
+            capturePopover.performClose(nil)
+        } else if let button = captureItem?.button {
+            capturePopover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
     }
 
@@ -130,8 +196,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: Capture
 
     private func capture(_ mode: CaptureMode) {
-        // Close the panel first so it isn't part of the screenshot.
-        popover.performClose(nil)
+        // Close the panels first so they aren't part of the screenshot.
+        closeAllPopovers()
         let screen = Self.screenUnderMouse()
         CountdownPanel.show(seconds: settings.timerSeconds, on: screen) { [weak self] in
             self?.performCapture(mode, on: screen)
@@ -259,7 +325,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Native magnifier loupe; hex code to clipboard. Consecutive picks also
     /// report the WCAG contrast ratio between the last two colors.
     private func pickColor() {
-        popover.performClose(nil)
+        closeAllPopovers()
         NSColorSampler().show { [weak self] color in
             guard let self, let color, let hex = ColorUtil.hexString(color) else { return }
             self.setPasteboardString(hex)
@@ -277,7 +343,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func captureText() {
-        popover.performClose(nil)
+        closeAllPopovers()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [ocrService] in
             ocrService.captureText()
         }

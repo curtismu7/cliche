@@ -371,8 +371,10 @@ do {
         "settings default to PNG + copy to clipboard")
     settings.captureFormat = .jpeg
     settings.copyCapturesToClipboard = false
+    settings.menuBarStyle = .split
     let reloaded = AppSettings(defaults: defaults)
-    expect(reloaded.captureFormat == .jpeg && !reloaded.copyCapturesToClipboard,
+    expect(reloaded.captureFormat == .jpeg && !reloaded.copyCapturesToClipboard
+        && reloaded.menuBarStyle == .split,
         "settings persist across reload")
     defaults.removePersistentDomain(forName: suite)
 }
