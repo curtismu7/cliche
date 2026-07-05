@@ -77,6 +77,8 @@ struct HelpView: View {
             }
         }
         .frame(width: 380, height: 460)
+        .background(Color.white)
+        .environment(\.colorScheme, .light)
     }
 
     private func section(_ title: String, rows: [(String, String)]) -> some View {
@@ -86,7 +88,7 @@ struct HelpView: View {
             ForEach(rows, id: \.0) { key, description in
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(key)
-                        .font(.caption.monospaced())
+                        .font(.system(size: 12, design: .monospaced))
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
                         .background(
@@ -94,8 +96,8 @@ struct HelpView: View {
                                 .fill(Color.primary.opacity(0.08)))
                         .frame(minWidth: 88, alignment: .leading)
                     Text(description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.ink)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }

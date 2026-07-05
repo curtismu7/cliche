@@ -2,6 +2,12 @@ import AppKit
 import ClicheKit
 import SwiftUI
 
+extension Color {
+    /// Readable "secondary" ink on the white panels (replaces washed-out
+    /// system .secondary/.tertiary styles).
+    static let ink = Color(white: 0.25)
+}
+
 enum PanelLayout {
     /// Everything in one panel (combined menu bar icon).
     case full
@@ -175,8 +181,8 @@ struct HistoryView: View {
                 itemList
             }
             Text("↩ copy · ⌥↩ paste into app · ⌘1–9 quick copy · ⌘⌫ delete · ⌘P pin")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 12))
+                .foregroundStyle(Color.ink)
                 .padding(.vertical, 4)
         }
     }
@@ -206,7 +212,7 @@ struct HistoryView: View {
     private var searchField: some View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.ink)
             TextField("Search history", text: $query)
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
@@ -245,9 +251,9 @@ struct HistoryView: View {
             Spacer()
             Image(systemName: query.isEmpty ? "doc.on.clipboard" : "magnifyingglass")
                 .font(.largeTitle)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.ink)
             Text(query.isEmpty ? "Clipboard history appears here" : "No matches")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.ink)
             Spacer()
         }
         .frame(maxWidth: .infinity)
@@ -294,32 +300,32 @@ struct HistoryView: View {
                 VStack(spacing: 1) {
                     CaptureButton(symbol: "rectangle.dashed") { onCapture(.region) }
                         .help("Capture region  ⌃⌥⌘4")
-                    Text("⌃⌥⌘4").font(.system(size: 9, weight: .medium)).foregroundStyle(.secondary)
+                    Text("⌃⌥⌘4").font(.system(size: 10, weight: .medium)).foregroundStyle(Color.ink)
                 }
                 VStack(spacing: 1) {
                     CaptureButton(symbol: "arrow.counterclockwise.square", action: onRepeatRegion)
                         .help("Repeat last region  ⌃⌥⌘R")
-                    Text("⌃⌥⌘R").font(.system(size: 9, weight: .medium)).foregroundStyle(.secondary)
+                    Text("⌃⌥⌘R").font(.system(size: 10, weight: .medium)).foregroundStyle(Color.ink)
                 }
                 VStack(spacing: 1) {
                     CaptureButton(symbol: "macwindow") { onCapture(.window) }
                         .help("Capture window  ⌃⌥⌘5")
-                    Text("⌃⌥⌘5").font(.system(size: 9, weight: .medium)).foregroundStyle(.secondary)
+                    Text("⌃⌥⌘5").font(.system(size: 10, weight: .medium)).foregroundStyle(Color.ink)
                 }
                 VStack(spacing: 1) {
                     CaptureButton(symbol: "display") { onCapture(.fullScreen) }
                         .help("Capture full screen")
-                    Text("screen").font(.system(size: 9, weight: .medium)).foregroundStyle(.secondary)
+                    Text("screen").font(.system(size: 10, weight: .medium)).foregroundStyle(Color.ink)
                 }
                 VStack(spacing: 1) {
                     CaptureButton(symbol: "text.viewfinder", action: onCaptureText)
                         .help("Copy text from screen (OCR)  ⌃⌥⌘6")
-                    Text("⌃⌥⌘6").font(.system(size: 9, weight: .medium)).foregroundStyle(.secondary)
+                    Text("⌃⌥⌘6").font(.system(size: 10, weight: .medium)).foregroundStyle(Color.ink)
                 }
                 VStack(spacing: 1) {
                     CaptureButton(symbol: "eyedropper", action: onPickColor)
                         .help("Pick a color — hex + contrast checker")
-                    Text("color").font(.system(size: 9, weight: .medium)).foregroundStyle(.secondary)
+                    Text("color").font(.system(size: 10, weight: .medium)).foregroundStyle(Color.ink)
                 }
                 Spacer()
             }
@@ -345,7 +351,7 @@ struct HistoryView: View {
                 Image(systemName: "gearshape")
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.ink)
             .help("Settings")
 
             Button {
@@ -354,19 +360,19 @@ struct HistoryView: View {
                 Image(systemName: "questionmark.circle")
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.ink)
             .help("Shortcuts & help")
 
             Text(footerCount)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 12))
+                .foregroundStyle(Color.ink)
             Spacer()
             if effectiveTab == .clipboard {
                 Button("Clear History") { store.clear() }
-                    .font(.caption)
+                    .font(.system(size: 12))
             }
             Button("Quit", action: onQuit)
-                .font(.caption)
+                .font(.system(size: 12))
                 .keyboardShortcut("q", modifiers: .command)
                 .help("Quit Cliché (⌘Q)")
         }
@@ -454,13 +460,13 @@ private struct ItemRow: View {
             } else {
                 if item.pinned {
                     Image(systemName: "pin.fill")
-                        .font(.caption)
+                        .font(.system(size: 12))
                         .foregroundStyle(.orange)
                 }
                 if let number = shortcutNumber {
                     Text("⌘\(number)")
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(Color.ink)
                 }
             }
         }
@@ -530,18 +536,19 @@ private struct ImageStripCell: View {
                     .fill(.black.opacity(0.45))
                     .frame(width: 100, height: 70)
                 HStack(spacing: 8) {
-                    RowButton(symbol: "eye", help: "Preview", action: onPreview)
+                    RowButton(symbol: "eye", help: "Preview", color: .white, action: onPreview)
                     RowButton(
                         symbol: item.pinned ? "pin.slash" : "pin",
                         help: item.pinned ? "Unpin" : "Pin",
+                        color: .white,
                         action: onPin)
-                    RowButton(symbol: "trash", help: "Delete", action: onDelete)
+                    RowButton(symbol: "trash", help: "Delete", color: .white, action: onDelete)
                 }
                 .foregroundStyle(.white)
                 .frame(width: 100, height: 70)
             } else if item.pinned {
                 Image(systemName: "pin.fill")
-                    .font(.caption)
+                    .font(.system(size: 12))
                     .foregroundStyle(.orange)
                     .padding(4)
             }
@@ -561,6 +568,7 @@ private struct ImageStripCell: View {
 private struct RowButton: View {
     let symbol: String
     let help: String
+    var color: Color = .ink
     let action: () -> Void
 
     var body: some View {
@@ -568,7 +576,7 @@ private struct RowButton: View {
             Image(systemName: symbol)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(color)
         .help(help)
     }
 }
@@ -586,8 +594,8 @@ private struct SnippetsList: View {
         VStack(spacing: 0) {
             HStack {
                 Text("Click to copy · ⌥-click to paste · %DATE% %TIME% %CLIPBOARD%")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.ink)
                 Spacer()
                 Button {
                     editing = SnippetsStore.Snippet(name: "", template: "")
@@ -595,7 +603,7 @@ private struct SnippetsList: View {
                     Image(systemName: "plus")
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.ink)
                 .help("New snippet")
             }
             .padding(8)
@@ -604,9 +612,9 @@ private struct SnippetsList: View {
                     Spacer()
                     Image(systemName: "text.badge.plus")
                         .font(.largeTitle)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.ink)
                     Text("Reusable text templates live here")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.ink)
                     Spacer()
                 }
                 .frame(maxWidth: .infinity)
@@ -653,8 +661,8 @@ private struct SnippetRow: View {
                 Text(snippet.name.isEmpty ? "Untitled" : snippet.name)
                     .font(.callout.weight(.medium))
                 Text(snippet.template)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.ink)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -705,8 +713,8 @@ private struct SnippetEditor: View {
                     RoundedRectangle(cornerRadius: 4)
                         .stroke(.quaternary))
             Text("Variables: %DATE%, %TIME%, %CLIPBOARD%")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 12))
+                .foregroundStyle(Color.ink)
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }
@@ -742,12 +750,12 @@ private struct CapturesGrid: View {
                 Spacer()
                 Image(systemName: "camera")
                     .font(.largeTitle)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.ink)
                 Text("Screenshots you take appear here")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.ink)
                 Text("⌃⌥⌘4 for a region, or use the buttons above")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.ink)
                 Spacer()
             }
             .frame(maxWidth: .infinity)
@@ -819,23 +827,23 @@ private struct CapturesGrid: View {
                                 }
                                 .buttonStyle(.plain)
                                 .help("Share…")
-                                RowButton(symbol: "doc.on.doc", help: "Copy") {
+                                RowButton(symbol: "doc.on.doc", help: "Copy", color: .white) {
                                     if let data = try? Data(contentsOf: URL(fileURLWithPath: capture.path)) {
                                         ClipboardWriter.writeImage(pngData: data)
                                     }
                                 }
-                                RowButton(symbol: "pencil.tip.crop.circle", help: "Annotate") {
+                                RowButton(symbol: "pencil.tip.crop.circle", help: "Annotate", color: .white) {
                                     AnnotationEditor.open(
                                         fileURL: URL(fileURLWithPath: capture.path))
                                 }
-                                RowButton(symbol: "pip", help: "Float on top") {
+                                RowButton(symbol: "pip", help: "Float on top", color: .white) {
                                     if let image = NSImage(contentsOfFile: capture.path) {
                                         FloatingImageWindow.show(image: image)
                                     }
                                 }
                             }
                             HStack(spacing: 9) {
-                                RowButton(symbol: "magnifyingglass", help: "Show in Finder") {
+                                RowButton(symbol: "magnifyingglass", help: "Show in Finder", color: .white) {
                                     NSWorkspace.shared.activateFileViewerSelecting(
                                         [URL(fileURLWithPath: capture.path)])
                                 }
@@ -843,20 +851,21 @@ private struct CapturesGrid: View {
                                     RowButton(
                                         symbol: "film.stack",
                                         help: "Before/after GIF with previous capture",
+                                        color: .white,
                                         action: makeBeforeAfterGIF)
                                 }
-                                RowButton(symbol: "trash", help: "Move to Trash") {
+                                RowButton(symbol: "trash", help: "Move to Trash", color: .white) {
                                     store.remove(capture, deleteFile: true)
                                 }
                             }
                         }
-                        .font(.caption)
+                        .font(.system(size: 12))
                         .foregroundStyle(.white)
                     }
                 }
                 Text(CapturesGrid.dateFormat.string(from: capture.date))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.ink)
             }
             .onHover { isHovering = $0 }
         }

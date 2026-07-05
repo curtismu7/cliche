@@ -32,8 +32,8 @@ struct SettingsView: View {
                     Text(settings.copyCapturesToClipboard
                         ? "Screenshots (including whole-screen) go to the Desktop and the clipboard, ready to ⌘V."
                         : "Screenshots are saved to the Desktop only — the clipboard is left untouched.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.ink)
                     Picker("Capture timer", selection: $settings.timerSeconds) {
                         Text("Off").tag(0)
                         Text("3 s").tag(3)
@@ -52,8 +52,8 @@ struct SettingsView: View {
                     Text(settings.menuBarStyle == .combined
                         ? "One icon opens everything."
                         : "Two icons: 📋 opens clipboard history & snippets, 📷 opens capture tools & screenshots.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.ink)
                 }
                 Section("General") {
                     Toggle("Launch at login", isOn: $launchAtLogin)
@@ -65,12 +65,14 @@ struct SettingsView: View {
                         NSWorkspace.shared.open(ignoreRulesURL)
                     }
                     Text("Ignore rules block apps (e.g. password managers) from ever entering clipboard history.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.ink)
                 }
             }
             .formStyle(.grouped)
         }
         .frame(width: 340, height: 500)
+        .background(Color.white)
+        .environment(\.colorScheme, .light)
     }
 }
