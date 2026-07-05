@@ -49,7 +49,7 @@
   - `struct NamedBeautifyConfig: Codable, Equatable, Identifiable { var id: UUID; var name: String; var config: BeautifyConfig }`
   - `extension BeautifyConfig { static let builtInPresets: [NamedBeautifyConfig] }`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append this block to `Sources/cliche-selftest/main.swift` (after the existing `// beautifyRenderer` block):
 
@@ -80,12 +80,12 @@ do {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | tail -5`
 Expected: FAIL — compile error, `cannot find 'BeautifyConfig' in scope` (the type does not exist yet).
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `Sources/ClicheKit/BeautifyConfig.swift`:
 
@@ -230,12 +230,12 @@ extension BeautifyConfig {
 }
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest 2>&1 | grep -i "config\|round-trip\|preset\|canvas"`
 Expected: all matching lines start with `PASS`. (The old `beautify .none`/`beautify pads` lines still reference the old API and remain untouched until Task 5.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/ClicheKit/BeautifyConfig.swift Sources/cliche-selftest/main.swift
@@ -258,7 +258,7 @@ git commit -m "feat(beautify): add BeautifyConfig value-type model and built-in 
   - `static func sourceCrop(_ config: BeautifyConfig, in image: CGImage) -> CGRect`
   - `static func render(_ config: BeautifyConfig, to image: CGImage) -> CGImage?`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `Sources/cliche-selftest/main.swift`:
 
@@ -315,12 +315,12 @@ do {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | tail -5`
 Expected: FAIL — compile error, `type 'BeautifyRenderer' has no member 'layout'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Add to `Sources/ClicheKit/BeautifyRenderer.swift` inside the `public enum BeautifyRenderer { … }` (keep the existing `BeautifyStyle` and `apply(_:to:)` for now). Add `import CoreImage` at top if not present:
 
@@ -474,12 +474,12 @@ Add to `Sources/ClicheKit/BeautifyRenderer.swift` inside the `public enum Beauti
     }
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest 2>&1 | grep -i "layout\|auto-balance\|render\|canvas outputs"`
 Expected: all matching lines `PASS`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/ClicheKit/BeautifyRenderer.swift Sources/cliche-selftest/main.swift
@@ -500,7 +500,7 @@ git commit -m "feat(beautify): add config-driven renderer with layout, crop, and
   - `var lastBeautifyConfig: BeautifyConfig { get set }` (persisted JSON, default `.identity`)
   - `var beautifyPresets: [NamedBeautifyConfig] { get set }` (persisted JSON, default `[]`)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `Sources/cliche-selftest/main.swift`:
 
@@ -528,12 +528,12 @@ do {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | tail -5`
 Expected: FAIL — compile error, `value of type 'AppSettings' has no member 'lastBeautifyConfig'`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 In `Sources/ClicheKit/AppSettings.swift`, add these stored properties to the class body (place them after `menuBarStyle`, before `private let defaults`):
 
@@ -578,12 +578,12 @@ In `init(defaults:)`, initialize the two new properties (add after the existing 
             key: "beautifyPresets", default: [])
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest 2>&1 | grep -i "beautifyPresets\|lastBeautifyConfig\|persist"`
 Expected: all matching lines `PASS`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/ClicheKit/AppSettings.swift Sources/cliche-selftest/main.swift
@@ -603,7 +603,7 @@ git commit -m "feat(beautify): persist last config and named presets in AppSetti
 - Consumes: `BeautifyConfig`, `NamedBeautifyConfig`, `AppSettings`, `BeautifyRenderer.layout/render/sourceCrop`.
 - Produces: `struct BeautifyInspector: View` (binds a `BeautifyConfig` and the settings' preset list); an updated `AnnotationEditorView` whose canvas shows `exported` and whose gestures map through `BeautifyRenderer`.
 
-- [ ] **Step 1: Create the inspector view**
+- [x] **Step 1: Create the inspector view**
 
 Create `Sources/Cliche/BeautifyInspector.swift`:
 
@@ -789,7 +789,7 @@ extension Color {
 }
 ```
 
-- [ ] **Step 2: Wire the inspector into the editor**
+- [x] **Step 2: Wire the inspector into the editor**
 
 In `Sources/Cliche/AnnotationEditor.swift`:
 
@@ -927,7 +927,7 @@ In `Sources/Cliche/AnnotationEditor.swift`:
 
 Note: the imagePoint mapping composes two flips (SwiftUI top-left → CG bottom-left for output, then crop-local → base top-left). Verify by drawing an arrow in Step 4; if it lands mirrored, the fix is isolated to `imagePoint`.
 
-- [ ] **Step 3: Update the `open` call site**
+- [x] **Step 3: Update the `open` call site**
 
 In `AnnotationEditor.open(fileURL:)`, the `AnnotationEditorView(...)` call needs the new `settings` argument. The editor is opened from `AppDelegate`; thread an `AppSettings` through. Change `open` signature:
 
@@ -958,7 +958,7 @@ Run: `cd /Users/cmuir/Development/cliche && grep -rn "AnnotationEditor.open" Sou
 
 For each hit, pass the existing settings instance (AppDelegate already owns an `AppSettings`; use that property). Example edit: `AnnotationEditor.open(fileURL: url)` → `AnnotationEditor.open(fileURL: url, settings: settings)`.
 
-- [ ] **Step 4: Build and manually verify**
+- [x] **Step 4: Build and manually verify**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | tail -8`
 Expected: build succeeds (warnings OK).
@@ -976,7 +976,7 @@ Manually confirm:
 6. Save → the written PNG matches the preview; reopen the editor → it remembers the last config.
 7. Save a custom preset → it appears under "Yours"; relaunch → it persists.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/Cliche/BeautifyInspector.swift Sources/Cliche/AnnotationEditor.swift
@@ -994,28 +994,28 @@ git commit -m "feat(beautify): live inspector panel, composited preview, gesture
 **Interfaces:**
 - Consumes: the new renderer API (Tasks 1–2). No new production API.
 
-- [ ] **Step 1: Confirm no remaining consumers of the old API**
+- [x] **Step 1: Confirm no remaining consumers of the old API**
 
 Run: `cd /Users/cmuir/Development/cliche && grep -rn "BeautifyStyle\|\.apply(" Sources | grep -i beautif`
 Expected: only the definition in `BeautifyRenderer.swift` and the old test block in `main.swift` (both removed below). If any other consumer appears, migrate it to `BeautifyRenderer.render(_:to:)` first.
 
-- [ ] **Step 2: Delete the old enum and method**
+- [x] **Step 2: Delete the old enum and method**
 
 In `Sources/ClicheKit/BeautifyRenderer.swift`, delete the entire `public enum BeautifyStyle { … }` declaration and the `public static func apply(_ style: BeautifyStyle, to image: CGImage) -> CGImage?` method. Keep `layout`, `sourceCrop`, `render`, and `drawGradient`.
 
 In `Sources/cliche-selftest/main.swift`, delete the entire original `// beautifyRenderer` `do { … }` block (the one asserting `beautify .none leaves image untouched` and `beautify pads with gradient…`). The new `beautifyLayoutAndCrop` block from Task 2 replaces its coverage.
 
-- [ ] **Step 3: Build to verify it fails if anything still references the old API**
+- [x] **Step 3: Build to verify it fails if anything still references the old API**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | tail -8`
 Expected: build succeeds. If it fails with `cannot find 'BeautifyStyle'`, a consumer was missed — migrate it to `render(_:to:)`.
 
-- [ ] **Step 4: Run the full self-test suite**
+- [x] **Step 4: Run the full self-test suite**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest 2>&1 | tail -20; echo "exit: $?"`
 Expected: every line `PASS`, final `exit: 0`. No `FAIL` lines.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/ClicheKit/BeautifyRenderer.swift Sources/cliche-selftest/main.swift

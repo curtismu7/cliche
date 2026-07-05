@@ -42,7 +42,7 @@
 **Interfaces:**
 - Produces: `public enum AllInOneMode: CaseIterable, Equatable { case region, window, fullScreen, ocr }` with `var label: String`, `var symbol: String`, `var keyEquivalent: String`, `var switchesInPlace: Bool`, `static func mode(forKey: String) -> AllInOneMode?`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `Sources/cliche-selftest/main.swift`:
 
@@ -65,12 +65,12 @@ do {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | grep error: | head -3`
 Expected: `cannot find 'AllInOneMode' in scope`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `Sources/ClicheKit/AllInOneMode.swift`:
 
@@ -119,12 +119,12 @@ public enum AllInOneMode: CaseIterable, Equatable {
 }
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest 2>&1 | grep -i "all-in-one\|mode(\|in place\|labels"`
 Expected: all lines `PASS`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/ClicheKit/AllInOneMode.swift Sources/cliche-selftest/main.swift
@@ -143,7 +143,7 @@ git commit -m "feat(all-in-one): add AllInOneMode table with routing rule"
 - Consumes: existing `HotkeyAction`, `HotkeyCombo`, `AppSettings.defaultHotkeys`, `AppSettings.action(using:)`.
 - Produces: `HotkeyAction.allInOne` with label `"All-in-one capture"` and default combo `⌃⌥⌘3`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `Sources/cliche-selftest/main.swift`:
 
@@ -171,12 +171,12 @@ do {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | grep error: | head -3`
 Expected: `type 'HotkeyAction' has no member 'allInOne'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 In `Sources/ClicheKit/Hotkeys.swift`:
 
@@ -199,12 +199,12 @@ In `Sources/ClicheKit/Hotkeys.swift`:
                 keyCode: UInt32(kVK_ANSI_3), carbonModifiers: base, display: "⌃⌥⌘3"),
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest 2>&1 | grep -i "allinone\|collide\|conflict"`
 Expected: all lines `PASS`. (If AppDelegate's hotkey dispatch switch is exhaustive it will fail to compile — add a temporary `case .allInOne: break` there; Task 4 replaces it.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/ClicheKit/Hotkeys.swift Sources/cliche-selftest/main.swift Sources/Cliche/AppDelegate.swift
@@ -223,7 +223,7 @@ git commit -m "feat(all-in-one): add allInOne hotkey action, default ⌃⌥⌘3"
 - Consumes: existing `OCRService.recognizeText(in url: URL)`.
 - Produces: `public static func recognizeText(in image: CGImage) throws -> String` — same recognition settings, newline-joined lines.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `Sources/cliche-selftest/main.swift` (mirrors the existing URL-based OCR test's image-drawing approach):
 
@@ -250,12 +250,12 @@ do {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | grep error: | head -3`
 Expected: `no exact matches in call to static method 'recognizeText'` (only the URL overload exists).
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 In `Sources/ClicheKit/OCRService.swift`, add below the URL-based `recognizeText`:
 
@@ -273,12 +273,12 @@ In `Sources/ClicheKit/OCRService.swift`, add below the URL-based `recognizeText`
     }
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest 2>&1 | grep -i "cgimage"`
 Expected: `PASS  OCR recognizes text from a CGImage`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/ClicheKit/OCRService.swift Sources/cliche-selftest/main.swift
@@ -299,7 +299,7 @@ git commit -m "feat(all-in-one): OCR directly from a CGImage crop"
 - Consumes: `AllInOneMode` (Task 1), `HotkeyAction.allInOne` (Task 2), `OCRService.recognizeText(in: CGImage)` (Task 3), existing `RegionSelector`, `ScreenshotEngine.captureImage`, `AppDelegate.performCapture(_:on:)`, `AppDelegate.deliver(_:)`, `InfoHUD.show(_:)`.
 - Produces: `RegionSelector.begin(frozen:on:allInOne:onSelect:onSwitchAway:onCancel:)`; `struct ModeStripView: View`; `AppDelegate.startAllInOne()`.
 
-- [ ] **Step 1: Create the strip view**
+- [x] **Step 1: Create the strip view**
 
 Create `Sources/Cliche/ModeStripView.swift`:
 
@@ -349,7 +349,7 @@ struct ModeStripView: View {
 }
 ```
 
-- [ ] **Step 2: Add the all-in-one overload to RegionSelector**
+- [x] **Step 2: Add the all-in-one overload to RegionSelector**
 
 In `Sources/Cliche/RegionSelector.swift`:
 
@@ -469,7 +469,7 @@ In `Sources/Cliche/RegionSelector.swift`:
     }
 ```
 
-- [ ] **Step 3: Add `startAllInOne()` and the dispatch case in AppDelegate**
+- [x] **Step 3: Add `startAllInOne()` and the dispatch case in AppDelegate**
 
 In `Sources/Cliche/AppDelegate.swift`:
 
@@ -540,14 +540,14 @@ In `Sources/Cliche/AppDelegate.swift`:
     }
 ```
 
-- [ ] **Step 4: Build and manually verify**
+- [x] **Step 4: Build and manually verify**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | tail -3`
 Expected: `Build complete!`
 
 Manual (after Task 5's install): `⌃⌥⌘3` shows frozen frame + strip; `1–4`/clicks switch highlight; Region drag delivers file+overlay; OCR drag copies text (HUD "Text copied"); `2` dismisses into native window picker; `3` captures full screen; Esc cancels; `⌃⌥⌘4/5/6` unchanged, no strip.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/Cliche/ModeStripView.swift Sources/Cliche/RegionSelector.swift Sources/Cliche/AppDelegate.swift
@@ -568,11 +568,11 @@ git commit -m "feat(all-in-one): mode strip overlay with in-place region/OCR and
 - Consumes: `AppDelegate.startAllInOne()` (Task 4), existing `HistoryView` closure-injection pattern (`onCapture`, `onCaptureText`).
 - Produces: `HistoryView.onAllInOne: () -> Void`.
 
-- [ ] **Step 1: Add the button**
+- [x] **Step 1: Add the button**
 
 In `Sources/Cliche/HistoryView.swift`: add `let onAllInOne: () -> Void` next to `let onCaptureText: () -> Void` (line ~32). In the capture-buttons row (where `onCapture(.region)` etc. are wired, ~line 392), add a button first in the row, following the exact local `CaptureButton`/labelled-button pattern used by its neighbors, with symbol `"square.grid.2x2"`, help `"All-in-one capture  \(settings.combo(for: .allInOne).display)"`, action `onAllInOne`. In `Sources/Cliche/AppDelegate.swift`, every `HistoryView(` construction gains `onAllInOne: { [weak self] in self?.startAllInOne() },` next to its `onCaptureText:` argument. In `Sources/Cliche/HelpView.swift`, add a row `("⌃⌥⌘3 (customizable)", "All-in-one capture — strip with Region/Window/Full Screen/OCR")` alongside the existing hotkey rows (match the existing tuple/row format found in the file).
 
-- [ ] **Step 2: Update README**
+- [x] **Step 2: Update README**
 
 In `README.md`: add `| `⌃⌥⌘3` | All-in-one capture (mode strip) |` as a row in the shortcuts table, and under `### 📷 Screen capture` add the bullet:
 
@@ -580,7 +580,7 @@ In `README.md`: add `| `⌃⌥⌘3` | All-in-one capture (mode strip) |` as a ro
 - **All-in-one capture** — one hotkey (`⌃⌥⌘3`) opens the overlay with a mode strip: Region, Window, Full Screen, or Copy Text, switchable with keys 1–4.
 ```
 
-- [ ] **Step 3: Full test suite + build**
+- [x] **Step 3: Full test suite + build**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest 2>&1 | grep -c FAIL; swift run cliche-selftest >/dev/null 2>&1; echo exit=$?`
 Expected: `0` and `exit=0`.
@@ -588,11 +588,11 @@ Expected: `0` and `exit=0`.
 Run: `make app 2>&1 | tail -2`
 Expected: `Built build/Cliche.app`
 
-- [ ] **Step 4: Install and manually smoke-test**
+- [x] **Step 4: Install and manually smoke-test**
 
 Run: `make install` — then walk the manual checklist from Task 4 Step 4.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/Cliche/HistoryView.swift Sources/Cliche/AppDelegate.swift Sources/Cliche/HelpView.swift README.md
