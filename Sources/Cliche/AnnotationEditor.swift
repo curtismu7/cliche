@@ -95,11 +95,39 @@ struct AnnotationEditorView: View {
     @State private var nextCounter = 1
     @State private var pendingTextPoint: CGPoint?
     @State private var textInput = ""
+    @State private var backdrop: BeautifyStyle = .none
+    @State private var isRedacting = false
 
     private var flattened: CGImage {
         AnnotationRenderer.render(
             base: base, annotations: annotations + (draft.map { [$0] } ?? []))
             ?? base
+    }
+
+    /// What Copy/Save produce: annotations plus the chosen backdrop.
+    private var exported: CGImage {
+        BeautifyRenderer.apply(backdrop, to: flattened) ?? flattened
+    }
+
+    /// One-click blur over everything that looks sensitive (emails, links,
+    /// phone numbers, API-key-shaped tokens).
+    private func redactSensitive() {
+        isRedacting = true
+        let image = base
+        DispatchQueue.global(qos: .userInitiated).async {
+            let rects = SensitiveTextDetector.detect(in: image)
+            DispatchQueue.main.async {
+                isRedacting = false
+                guard !rects.isEmpty else {
+                    NSSound.beep()
+                    return
+                }
+                annotations += rects.map {
+                    Annotation(kind: .blur, start: $0.origin,
+                               end: CGPoint(x: $0.maxX, y: $0.maxY))
+                }
+            }
+        }
     }
 
     var body: some View {
@@ -144,12 +172,32 @@ struct AnnotationEditorView: View {
             .disabled(annotations.isEmpty)
             .help("Undo (⌘Z)")
 
+            Button {
+                redactSensitive()
+            } label: {
+                if isRedacting {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Image(systemName: "eye.slash")
+                }
+            }
+            .disabled(isRedacting)
+            .help("Auto-redact sensitive text (emails, links, phone numbers, keys)")
+
+            Picker("Backdrop", selection: $backdrop) {
+                ForEach(BeautifyStyle.allCases, id: \.self) { style in
+                    Text(style.label).tag(style)
+                }
+            }
+            .fixedSize()
+            .help("Gradient backdrop with padding, rounded corners, and shadow")
+
             Spacer()
 
-            Button("Copy") { onCopy(flattened) }
+            Button("Copy") { onCopy(exported) }
                 .keyboardShortcut("c", modifiers: [.command, .shift])
                 .help("Copy annotated image to clipboard")
-            Button("Save") { onSave(flattened) }
+            Button("Save") { onSave(exported) }
                 .keyboardShortcut(.defaultAction)
                 .help("Overwrite the capture file and copy to clipboard")
         }

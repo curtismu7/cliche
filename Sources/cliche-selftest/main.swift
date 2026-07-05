@@ -563,6 +563,66 @@ do {
         "renderer exports annotated PNG")
 }
 
+// beautifyRenderer
+do {
+    let ctx = CGContext(
+        data: nil, width: 100, height: 80, bitsPerComponent: 8, bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.setFillColor(CGColor(red: 0, green: 1, blue: 0, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 0, width: 100, height: 80))
+    let base = ctx.makeImage()!
+
+    let unchanged = BeautifyRenderer.apply(.none, to: base)
+    expect(unchanged?.width == 100 && unchanged?.height == 80,
+        "beautify .none leaves image untouched")
+
+    let styled = BeautifyRenderer.apply(.indigo, to: base)!
+    let rep = NSBitmapImageRep(cgImage: styled)
+    let corner = rep.colorAt(x: 2, y: 2)!.usingColorSpace(.deviceRGB)!
+    let center = rep.colorAt(x: styled.width / 2, y: styled.height / 2)!
+        .usingColorSpace(.deviceRGB)!
+    expect(styled.width == 100 + 96 && styled.height == 80 + 96
+        && corner.greenComponent < 0.6      // gradient, not the green image
+        && center.greenComponent > 0.9,     // screenshot centered on top
+        "beautify pads with gradient and keeps screenshot centered")
+}
+
+// sensitiveTextDetection
+do {
+    let width = 900, height = 120
+    let ctx = CGContext(
+        data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(cgContext: ctx, flipped: false)
+    ctx.setFillColor(CGColor(gray: 1, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+    ("Contact bob@example.com for the key" as NSString).draw(
+        at: NSPoint(x: 20, y: 40),
+        withAttributes: [
+            .font: NSFont.systemFont(ofSize: 36),
+            .foregroundColor: NSColor.black,
+        ])
+    NSGraphicsContext.restoreGraphicsState()
+    let image = ctx.makeImage()!
+
+    let rects = SensitiveTextDetector.detect(in: image)
+    let inBounds = rects.allSatisfy {
+        $0.minX >= -5 && $0.maxX <= CGFloat(width) + 5
+            && $0.minY >= -5 && $0.maxY <= CGFloat(height) + 5
+    }
+    expect(!rects.isEmpty && inBounds,
+        "sensitive detector finds the email with in-bounds rect")
+
+    ctx.setFillColor(CGColor(gray: 1, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+    let clean = ctx.makeImage()!
+    expect(SensitiveTextDetector.detect(in: clean).isEmpty,
+        "sensitive detector quiet on blank image")
+}
+
 // ocrRecognizesRenderedText
 do {
     let size = NSSize(width: 700, height: 140)
