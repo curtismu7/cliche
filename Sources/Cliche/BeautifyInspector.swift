@@ -40,6 +40,8 @@ struct BeautifyInspector: View {
                 Divider()
                 backgroundSection
                 Divider()
+                frameStyleSection
+                Divider()
                 frameSection
                 Divider()
                 shadowSection
@@ -117,6 +119,23 @@ struct BeautifyInspector: View {
                 Spacer()
             }
             slider("Angle", value: $config.background.angleDegrees, range: 0...360, unit: "°")
+        }
+    }
+
+    private var frameStyleSection: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Text("FRAME STYLE").sectionLabel()
+            Picker("", selection: $config.frame) {
+                ForEach(FrameStyle.allCases, id: \.self) { style in
+                    Text(style.label).tag(style)
+                }
+            }
+            .labelsHidden()
+            if config.frame.isBrowser {
+                TextField("example.com", text: $config.frameURL)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12))
+            }
         }
     }
 

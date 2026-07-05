@@ -53,7 +53,7 @@ make install    # builds, installs to ~/Applications, launches
 - **Screen recording** — region to MP4, with optional GIF export.
 - **Pixel ruler** — hover snaps to UI element edges and shows dimensions; drag measures; click copies.
 - **Annotation editor** — arrows, boxes, text, pixelate, counter badges, and **one-click auto-redaction** of emails/links/phone numbers/API keys.
-- **Beautify panel** — make any capture social-ready with a live preview: editable gradient backdrops (colors + angle), padding, rounded corners, shadow, and an optional matte border; **auto-balance** trims uneven margins; export at exact social sizes (X 1600×900, Square, IG Portrait); save your look as a **named preset**.
+- **Beautify panel** — make any capture social-ready with a live preview: editable gradient backdrops (colors + angle), padding, rounded corners, shadow, and an optional matte border; **browser/device frames** — Safari-style bar (light/dark) with editable URL, Mac window bar, or phone/tablet bezel; **auto-balance** trims uneven margins; export at exact social sizes (X 1600×900, Square, IG Portrait); save your look as a **named preset**.
 - **Quick Access Overlay** — post-capture thumbnail you can drag into Slack/Mail or click to annotate; QR codes in captures get a "copy link" button.
 - **Color picker** with hex copy and a WCAG contrast checker; before/after GIFs from any two captures.
 - Screenshots land on the **Desktop + clipboard + Captures tab** (format and clipboard behavior configurable).
