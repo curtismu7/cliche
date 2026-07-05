@@ -15,18 +15,17 @@ public enum ScreenshotEngine {
         displayID: CGDirectDisplayID,
         sourceRect: CGRect? = nil,
         scale: CGFloat,
-        showsCursor: Bool = false
+        showsCursor: Bool = false,
+        hideDesktopIcons: Bool = false
     ) async throws -> CGImage {
         let content = try await SCShareableContent.excludingDesktopWindows(
             false, onScreenWindowsOnly: true)
         guard let display = content.displays.first(where: { $0.displayID == displayID })
         else { throw EngineError.displayNotFound }
 
-        let ownPID = pid_t(ProcessInfo.processInfo.processIdentifier)
-        let ownWindows = content.windows.filter {
-            $0.owningApplication?.processID == ownPID
-        }
-        let filter = SCContentFilter(display: display, excludingWindows: ownWindows)
+        let excluded = DesktopClutter.exclusions(
+            in: content.windows, hideDesktopIcons: hideDesktopIcons)
+        let filter = SCContentFilter(display: display, excludingWindows: excluded)
 
         let rect = sourceRect
             ?? CGRect(x: 0, y: 0, width: display.width, height: display.height)

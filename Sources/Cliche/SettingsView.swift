@@ -42,6 +42,7 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                     Toggle("Show mouse pointer", isOn: $settings.showCursor)
+                    Toggle("Hide desktop icons in captures", isOn: $settings.hideDesktopIcons)
                     Toggle("Window capture keeps shadow", isOn: $settings.windowShadow)
                 }
                 Section("History Limits") {

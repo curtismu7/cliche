@@ -12,6 +12,7 @@ final class ScrollingCapture {
     private let pointRect: CGRect  // display-relative, top-left origin, points
     private let scale: CGFloat
     private let showsCursor: Bool
+    private let hideDesktopIcons: Bool
     private let deliver: (CGImage) -> Void
 
     private var frames: [CGImage] = []
@@ -24,6 +25,7 @@ final class ScrollingCapture {
         pixelRect: CGRect,
         scale: CGFloat,
         showsCursor: Bool,
+        hideDesktopIcons: Bool = false,
         on screen: NSScreen,
         deliver: @escaping (CGImage) -> Void
     ) {
@@ -35,6 +37,7 @@ final class ScrollingCapture {
                 width: pixelRect.width / scale, height: pixelRect.height / scale),
             scale: scale,
             showsCursor: showsCursor,
+            hideDesktopIcons: hideDesktopIcons,
             deliver: deliver)
         active = capture
         capture.start(on: screen)
@@ -42,12 +45,13 @@ final class ScrollingCapture {
 
     private init(
         displayID: CGDirectDisplayID, pointRect: CGRect, scale: CGFloat,
-        showsCursor: Bool, deliver: @escaping (CGImage) -> Void
+        showsCursor: Bool, hideDesktopIcons: Bool, deliver: @escaping (CGImage) -> Void
     ) {
         self.displayID = displayID
         self.pointRect = pointRect
         self.scale = scale
         self.showsCursor = showsCursor
+        self.hideDesktopIcons = hideDesktopIcons
         self.deliver = deliver
     }
 
@@ -68,7 +72,7 @@ final class ScrollingCapture {
             guard ScrollingCapture.active === self else { return }
             if let frame = try? await ScreenshotEngine.captureImage(
                 displayID: displayID, sourceRect: pointRect, scale: scale,
-                showsCursor: showsCursor) {
+                showsCursor: showsCursor, hideDesktopIcons: hideDesktopIcons) {
                 frames.append(frame)
                 countLabel?.stringValue =
                     "Scroll the content — \(frames.count) frames"

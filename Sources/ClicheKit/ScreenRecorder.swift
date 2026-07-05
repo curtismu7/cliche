@@ -25,6 +25,7 @@ public final class ScreenRecorder: NSObject, SCStreamOutput {
         sourceRect: CGRect?,
         scale: CGFloat,
         showsCursor: Bool,
+        hideDesktopIcons: Bool = false,
         outputURL: URL
     ) async throws {
         let content = try await SCShareableContent.excludingDesktopWindows(
@@ -32,11 +33,9 @@ public final class ScreenRecorder: NSObject, SCStreamOutput {
         guard let display = content.displays.first(where: { $0.displayID == displayID })
         else { throw RecorderError.displayNotFound }
 
-        let ownPID = pid_t(ProcessInfo.processInfo.processIdentifier)
-        let ownWindows = content.windows.filter {
-            $0.owningApplication?.processID == ownPID
-        }
-        let filter = SCContentFilter(display: display, excludingWindows: ownWindows)
+        let excluded = DesktopClutter.exclusions(
+            in: content.windows, hideDesktopIcons: hideDesktopIcons)
+        let filter = SCContentFilter(display: display, excludingWindows: excluded)
 
         let rect = sourceRect
             ?? CGRect(x: 0, y: 0, width: display.width, height: display.height)

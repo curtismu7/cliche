@@ -23,6 +23,7 @@ final class RecordingController {
         pixelRect: CGRect?,
         scale: CGFloat,
         showsCursor: Bool,
+        hideDesktopIcons: Bool = false,
         on screen: NSScreen,
         onFinished: @escaping (URL) -> Void
     ) {
@@ -31,7 +32,7 @@ final class RecordingController {
         active = controller
         controller.start(
             displayID: displayID, pixelRect: pixelRect, scale: scale,
-            showsCursor: showsCursor, on: screen)
+            showsCursor: showsCursor, hideDesktopIcons: hideDesktopIcons, on: screen)
     }
 
     private init(onFinished: @escaping (URL) -> Void) {
@@ -40,7 +41,7 @@ final class RecordingController {
 
     private func start(
         displayID: CGDirectDisplayID, pixelRect: CGRect?, scale: CGFloat,
-        showsCursor: Bool, on screen: NSScreen
+        showsCursor: Bool, hideDesktopIcons: Bool, on screen: NSScreen
     ) {
         let outputURL = CaptureService.outputURL(fileExtension: "mp4")
         let pointRect = pixelRect.map {
@@ -51,7 +52,8 @@ final class RecordingController {
             do {
                 try await recorder.start(
                     displayID: displayID, sourceRect: pointRect, scale: scale,
-                    showsCursor: showsCursor, outputURL: outputURL)
+                    showsCursor: showsCursor, hideDesktopIcons: hideDesktopIcons,
+                    outputURL: outputURL)
                 startedAt = Date()
                 showHUD(on: screen)
             } catch {

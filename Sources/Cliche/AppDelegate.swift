@@ -319,7 +319,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 let frozen = try await ScreenshotEngine.captureImage(
                     displayID: displayID, scale: scale,
-                    showsCursor: settings.showCursor)
+                    showsCursor: settings.showCursor,
+                    hideDesktopIcons: settings.hideDesktopIcons)
                 RegionSelector.begin(frozen: frozen, on: screen) { [weak self] pixelRect in
                     guard let self, let pixelRect else { return }
                     self.settings.lastRegion = (pixelRect, displayID)
@@ -347,7 +348,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 let frozen = try await ScreenshotEngine.captureImage(
                     displayID: displayID, scale: scale,
-                    showsCursor: settings.showCursor)
+                    showsCursor: settings.showCursor,
+                    hideDesktopIcons: settings.hideDesktopIcons)
                 RegionSelector.begin(
                     frozen: frozen, on: screen, allInOne: .region,
                     onSelect: { [weak self] pixelRect, mode in
@@ -403,7 +405,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 let frozen = try await ScreenshotEngine.captureImage(
                     displayID: last.displayID, scale: screen.backingScaleFactor,
-                    showsCursor: settings.showCursor)
+                    showsCursor: settings.showCursor,
+                    hideDesktopIcons: settings.hideDesktopIcons)
                 if let cropped = frozen.cropping(to: last.rect) {
                     self.deliver(cropped)
                 }
@@ -423,7 +426,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 let image = try await ScreenshotEngine.captureImage(
                     displayID: displayID, sourceRect: rect, scale: scale,
-                    showsCursor: settings.showCursor)
+                    showsCursor: settings.showCursor,
+                    hideDesktopIcons: settings.hideDesktopIcons)
                 self.deliver(image)
             } catch {
                 NSLog("Cliche: ScreenCaptureKit failed (\(error)); using screencapture CLI")
@@ -519,7 +523,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self, let pixelRect else { return }
                 ScrollingCapture.begin(
                     displayID: displayID, pixelRect: pixelRect, scale: scale,
-                    showsCursor: false, on: screen
+                    showsCursor: false,
+                    hideDesktopIcons: self.settings.hideDesktopIcons, on: screen
                 ) { stitched in
                     self.deliver(stitched)
                 }
@@ -547,7 +552,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self, let pixelRect else { return }
                 RecordingController.begin(
                     displayID: displayID, pixelRect: pixelRect, scale: scale,
-                    showsCursor: self.settings.showCursor, on: screen
+                    showsCursor: self.settings.showCursor,
+                    hideDesktopIcons: self.settings.hideDesktopIcons, on: screen
                 ) { url in
                     self.capturesStore.add(path: url.path)
                     InfoHUD.show("Recording saved to Desktop")

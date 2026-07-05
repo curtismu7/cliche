@@ -47,6 +47,7 @@ make install    # builds, installs to ~/Applications, launches
 
 - **Region capture on a frozen screen** with a magnifier loupe, live pixel-size label, and Shift-to-square — plus window, full-screen, and timed (3/5/10 s) capture.
 - **All-in-one capture** — one hotkey (`⌃⌥⌘3`) opens the overlay with a mode strip: Region, Window, Full Screen, or Copy Text, switchable with keys 1–4.
+- **Hide desktop clutter** — a Settings toggle excludes desktop icons from captures and recordings; your wallpaper stays.
 - **Repeat last region** with one hotkey — perfect for iterating on the same area.
 - **OCR** — select any region, the text in it lands on your clipboard (on-device Vision).
 - **Scrolling capture** — select a region, scroll the content, Cliché stitches one tall image.
