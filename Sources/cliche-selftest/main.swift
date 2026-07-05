@@ -897,6 +897,88 @@ do {
         "wrong scheme, unknown host, unknown mode → nil")
 }
 
+// annotationKindsAndCodable
+do {
+    // Every kind round-trips through JSON (needed by the project format).
+    let kinds: [Annotation.Kind] = [
+        .arrow, .rectangle, .text("hi"), .blur, .counter(7), .ellipse, .line,
+        .freehand(points: [CGPoint(x: 1, y: 2), CGPoint(x: 3, y: 4)]),
+        .highlight, .gaussianBlur,
+    ]
+    let annotations = kinds.map {
+        Annotation(kind: $0, start: CGPoint(x: 10, y: 20), end: CGPoint(x: 30, y: 40))
+    }
+    let data = try! JSONEncoder().encode(annotations)
+    let decoded = try! JSONDecoder().decode([Annotation].self, from: data)
+    expect(decoded == annotations, "all annotation kinds round-trip through JSON")
+
+    // Renderer: new shapes actually draw. White base, look for red stroke.
+    let w = 200, h = 160
+    let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8,
+        bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.setFillColor(CGColor(gray: 1, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+    let base = ctx.makeImage()!
+
+    func redPixels(_ image: CGImage) -> Int {
+        let rep = NSBitmapImageRep(cgImage: image)
+        var count = 0
+        for x in stride(from: 0, to: image.width, by: 2) {
+            for y in stride(from: 0, to: image.height, by: 2) {
+                if let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB),
+                   c.redComponent > 0.7, c.greenComponent < 0.5 {
+                    count += 1
+                }
+            }
+        }
+        return count
+    }
+    let ellipse = AnnotationRenderer.render(base: base, annotations: [
+        Annotation(kind: .ellipse, start: CGPoint(x: 20, y: 20), end: CGPoint(x: 180, y: 140))])!
+    let line = AnnotationRenderer.render(base: base, annotations: [
+        Annotation(kind: .line, start: CGPoint(x: 10, y: 10), end: CGPoint(x: 190, y: 150))])!
+    let freehand = AnnotationRenderer.render(base: base, annotations: [
+        Annotation(kind: .freehand(points: [
+            CGPoint(x: 20, y: 20), CGPoint(x: 90, y: 120), CGPoint(x: 170, y: 30)]),
+            start: CGPoint(x: 20, y: 20), end: CGPoint(x: 170, y: 30))])!
+    expect(redPixels(ellipse) > 10 && redPixels(line) > 10 && redPixels(freehand) > 10,
+        "ellipse, line, and freehand draw red strokes")
+
+    // Highlight tints without hiding content.
+    let highlight = AnnotationRenderer.render(base: base, annotations: [
+        Annotation(kind: .highlight, start: CGPoint(x: 0, y: 0), end: CGPoint(x: 200, y: 160))])!
+    let hrep = NSBitmapImageRep(cgImage: highlight)
+    let hc = hrep.colorAt(x: 100, y: 80)!.usingColorSpace(.deviceRGB)!
+    expect(hc.blueComponent < 0.9 && hc.redComponent > 0.85,
+        "highlight tints the area yellow")
+
+    // Gaussian blur destroys a checkerboard's fine detail.
+    let cctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8,
+        bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    for x in 0..<w {
+        for y in 0..<h {
+            cctx.setFillColor(CGColor(gray: (x + y) % 2 == 0 ? 0 : 1, alpha: 1))
+            cctx.fill(CGRect(x: x, y: y, width: 1, height: 1))
+        }
+    }
+    let checker = cctx.makeImage()!
+    let blurred = AnnotationRenderer.render(base: checker, annotations: [
+        Annotation(kind: .gaussianBlur, start: CGPoint(x: 40, y: 40),
+                   end: CGPoint(x: 160, y: 120))])!
+    let brep = NSBitmapImageRep(cgImage: blurred)
+    // Inside the blur, neighboring pixels should now be near-identical gray.
+    let inner1 = brep.colorAt(x: 100, y: 80)!.usingColorSpace(.deviceRGB)!
+    let inner2 = brep.colorAt(x: 101, y: 80)!.usingColorSpace(.deviceRGB)!
+    // Outside, the checkerboard still alternates hard.
+    let outer1 = brep.colorAt(x: 5, y: 5)!.usingColorSpace(.deviceRGB)!
+    let outer2 = brep.colorAt(x: 6, y: 5)!.usingColorSpace(.deviceRGB)!
+    expect(abs(inner1.redComponent - inner2.redComponent) < 0.2
+        && abs(outer1.redComponent - outer2.redComponent) > 0.5,
+        "gaussian blur flattens detail inside, leaves outside sharp")
+}
+
 // desktopClutter
 do {
     let iconLayer = Int(CGWindowLevelForKey(.desktopIconWindow))

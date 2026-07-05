@@ -41,6 +41,37 @@ public enum AnnotationRenderer {
                 drawCounter(number, at: annotation.end, in: context, unit: unit, color: red)
             case .text(let string):
                 drawText(string, at: annotation.end, in: context, unit: unit)
+            case .ellipse:
+                context.setStrokeColor(red)
+                context.setLineWidth(1.5 * unit)
+                context.strokeEllipse(in: annotation.rect)
+            case .line:
+                context.setStrokeColor(red)
+                context.setLineWidth(1.5 * unit)
+                context.setLineCap(.round)
+                context.move(to: annotation.start)
+                context.addLine(to: annotation.end)
+                context.strokePath()
+            case .freehand(let points):
+                guard points.count > 1 else { break }
+                context.setStrokeColor(red)
+                context.setLineWidth(1.5 * unit)
+                context.setLineCap(.round)
+                context.setLineJoin(.round)
+                context.move(to: points[0])
+                for point in points.dropFirst() { context.addLine(to: point) }
+                context.strokePath()
+            case .highlight:
+                context.saveGState()
+                context.setBlendMode(.multiply)
+                context.setFillColor(CGColor(red: 1, green: 0.92, blue: 0.23, alpha: 0.45))
+                context.fill(annotation.rect.intersection(fullRect))
+                context.restoreGState()
+            case .gaussianBlur:
+                if let blurred = gaussianBlur(base, in: annotation.rect
+                    .intersection(fullRect).integral) {
+                    context.draw(blurred.image, in: blurred.rect)
+                }
             }
         }
         return context.makeImage()
@@ -122,6 +153,37 @@ public enum AnnotationRenderer {
             at: CGPoint(x: center.x - size.width / 2, y: center.y - size.height / 2),
             withAttributes: attributes)
         NSGraphicsContext.restoreGraphicsState()
+    }
+
+    /// True blur: crop → shrink to 1/8 → draw back enlarged. The
+    /// downsample destroys the information, so text can't be recovered.
+    private static func gaussianBlur(
+        _ base: CGImage, in rect: CGRect
+    ) -> (image: CGImage, rect: CGRect)? {
+        guard rect.width >= 4, rect.height >= 4,
+              let cropped = base.cropping(to: CGRect(
+                x: rect.minX, y: CGFloat(base.height) - rect.maxY,
+                width: rect.width, height: rect.height))
+        else { return nil }
+        let smallW = max(1, Int(rect.width / 8)), smallH = max(1, Int(rect.height / 8))
+        guard let small = CGContext(
+            data: nil, width: smallW, height: smallH, bitsPerComponent: 8,
+            bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return nil }
+        small.interpolationQuality = .low
+        small.draw(cropped, in: CGRect(x: 0, y: 0, width: smallW, height: smallH))
+        guard let shrunk = small.makeImage(),
+              let big = CGContext(
+                data: nil, width: Int(rect.width), height: Int(rect.height),
+                bitsPerComponent: 8, bytesPerRow: 0,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return nil }
+        big.interpolationQuality = .high
+        big.draw(shrunk, in: CGRect(x: 0, y: 0, width: rect.width, height: rect.height))
+        guard let image = big.makeImage() else { return nil }
+        return (image, rect)
     }
 
     private static func pixelate(

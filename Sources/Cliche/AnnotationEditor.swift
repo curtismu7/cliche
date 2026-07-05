@@ -62,14 +62,20 @@ enum AnnotationEditor {
 }
 
 private enum EditorTool: String, CaseIterable {
-    case arrow, rectangle, text, blur, counter
+    case arrow, line, rectangle, ellipse, freehand, highlight, text, blur,
+         gaussian, counter
 
     var symbol: String {
         switch self {
         case .arrow: return "arrow.up.right"
+        case .line: return "line.diagonal"
         case .rectangle: return "rectangle"
+        case .ellipse: return "circle"
+        case .freehand: return "scribble"
+        case .highlight: return "highlighter"
         case .text: return "textformat"
         case .blur: return "circle.grid.3x3.fill"
+        case .gaussian: return "drop.halffull"
         case .counter: return "1.circle"
         }
     }
@@ -77,9 +83,14 @@ private enum EditorTool: String, CaseIterable {
     var help: String {
         switch self {
         case .arrow: return "Arrow — drag"
+        case .line: return "Line — drag"
         case .rectangle: return "Rectangle — drag"
+        case .ellipse: return "Ellipse — drag"
+        case .freehand: return "Freehand — draw"
+        case .highlight: return "Highlighter — drag"
         case .text: return "Text — click to place"
         case .blur: return "Pixelate — drag over what to hide"
+        case .gaussian: return "Blur — drag (unrecoverable)"
         case .counter: return "Counter badge — click to place"
         }
     }
@@ -271,10 +282,29 @@ struct AnnotationEditorView: View {
                         switch tool {
                         case .arrow:
                             draft = Annotation(kind: .arrow, start: start, end: current)
+                        case .line:
+                            draft = Annotation(kind: .line, start: start, end: current)
                         case .rectangle:
                             draft = Annotation(kind: .rectangle, start: start, end: current)
+                        case .ellipse:
+                            draft = Annotation(kind: .ellipse, start: start, end: current)
+                        case .highlight:
+                            draft = Annotation(kind: .highlight, start: start, end: current)
                         case .blur:
                             draft = Annotation(kind: .blur, start: start, end: current)
+                        case .gaussian:
+                            draft = Annotation(kind: .gaussianBlur, start: start, end: current)
+                        case .freehand:
+                            if case .freehand(var points) = draft?.kind {
+                                points.append(current)
+                                draft = Annotation(
+                                    kind: .freehand(points: points),
+                                    start: draft!.start, end: current)
+                            } else {
+                                draft = Annotation(
+                                    kind: .freehand(points: [start, current]),
+                                    start: start, end: current)
+                            }
                         case .text, .counter:
                             break
                         }
@@ -282,10 +312,9 @@ struct AnnotationEditorView: View {
                     .onEnded { value in
                         let point = imagePoint(value.location)
                         switch tool {
-                        case .arrow, .rectangle, .blur:
-                            if let finished = draft,
-                               hypot(finished.end.x - finished.start.x,
-                                     finished.end.y - finished.start.y) > 4 {
+                        case .arrow, .line, .rectangle, .ellipse, .highlight,
+                             .blur, .gaussian, .freehand:
+                            if let finished = draft, dragIsMeaningful(finished) {
                                 annotations.append(finished)
                             }
                             draft = nil
@@ -298,6 +327,14 @@ struct AnnotationEditorView: View {
                             pendingTextPoint = point
                         }
                     })
+    }
+
+    /// Filters out accidental clicks: a drag counts if it moved, or if a
+    /// freehand stroke gathered more than a couple of points.
+    private func dragIsMeaningful(_ annotation: Annotation) -> Bool {
+        if case .freehand(let points) = annotation.kind { return points.count > 2 }
+        return hypot(annotation.end.x - annotation.start.x,
+                     annotation.end.y - annotation.start.y) > 4
     }
 
     private var textSheet: some View {
