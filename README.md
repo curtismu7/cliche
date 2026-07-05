@@ -82,7 +82,12 @@ where you can add more pasteboard types or app bundle IDs to ignore.
 
 ## Build & run
 
-Requires macOS 14+ and Swift 6 (Xcode Command Line Tools are enough).
+Requires macOS 14+ and Swift 6 (Xcode Command Line Tools are enough):
+
+```sh
+git clone https://github.com/curtismu7/cliche.git
+cd cliche
+```
 
 ```sh
 make test   # run the self-test suite
