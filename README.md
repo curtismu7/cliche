@@ -33,9 +33,9 @@ make install    # builds, installs to ~/Applications, launches
 ### 📋 Clipboard history
 - Remembers your last **150 text snippets and 50 images** (both configurable in Settings) from anywhere on your Mac; history survives restarts.
 - **Fuzzy search** — the panel opens with search focused; `hw` finds "hello world".
-- **Keyboard-first** — `↑↓` select, `↩` copies, `⌘1–9` grab the first nine, `⌘⌫` deletes, `⌘P` pins.
+- **Keyboard-first** — `↑↓` select, `↩` copies, `⌘1–9` grab the first nine, `⌘⌫` deletes, `⌥P` pins, `⌥U` unpins.
 - **Paste directly into the app you were using** — `⌥↩` or ⌥-click types the item where your cursor was.
-- **Pin** anything to keep it forever; **edit text clips in place**; **preview** long text or images in a floating window with copy/pin/edit corners.
+- **Pin** anything to keep it forever — pins live in their own section at the top, above a "Recent" separator, with an **Unpin All** button; pinned items never count against history limits. Plus **edit text clips in place** and **preview** long text or images in a floating window with copy/pin/edit corners.
 - **Images in a horizontal strip**, previewable, pinnable, annotatable.
 - **Snippets** — reusable templates with `%DATE%`, `%TIME%`, `%CLIPBOARD%` variables.
 - **Privacy built in** — anything copied from password managers (concealed/transient pasteboard types) is never recorded, with a user-editable ignore list.
