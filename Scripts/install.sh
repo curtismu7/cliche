@@ -49,6 +49,8 @@ First-run permissions (macOS asks once each):
 Getting started:
   ⌃⌥⌘C  clipboard panel        ⌥1  floating clipboard list
   ⌃⌥⌘4  capture a region       ⌃⌥⌘6  copy text from screen (OCR)
+  Annotate any capture, then use the Beautify panel on the right
+  to add a gradient backdrop and export at social sizes.
   The ? button in the panel lists everything; hotkeys are
   customizable under the gear icon.
 EOF

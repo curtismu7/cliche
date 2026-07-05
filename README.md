@@ -49,7 +49,8 @@ make install    # builds, installs to ~/Applications, launches
 - **Scrolling capture** — select a region, scroll the content, Cliché stitches one tall image.
 - **Screen recording** — region to MP4, with optional GIF export.
 - **Pixel ruler** — hover snaps to UI element edges and shows dimensions; drag measures; click copies.
-- **Annotation editor** — arrows, boxes, text, pixelate, counter badges, **one-click auto-redaction** of emails/links/phone numbers/API keys, and **gradient backdrops** for social-ready shots.
+- **Annotation editor** — arrows, boxes, text, pixelate, counter badges, and **one-click auto-redaction** of emails/links/phone numbers/API keys.
+- **Beautify panel** — make any capture social-ready with a live preview: editable gradient backdrops (colors + angle), padding, rounded corners, shadow, and an optional matte border; **auto-balance** trims uneven margins; export at exact social sizes (X 1600×900, Square, IG Portrait); save your look as a **named preset**.
 - **Quick Access Overlay** — post-capture thumbnail you can drag into Slack/Mail or click to annotate; QR codes in captures get a "copy link" button.
 - **Color picker** with hex copy and a WCAG contrast checker; before/after GIFs from any two captures.
 - Screenshots land on the **Desktop + clipboard + Captures tab** (format and clipboard behavior configurable).
@@ -77,7 +78,7 @@ Quit Cliché from the panel, then delete `~/Applications/Cliche.app` and `~/Libr
 
 ## Development
 
-- `Sources/ClicheKit` — library: history store, clipboard monitor, screenshot engine, recorder, stitcher, OCR, annotation renderer
+- `Sources/ClicheKit` — library: history store, clipboard monitor, screenshot engine, recorder, stitcher, OCR, annotation renderer, beautify pipeline
 - `Sources/Cliche` — the menu bar app (AppKit shell + SwiftUI panels)
 - `Sources/cliche-selftest` — assertion-based tests: `make test` (Command Line Tools ship no XCTest)
 - `make install` — build + reinstall locally · `make dist` — shareable zip · `make release` — tag, push, and publish a GitHub release
