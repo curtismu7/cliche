@@ -32,6 +32,7 @@ make install    # builds, installs to ~/Applications, launches
 ## What it does
 
 ### 📋 Clipboard history
+
 - Remembers your last **150 text snippets and 50 images** (both configurable in Settings) from anywhere on your Mac; history survives restarts.
 - **Fuzzy search** — the panel opens with search focused; `hw` finds "hello world".
 - **Keyboard-first** — `↑↓` select, `↩` copies, `⌘1–9` grab the first nine, `⌘⌫` deletes, `⌥P` pins, `⌥U` unpins.
@@ -43,6 +44,7 @@ make install    # builds, installs to ~/Applications, launches
 - **⌥1 floating list** — Maccy-style popup at your cursor from anywhere.
 
 ### 📷 Screen capture
+
 - **Region capture on a frozen screen** with a magnifier loupe, live pixel-size label, and Shift-to-square — plus window, full-screen, and timed (3/5/10 s) capture.
 - **Repeat last region** with one hotkey — perfect for iterating on the same area.
 - **OCR** — select any region, the text in it lands on your clipboard (on-device Vision).
@@ -58,7 +60,7 @@ make install    # builds, installs to ~/Applications, launches
 ## Default shortcuts (all customizable in Settings)
 
 | Shortcut | Action |
-|---|---|
+| --- | --- |
 | `⌃⌥⌘C` | Open the clipboard panel |
 | `⌥1` | Floating clipboard list at the cursor |
 | `⌃⌥⌘4` | Capture a region |
