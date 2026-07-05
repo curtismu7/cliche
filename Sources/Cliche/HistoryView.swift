@@ -50,6 +50,8 @@ struct HistoryView: View {
     @State private var showingSettings = false
     @State private var editingItem: ClipItem?
     @State private var editText = ""
+    @State private var hostWindow: NSWindow?
+    @State private var pinKeyMonitor: Any?
     @FocusState private var searchFocused: Bool
 
     /// Pinned first, then recent, both fuzzy-filtered.
@@ -66,6 +68,44 @@ struct HistoryView: View {
     /// Images render as a horizontal strip above the text list.
     private var imageItems: [ClipItem] {
         visibleItems.filter { if case .image = $0.kind { return true }; return false }
+    }
+
+    private func pinSelection(pin: Bool) {
+        guard textItems.indices.contains(selectedIndex),
+              textItems[selectedIndex].pinned != pin else { return }
+        store.togglePin(textItems[selectedIndex])
+    }
+
+    /// ⌥P/⌥U must be swallowed before the search field turns them into
+    /// "π"/"¨" text — SwiftUI keyboardShortcut can't intercept option-combos,
+    /// so use an event monitor scoped to this panel's window.
+    private func installPinKeyMonitor() {
+        guard pinKeyMonitor == nil else { return }
+        pinKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard event.modifierFlags.contains(.option),
+                  !event.modifierFlags.contains(.command),
+                  let window = hostWindow, event.window === window,
+                  effectiveTab == .clipboard,
+                  let key = event.charactersIgnoringModifiers?.lowercased()
+            else { return event }
+            switch key {
+            case "p":
+                pinSelection(pin: true)
+                return nil
+            case "u":
+                pinSelection(pin: false)
+                return nil
+            default:
+                return event
+            }
+        }
+    }
+
+    private func removePinKeyMonitor() {
+        if let pinKeyMonitor {
+            NSEvent.removeMonitor(pinKeyMonitor)
+        }
+        pinKeyMonitor = nil
     }
 
     private func openPreview(_ item: ClipItem) {
@@ -141,6 +181,9 @@ struct HistoryView: View {
         .background(Color.white)
         .environment(\.colorScheme, .light)
         .background(shortcutButtons)
+        .background(WindowAccessor { hostWindow = $0 })
+        .onAppear(perform: installPinKeyMonitor)
+        .onDisappear(perform: removePinKeyMonitor)
         .sheet(isPresented: $showingHelp) { HelpView(settings: settings) }
         .sheet(isPresented: $showingSettings) {
             SettingsView(settings: settings, ignoreRulesURL: ignoreRulesURL)
@@ -459,21 +502,8 @@ struct HistoryView: View {
             }
             .keyboardShortcut(.delete, modifiers: .command)
             Button("") {
-                // ⌥P pins only (no-op if already pinned)
-                guard textItems.indices.contains(selectedIndex),
-                      !textItems[selectedIndex].pinned else { return }
-                store.togglePin(textItems[selectedIndex])
-            }
-            .keyboardShortcut("p", modifiers: .option)
-            Button("") {
-                // ⌥U unpins only
-                guard textItems.indices.contains(selectedIndex),
-                      textItems[selectedIndex].pinned else { return }
-                store.togglePin(textItems[selectedIndex])
-            }
-            .keyboardShortcut("u", modifiers: .option)
-            Button("") {
-                // ⌘P kept as a toggle for old muscle memory
+                // ⌘P kept as a toggle (⌥P/⌥U are handled by the key monitor —
+                // SwiftUI shortcuts can't claim option-combos from a text field)
                 guard textItems.indices.contains(selectedIndex) else { return }
                 store.togglePin(textItems[selectedIndex])
             }
@@ -945,5 +975,21 @@ private struct CapturesGrid: View {
             }
             .onHover { isHovering = $0 }
         }
+    }
+}
+
+
+/// Reports the hosting NSWindow so views can scope event monitors to it.
+private struct WindowAccessor: NSViewRepresentable {
+    let onWindow: (NSWindow?) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async { [weak view] in onWindow(view?.window) }
+        return view
+    }
+
+    func updateNSView(_ view: NSView, context: Context) {
+        DispatchQueue.main.async { [weak view] in onWindow(view?.window) }
     }
 }
