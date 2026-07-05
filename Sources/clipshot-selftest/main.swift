@@ -404,6 +404,73 @@ do {
     pasteboard.releaseGlobally()
 }
 
+// qrDetection
+do {
+    let filter = CIFilter(name: "CIQRCodeGenerator")!
+    filter.setValue("https://example.com/clipshot".data(using: .utf8)!, forKey: "inputMessage")
+    let output = filter.outputImage!.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
+    let qrImage = CIContext().createCGImage(output, from: output.extent)!
+    expect(QRDetector.firstQRPayload(in: qrImage) == "https://example.com/clipshot",
+        "QR detector decodes payload")
+
+    let blank = CGContext(
+        data: nil, width: 50, height: 50, bitsPerComponent: 8, bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    blank.setFillColor(.white)
+    blank.fill(CGRect(x: 0, y: 0, width: 50, height: 50))
+    expect(QRDetector.firstQRPayload(in: blank.makeImage()!) == nil,
+        "QR detector returns nil for plain image")
+}
+
+// contrastRatio
+do {
+    let blackWhite = ColorUtil.contrastRatio(.black, .white)!
+    let same = ColorUtil.contrastRatio(.white, .white)!
+    expect(abs(blackWhite - 21) < 0.1 && abs(same - 1) < 0.01,
+        "contrast ratio black/white=21, same=1")
+    expect(ColorUtil.wcagVerdict(ratio: 21) == "AAA"
+        && ColorUtil.wcagVerdict(ratio: 5) == "AA"
+        && ColorUtil.wcagVerdict(ratio: 3.5) == "AA Large"
+        && ColorUtil.wcagVerdict(ratio: 2) == "Fail",
+        "WCAG verdict thresholds")
+}
+
+// gifBuilder
+do {
+    func solid(_ r: CGFloat) -> CGImage {
+        let ctx = CGContext(
+            data: nil, width: 20, height: 20, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        ctx.setFillColor(CGColor(red: r, green: 0, blue: 0, alpha: 1))
+        ctx.fill(CGRect(x: 0, y: 0, width: 20, height: 20))
+        return ctx.makeImage()!
+    }
+    let gif = GIFBuilder.gifData(frames: [solid(1), solid(0)], frameDelay: 0.8)
+    let signatureOK = gif?.prefix(4).elementsEqual([0x47, 0x49, 0x46, 0x38]) == true  // "GIF8"
+    let frameCount = gif.flatMap {
+        CGImageSourceCreateWithData($0 as CFData, nil).map(CGImageSourceGetCount)
+    }
+    expect(signatureOK && frameCount == 2, "GIF builder produces 2-frame GIF")
+    expect(GIFBuilder.gifData(frames: [], frameDelay: 0.5) == nil,
+        "GIF builder rejects empty frames")
+}
+
+// lastRegionPersistence
+do {
+    let suite = "clipshot-selftest-\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    let settings = AppSettings(defaults: defaults)
+    expect(settings.lastRegion == nil, "last region starts nil")
+    settings.lastRegion = (CGRect(x: 10, y: 20, width: 300, height: 200), 42)
+    let reloaded = AppSettings(defaults: defaults)
+    let region = reloaded.lastRegion
+    expect(region?.rect == CGRect(x: 10, y: 20, width: 300, height: 200)
+        && region?.displayID == 42, "last region persists")
+    defaults.removePersistentDomain(forName: suite)
+}
+
 // annotationRenderer
 do {
     // 200x150 base: left half white, with black/white 1px vertical stripes

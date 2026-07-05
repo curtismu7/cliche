@@ -8,7 +8,7 @@ enum CaptureOverlay {
     private static var panel: NSPanel?
     private static var dismissTimer: Timer?
 
-    static func show(fileURL: URL, onAnnotate: @escaping (URL) -> Void) {
+    static func show(fileURL: URL, qrLink: String? = nil, onAnnotate: @escaping (URL) -> Void) {
         hide()
         guard let image = NSImage(contentsOf: fileURL) else { return }
 
@@ -33,6 +33,7 @@ enum CaptureOverlay {
         let view = OverlayThumbnail(
             image: image,
             fileURL: fileURL,
+            qrLink: qrLink,
             onAnnotate: {
                 hide()
                 onAnnotate(fileURL)
@@ -81,6 +82,7 @@ enum CaptureOverlay {
 private struct OverlayThumbnail: View {
     let image: NSImage
     let fileURL: URL
+    let qrLink: String?
     let onAnnotate: () -> Void
     let onDismiss: () -> Void
     let onHoverChanged: (Bool) -> Void
@@ -102,6 +104,17 @@ private struct OverlayThumbnail: View {
 
             if isHovering {
                 HStack(spacing: 6) {
+                    if let qrLink {
+                        Button {
+                            let pasteboard = NSPasteboard.general
+                            pasteboard.clearContents()
+                            pasteboard.setString(qrLink, forType: .string)
+                            onDismiss()
+                        } label: {
+                            Image(systemName: "qrcode")
+                        }
+                        .help("QR code found — copy its link")
+                    }
                     Button(action: onAnnotate) {
                         Image(systemName: "pencil.tip.crop.circle")
                     }

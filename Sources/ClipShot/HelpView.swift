@@ -20,8 +20,15 @@ struct HelpView: View {
                     section("Global Hotkeys (work anywhere)", rows: [
                         ("⌃⌥⌘C", "Open / close this panel"),
                         ("⌃⌥⌘4", "Capture a region"),
+                        ("⌃⌥⌘R", "Repeat the last region capture (no UI)"),
                         ("⌃⌥⌘5", "Capture a window"),
                         ("⌃⌥⌘6", "Copy text from screen (OCR)"),
+                    ])
+                    section("Region Selection", rows: [
+                        ("frozen screen", "The display freezes while you select; a loupe magnifies pixels at the cursor"),
+                        ("⇧ while dragging", "Lock the selection to a square"),
+                        ("size label", "Live pixel dimensions of the selection"),
+                        ("esc", "Cancel"),
                     ])
                     section("Clipboard Tab", rows: [
                         ("type", "Search history (fuzzy — \"hw\" finds \"hello world\")"),
@@ -39,6 +46,13 @@ struct HelpView: View {
                     ])
                     section("Color Picker", rows: [
                         ("eyedropper button", "Magnifier loupe — click any pixel; its hex code (#3A7BD5) is copied"),
+                        ("pick twice", "Consecutive picks show the WCAG contrast ratio between the two colors"),
+                    ])
+                    section("More Capture Tools", rows: [
+                        ("timer", "Settings → capture timer (3/5/10 s countdown) for menus and hover states"),
+                        ("QR codes", "If a capture contains a QR code, the thumbnail overlay offers Copy Link"),
+                        ("film button", "On a capture: before/after GIF with the previous capture"),
+                        ("cursor / shadow", "Settings toggles: show mouse pointer, keep window shadow"),
                     ])
                     section("Annotation Editor", rows: [
                         ("drag", "Arrow, rectangle, or pixelate (by tool)"),

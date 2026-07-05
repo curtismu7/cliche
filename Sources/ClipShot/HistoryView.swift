@@ -15,6 +15,7 @@ struct HistoryView: View {
     let onCapture: (CaptureMode) -> Void
     let onCaptureText: () -> Void
     let onPickColor: () -> Void
+    let onRepeatRegion: () -> Void
     let onQuit: () -> Void
 
     private enum Tab: String, CaseIterable {
@@ -201,32 +202,23 @@ struct HistoryView: View {
     // MARK: Chrome
 
     private var captureBar: some View {
-        HStack(spacing: 8) {
-            CaptureButton(title: "Region", symbol: "rectangle.dashed") {
-                onCapture(.region)
-            }
-            .help("Capture region  ⌃⌥⌘4")
-            CaptureButton(title: "Window", symbol: "macwindow") {
-                onCapture(.window)
-            }
-            .help("Capture window  ⌃⌥⌘5")
-            CaptureButton(title: "Screen", symbol: "display") {
-                onCapture(.fullScreen)
-            }
-            .help("Capture full screen")
-            CaptureButton(title: "Text", symbol: "text.viewfinder", action: onCaptureText)
+        HStack(spacing: 4) {
+            CaptureButton(symbol: "rectangle.dashed") { onCapture(.region) }
+                .help("Capture region  ⌃⌥⌘4")
+            CaptureButton(symbol: "arrow.counterclockwise.square", action: onRepeatRegion)
+                .help("Repeat last region  ⌃⌥⌘R")
+            CaptureButton(symbol: "macwindow") { onCapture(.window) }
+                .help("Capture window  ⌃⌥⌘5")
+            CaptureButton(symbol: "display") { onCapture(.fullScreen) }
+                .help("Capture full screen")
+            CaptureButton(symbol: "text.viewfinder", action: onCaptureText)
                 .help("Copy text from screen (OCR)  ⌃⌥⌘6")
-            CaptureButton(title: "Color", symbol: "eyedropper", action: onPickColor)
-                .help("Pick a color — hex code goes to the clipboard")
+            CaptureButton(symbol: "eyedropper", action: onPickColor)
+                .help("Pick a color — hex + contrast checker")
             Spacer()
-            Button(action: onQuit) {
-                Image(systemName: "power")
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .help("Quit ClipShot")
         }
-        .padding(10)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
     }
 
     private var footer: some View {
@@ -257,6 +249,10 @@ struct HistoryView: View {
                 Button("Clear History") { store.clear() }
                     .font(.caption)
             }
+            Button("Quit", action: onQuit)
+                .font(.caption)
+                .keyboardShortcut("q", modifiers: .command)
+                .help("Quit ClipShot (⌘Q)")
         }
         .padding(8)
     }
@@ -291,18 +287,22 @@ struct HistoryView: View {
 }
 
 private struct CaptureButton: View {
-    let title: String
     let symbol: String
     let action: () -> Void
 
+    @State private var isHovering = false
+
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 2) {
-                Image(systemName: symbol)
-                Text(title).font(.caption2)
-            }
-            .frame(width: 52)
+            Image(systemName: symbol)
+                .font(.system(size: 14))
+                .frame(width: 30, height: 24)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(isHovering ? Color.primary.opacity(0.1) : Color.clear))
         }
+        .buttonStyle(.plain)
+        .onHover { isHovering = $0 }
     }
 }
 
@@ -357,10 +357,10 @@ private struct ItemRow: View {
                 }
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 4)
         .background(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 5)
                 .fill(isSelected
                     ? Color.accentColor.opacity(0.25)
                     : isHovering ? Color.primary.opacity(0.08) : Color.clear)
@@ -381,18 +381,19 @@ private struct ItemRow: View {
     private var content: some View {
         switch item.kind {
         case .text(let text):
-            Text(text.trimmingCharacters(in: .whitespacesAndNewlines))
-                .lineLimit(2)
-                .font(.callout)
+            Text(text.trimmingCharacters(in: .whitespacesAndNewlines)
+                .replacingOccurrences(of: "\n", with: " ⏎ "))
+                .lineLimit(1)
+                .font(.system(size: 13))
                 .frame(maxWidth: .infinity, alignment: .leading)
         case .image:
             if let data = imageData(), let nsImage = NSImage(data: data) {
                 Image(nsImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(maxHeight: 64)
+                    .frame(maxHeight: 38)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .clipShape(RoundedRectangle(cornerRadius: 3))
             } else {
                 Label("Image unavailable", systemImage: "photo")
                     .foregroundStyle(.secondary)
@@ -594,8 +595,12 @@ private struct CapturesGrid: View {
         } else {
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 8)], spacing: 8) {
-                    ForEach(store.captures) { capture in
-                        CaptureCell(capture: capture, store: store)
+                    ForEach(Array(store.captures.enumerated()), id: \.element.id) { index, capture in
+                        CaptureCell(
+                            capture: capture,
+                            older: index + 1 < store.captures.count
+                                ? store.captures[index + 1] : nil,
+                            store: store)
                     }
                 }
                 .padding(8)
@@ -605,9 +610,29 @@ private struct CapturesGrid: View {
 
     private struct CaptureCell: View {
         let capture: CapturesStore.Capture
+        let older: CapturesStore.Capture?
         let store: CapturesStore
 
         @State private var isHovering = false
+
+        /// Two-frame before/after GIF: the older capture first, this one second.
+        private func makeBeforeAfterGIF() {
+            guard let older,
+                  let before = NSImage(contentsOfFile: older.path)?
+                      .cgImage(forProposedRect: nil, context: nil, hints: nil),
+                  let after = NSImage(contentsOfFile: capture.path)?
+                      .cgImage(forProposedRect: nil, context: nil, hints: nil),
+                  let gif = GIFBuilder.gifData(frames: [before, after], frameDelay: 0.8)
+            else { return }
+            let url = CaptureService.outputURL(fileExtension: "gif")
+            do {
+                try gif.write(to: url)
+                store.add(path: url.path)
+                InfoHUD.show("Before/after GIF saved to Desktop")
+            } catch {
+                NSLog("ClipShot: failed to write GIF: \(error)")
+            }
+        }
 
         var body: some View {
             VStack(spacing: 2) {
@@ -628,34 +653,45 @@ private struct CapturesGrid: View {
                         RoundedRectangle(cornerRadius: 6)
                             .fill(.black.opacity(0.5))
                             .frame(height: 72)
-                        HStack(spacing: 8) {
-                            ShareLink(item: URL(fileURLWithPath: capture.path)) {
-                                Image(systemName: "square.and.arrow.up")
-                            }
-                            .buttonStyle(.plain)
-                            .help("Share…")
-                            RowButton(symbol: "doc.on.doc", help: "Copy") {
-                                if let data = try? Data(contentsOf: URL(fileURLWithPath: capture.path)) {
-                                    ClipboardWriter.writeImage(pngData: data)
+                        VStack(spacing: 7) {
+                            HStack(spacing: 9) {
+                                ShareLink(item: URL(fileURLWithPath: capture.path)) {
+                                    Image(systemName: "square.and.arrow.up")
+                                }
+                                .buttonStyle(.plain)
+                                .help("Share…")
+                                RowButton(symbol: "doc.on.doc", help: "Copy") {
+                                    if let data = try? Data(contentsOf: URL(fileURLWithPath: capture.path)) {
+                                        ClipboardWriter.writeImage(pngData: data)
+                                    }
+                                }
+                                RowButton(symbol: "pencil.tip.crop.circle", help: "Annotate") {
+                                    AnnotationEditor.open(
+                                        fileURL: URL(fileURLWithPath: capture.path))
+                                }
+                                RowButton(symbol: "pip", help: "Float on top") {
+                                    if let image = NSImage(contentsOfFile: capture.path) {
+                                        FloatingImageWindow.show(image: image)
+                                    }
                                 }
                             }
-                            RowButton(symbol: "pencil.tip.crop.circle", help: "Annotate") {
-                                AnnotationEditor.open(
-                                    fileURL: URL(fileURLWithPath: capture.path))
-                            }
-                            RowButton(symbol: "pip", help: "Float on top") {
-                                if let image = NSImage(contentsOfFile: capture.path) {
-                                    FloatingImageWindow.show(image: image)
+                            HStack(spacing: 9) {
+                                RowButton(symbol: "magnifyingglass", help: "Show in Finder") {
+                                    NSWorkspace.shared.activateFileViewerSelecting(
+                                        [URL(fileURLWithPath: capture.path)])
                                 }
-                            }
-                            RowButton(symbol: "magnifyingglass", help: "Show in Finder") {
-                                NSWorkspace.shared.activateFileViewerSelecting(
-                                    [URL(fileURLWithPath: capture.path)])
-                            }
-                            RowButton(symbol: "trash", help: "Move to Trash") {
-                                store.remove(capture, deleteFile: true)
+                                if older != nil {
+                                    RowButton(
+                                        symbol: "film.stack",
+                                        help: "Before/after GIF with previous capture",
+                                        action: makeBeforeAfterGIF)
+                                }
+                                RowButton(symbol: "trash", help: "Move to Trash") {
+                                    store.remove(capture, deleteFile: true)
+                                }
                             }
                         }
+                        .font(.caption)
                         .foregroundStyle(.white)
                     }
                 }

@@ -34,6 +34,15 @@ struct SettingsView: View {
                         : "Screenshots are saved to the Desktop only — the clipboard is left untouched.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    Picker("Capture timer", selection: $settings.timerSeconds) {
+                        Text("Off").tag(0)
+                        Text("3 s").tag(3)
+                        Text("5 s").tag(5)
+                        Text("10 s").tag(10)
+                    }
+                    .pickerStyle(.segmented)
+                    Toggle("Show mouse pointer", isOn: $settings.showCursor)
+                    Toggle("Window capture keeps shadow", isOn: $settings.windowShadow)
                 }
                 Section("General") {
                     Toggle("Launch at login", isOn: $launchAtLogin)
@@ -51,6 +60,6 @@ struct SettingsView: View {
             }
             .formStyle(.grouped)
         }
-        .frame(width: 340, height: 330)
+        .frame(width: 340, height: 440)
     }
 }

@@ -18,15 +18,18 @@ public final class CaptureService {
         _ mode: CaptureMode,
         format: AppSettings.ImageFormat = .png,
         copyToClipboard: Bool = true,
+        showCursor: Bool = false,
+        windowShadow: Bool = false,
         onSaved: ((URL) -> Void)? = nil
     ) {
         let outputURL = Self.outputURL(fileExtension: format.fileExtension)
         var arguments: [String]
         switch mode {
         case .region: arguments = ["-i"]
-        case .window: arguments = ["-iWo"]
+        case .window: arguments = windowShadow ? ["-iW"] : ["-iWo"]
         case .fullScreen: arguments = []
         }
+        if showCursor { arguments.append("-C") }
         arguments += ["-t", format == .png ? "png" : "jpg", outputURL.path]
 
         let process = Process()

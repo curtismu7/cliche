@@ -14,7 +14,8 @@ public enum ScreenshotEngine {
     public static func captureImage(
         displayID: CGDirectDisplayID,
         sourceRect: CGRect? = nil,
-        scale: CGFloat
+        scale: CGFloat,
+        showsCursor: Bool = false
     ) async throws -> CGImage {
         let content = try await SCShareableContent.excludingDesktopWindows(
             false, onScreenWindowsOnly: true)
@@ -35,7 +36,7 @@ public enum ScreenshotEngine {
         }
         configuration.width = Int(rect.width * scale)
         configuration.height = Int(rect.height * scale)
-        configuration.showsCursor = false
+        configuration.showsCursor = showsCursor
 
         return try await SCScreenshotManager.captureImage(
             contentFilter: filter, configuration: configuration)
