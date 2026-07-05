@@ -774,6 +774,34 @@ do {
         "frame-only config is not identity; plain identity still is")
 }
 
+// frameChromeInsets
+do {
+    let none = FrameRenderer.chromeInsets(.none, minDimension: 1000)
+    expect(none.top == 0 && none.bottom == 0 && none.left == 0 && none.right == 0,
+        "no chrome insets for FrameStyle.none")
+    let bar = FrameRenderer.chromeInsets(.browserLight, minDimension: 1000)
+    expect(bar.top == 55 && bar.bottom == 0 && bar.left == 0 && bar.right == 0,
+        "browser bar is a top-only inset of 5.5% min dimension")
+    let phone = FrameRenderer.chromeInsets(.phone, minDimension: 1000)
+    expect(phone.top == 45 && phone.bottom == 45 && phone.left == 45 && phone.right == 45,
+        "phone bezel is uniform 4.5% min dimension")
+
+    // layout grows by exactly the chrome insets.
+    let plain = BeautifyConfig.gradient(RGBAColor(0, 0, 1), RGBAColor(0, 1, 0))
+    var framed = plain
+    framed.frame = .browserLight
+    let size = CGSize(width: 800, height: 600)
+    let plainL = BeautifyRenderer.layout(plain, croppedSize: size)
+    let framedL = BeautifyRenderer.layout(framed, croppedSize: size)
+    let expectedBar = 0.055 * 600
+    expect(abs(framedL.outputSize.height - plainL.outputSize.height - expectedBar) < 0.5
+        && abs(framedL.outputSize.width - plainL.outputSize.width) < 0.5,
+        "browser frame adds exactly the bar height to layout")
+    expect(abs(framedL.screenshotRect.minY - plainL.screenshotRect.minY) < 0.5
+        && abs(framedL.screenshotRect.width - plainL.screenshotRect.width) < 0.5,
+        "screenshot keeps its position; bar space is added above")
+}
+
 // allInOneModeTable
 do {
     expect(AllInOneMode.allCases == [.region, .window, .fullScreen, .ocr],

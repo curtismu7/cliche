@@ -19,15 +19,17 @@ public enum BeautifyRenderer {
         let minDim = min(croppedSize.width, croppedSize.height)
         let pad = config.padding * minDim
         let insetW = (config.inset?.width ?? 0) * minDim
-        let frameW = croppedSize.width + 2 * insetW
-        let frameH = croppedSize.height + 2 * insetW
+        let chrome = FrameRenderer.chromeInsets(config.frame, minDimension: minDim)
+        let frameW = croppedSize.width + chrome.left + chrome.right + 2 * insetW
+        let frameH = croppedSize.height + chrome.top + chrome.bottom + 2 * insetW
         let contentW = frameW + 2 * pad
         let contentH = frameH + 2 * pad
 
         switch config.canvas {
         case .free:
-            let rect = CGRect(x: pad + insetW, y: pad + insetW,
-                              width: croppedSize.width, height: croppedSize.height)
+            let rect = CGRect(
+                x: pad + insetW + chrome.left, y: pad + insetW + chrome.bottom,
+                width: croppedSize.width, height: croppedSize.height)
             return BeautifyLayout(
                 outputSize: CGSize(width: contentW, height: contentH),
                 screenshotRect: rect)
@@ -37,7 +39,8 @@ public enum BeautifyRenderer {
             let drawW = contentW * s, drawH = contentH * s
             let ox = (canvas.width - drawW) / 2, oy = (canvas.height - drawH) / 2
             let rect = CGRect(
-                x: ox + (pad + insetW) * s, y: oy + (pad + insetW) * s,
+                x: ox + (pad + insetW + chrome.left) * s,
+                y: oy + (pad + insetW + chrome.bottom) * s,
                 width: croppedSize.width * s, height: croppedSize.height * s)
             return BeautifyLayout(outputSize: canvas, screenshotRect: rect)
         }
