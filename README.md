@@ -20,12 +20,20 @@ A macOS menu bar app combining a clipboard history manager and screen capture.
   `%TIME%`, and `%CLIPBOARD%` variables rendered at copy time. Click to copy,
   ⌥-click to paste directly.
 - **Screen capture** — region and full-screen captures run in-process via
-  ScreenCaptureKit (instant, silent, ClipShot's own windows excluded); region
-  selection uses ClipShot's crosshair overlay (drag to select, Esc cancels).
-  Window capture uses the native macOS picker. Screenshots land on the
-  Desktop as PNG and on the clipboard (so they also appear in history).
-  If ScreenCaptureKit is unavailable, capture falls back to the system
+  ScreenCaptureKit (instant, silent, ClipShot's own windows excluded).
+  Region selection happens on a **frozen frame** with a magnifier loupe,
+  live pixel-size label, and Shift-to-lock-square; `⌃⌥⌘R` recaptures the
+  exact previous region with no UI. Optional capture timer (3/5/10 s),
+  show-cursor and window-shadow settings. Window capture uses the native
+  macOS picker. Screenshots land on the Desktop and the clipboard. If
+  ScreenCaptureKit is unavailable, capture falls back to the system
   `screencapture` tool automatically.
+- **QR codes** — captures containing a QR code get a "copy its link" button
+  on the post-capture thumbnail.
+- **Before/after GIFs** — combine any capture with the previous one into a
+  looping two-frame GIF from the Captures tab.
+- **Contrast checker** — pick two colors in a row with the eyedropper and
+  ClipShot shows the WCAG contrast ratio and AA/AAA verdict.
 - **Copy text from screen (OCR)** — the Text button (or `⌃⌥⌘6`) lets you
   select any region; the text in it is recognized on-device with Apple's
   Vision framework and copied to the clipboard. Beeps if no text was found.
