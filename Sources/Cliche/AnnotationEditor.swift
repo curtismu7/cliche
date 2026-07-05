@@ -8,7 +8,7 @@ import SwiftUI
 enum AnnotationEditor {
     private static var window: NSWindow?
 
-    static func open(fileURL: URL) {
+    static func open(fileURL: URL, settings: AppSettings = AppSettings()) {
         guard let nsImage = NSImage(contentsOf: fileURL),
               let base = nsImage.cgImage(forProposedRect: nil, context: nil, hints: nil)
         else { return }
@@ -17,6 +17,7 @@ enum AnnotationEditor {
 
         let view = AnnotationEditorView(
             base: base,
+            settings: settings,
             onCopy: { flattened in
                 copyToClipboard(flattened)
             },
@@ -37,7 +38,7 @@ enum AnnotationEditor {
         let scale = min(1, maxSize.width / imageSize.width,
                         maxSize.height / imageSize.height)
         let contentSize = NSSize(
-            width: max(520, imageSize.width * scale),
+            width: max(520, imageSize.width * scale) + 288,  // + inspector
             height: imageSize.height * scale + 48)  // toolbar row
 
         let editorWindow = NSWindow(
@@ -86,8 +87,19 @@ private enum EditorTool: String, CaseIterable {
 
 struct AnnotationEditorView: View {
     let base: CGImage
+    let settings: AppSettings
     let onCopy: (CGImage) -> Void
     let onSave: (CGImage) -> Void
+
+    init(base: CGImage, settings: AppSettings,
+         onCopy: @escaping (CGImage) -> Void,
+         onSave: @escaping (CGImage) -> Void) {
+        self.base = base
+        self.settings = settings
+        self.onCopy = onCopy
+        self.onSave = onSave
+        _config = State(initialValue: settings.lastBeautifyConfig)
+    }
 
     @State private var tool: EditorTool = .arrow
     @State private var annotations: [Annotation] = []
@@ -95,7 +107,7 @@ struct AnnotationEditorView: View {
     @State private var nextCounter = 1
     @State private var pendingTextPoint: CGPoint?
     @State private var textInput = ""
-    @State private var backdrop: BeautifyStyle = .none
+    @State private var config: BeautifyConfig
     @State private var isRedacting = false
 
     private var flattened: CGImage {
@@ -106,7 +118,7 @@ struct AnnotationEditorView: View {
 
     /// What Copy/Save produce: annotations plus the chosen backdrop.
     private var exported: CGImage {
-        BeautifyRenderer.apply(backdrop, to: flattened) ?? flattened
+        BeautifyRenderer.render(config, to: flattened) ?? flattened
     }
 
     /// One-click blur over everything that looks sensitive (emails, links,
@@ -131,14 +143,19 @@ struct AnnotationEditorView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            toolbar
-            Divider()
-            GeometryReader { geometry in
-                canvas(in: geometry.size)
+        HStack(spacing: 0) {
+            VStack(spacing: 0) {
+                toolbar
+                Divider()
+                GeometryReader { geometry in
+                    canvas(in: geometry.size)
+                }
+                .background(Color(nsColor: .underPageBackgroundColor))
             }
-            .background(Color(nsColor: .underPageBackgroundColor))
+            Divider()
+            BeautifyInspector(config: $config, settings: settings)
         }
+        .onChange(of: config) { settings.lastBeautifyConfig = config }
         .sheet(isPresented: Binding(
             get: { pendingTextPoint != nil },
             set: { if !$0 { pendingTextPoint = nil } }
@@ -184,14 +201,6 @@ struct AnnotationEditorView: View {
             .disabled(isRedacting)
             .help("Auto-redact sensitive text (emails, links, phone numbers, keys)")
 
-            Picker("Backdrop", selection: $backdrop) {
-                ForEach(BeautifyStyle.allCases, id: \.self) { style in
-                    Text(style.label).tag(style)
-                }
-            }
-            .fixedSize()
-            .help("Gradient backdrop with padding, rounded corners, and shadow")
-
             Spacer()
 
             Button("Copy") { onCopy(exported) }
@@ -205,23 +214,49 @@ struct AnnotationEditorView: View {
     }
 
     private func canvas(in available: CGSize) -> some View {
-        let imageWidth = CGFloat(base.width)
-        let imageHeight = CGFloat(base.height)
-        let scale = min(available.width / imageWidth, available.height / imageHeight)
-        let displayed = CGSize(width: imageWidth * scale, height: imageHeight * scale)
+        let display = exported
+        let baseW = CGFloat(flattened.width), baseH = CGFloat(flattened.height)
+        // For "None", `exported` is the untouched flattened image, so geometry
+        // must be identity too — layout() would otherwise report a padded size.
+        let identity = config.isIdentity
+        let crop = identity
+            ? CGRect(x: 0, y: 0, width: baseW, height: baseH)
+            : BeautifyRenderer.sourceCrop(config, in: flattened)
+        let croppedSize = CGSize(width: crop.width, height: crop.height)
+        let l = identity
+            ? BeautifyRenderer.BeautifyLayout(
+                outputSize: CGSize(width: baseW, height: baseH),
+                screenshotRect: CGRect(x: 0, y: 0, width: baseW, height: baseH))
+            : BeautifyRenderer.layout(config, croppedSize: croppedSize)
+        let outW = l.outputSize.width, outH = l.outputSize.height
+        let scale = min(available.width / outW, available.height / outH)
+        let displayed = CGSize(width: outW * scale, height: outH * scale)
         let origin = CGPoint(
             x: (available.width - displayed.width) / 2,
             y: (available.height - displayed.height) / 2)
+        let shot = l.screenshotRect  // output pixels, bottom-left origin
 
+        // Map a SwiftUI view point (top-left origin) to base-image pixels in
+        // bottom-left origin (what Annotation coordinates use), routing through
+        // the beautify layout so gestures land on the screenshot, not padding.
         func imagePoint(_ viewPoint: CGPoint) -> CGPoint {
-            CGPoint(
-                x: min(max((viewPoint.x - origin.x) / scale, 0), imageWidth),
-                y: min(max(imageHeight - (viewPoint.y - origin.y) / scale, 0), imageHeight))
+            let outX = (viewPoint.x - origin.x) / scale
+            let outYFromBottom = outH - (viewPoint.y - origin.y) / scale
+            let sx = shot.width / croppedSize.width
+            let sy = shot.height / croppedSize.height
+            let cropX = (outX - shot.minX) / sx
+            let cropYFromBottom = (outYFromBottom - shot.minY) / sy
+            // crop is top-left origin; convert to base bottom-left origin.
+            let baseX = crop.minX + cropX
+            let baseYFromBottom = baseH - crop.maxY + cropYFromBottom
+            return CGPoint(
+                x: min(max(baseX, 0), baseW),
+                y: min(max(baseYFromBottom, 0), baseH))
         }
 
         return Image(nsImage: NSImage(
-            cgImage: flattened,
-            size: NSSize(width: imageWidth, height: imageHeight)))
+            cgImage: display,
+            size: NSSize(width: outW, height: outH)))
             .resizable()
             .interpolation(.high)
             .frame(width: displayed.width, height: displayed.height)

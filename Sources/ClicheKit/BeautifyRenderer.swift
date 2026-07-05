@@ -100,6 +100,10 @@ public enum BeautifyRenderer {
     public struct BeautifyLayout: Equatable {
         public var outputSize: CGSize
         public var screenshotRect: CGRect
+        public init(outputSize: CGSize, screenshotRect: CGRect) {
+            self.outputSize = outputSize
+            self.screenshotRect = screenshotRect
+        }
     }
 
     /// Where the (possibly trimmed) screenshot lands and how big the output is.
