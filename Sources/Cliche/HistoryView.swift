@@ -30,6 +30,7 @@ struct HistoryView: View {
     let onPasteSnippet: (SnippetsStore.Snippet) -> Void
     let onCapture: (CaptureMode) -> Void
     let onCaptureText: () -> Void
+    let onAllInOne: () -> Void
     let onPickColor: () -> Void
     let onRepeatRegion: () -> Void
     let onRuler: () -> Void
@@ -409,6 +410,10 @@ struct HistoryView: View {
                                settings.combo(for: .captureText).display,
                                "Copy text from screen (OCR)  \(settings.combo(for: .captureText).display)",
                                action: onCaptureText)
+                labeledCapture("square.grid.2x2",
+                               settings.combo(for: .allInOne).display,
+                               "All-in-one capture — mode strip  \(settings.combo(for: .allInOne).display)",
+                               action: onAllInOne)
                 Spacer()
             }
             HStack(spacing: 4) {

@@ -195,6 +195,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             onCapture: { [weak self] mode in self?.capture(mode) },
             onCaptureText: { [weak self] in self?.captureText() },
+            onAllInOne: { [weak self] in self?.startAllInOne() },
             onPickColor: { [weak self] in self?.pickColor() },
             onRepeatRegion: { [weak self] in
                 self?.closeAllPopovers()
