@@ -737,6 +737,66 @@ do {
     defaults.removePersistentDomain(forName: suite)
 }
 
+// allInOneModeTable
+do {
+    expect(AllInOneMode.allCases == [.region, .window, .fullScreen, .ocr],
+        "all-in-one modes in strip order")
+    expect(AllInOneMode.allCases.map(\.keyEquivalent) == ["1", "2", "3", "4"],
+        "key equivalents are 1-4 in strip order")
+    expect(AllInOneMode.mode(forKey: "2") == .window
+        && AllInOneMode.mode(forKey: "4") == .ocr
+        && AllInOneMode.mode(forKey: "9") == nil,
+        "mode(forKey:) maps 1-4 and rejects unknown keys")
+    expect(AllInOneMode.allCases.filter(\.switchesInPlace) == [.region, .ocr],
+        "region and OCR switch in place; window and full screen dismiss")
+    let labels = AllInOneMode.allCases.map(\.label)
+    expect(Set(labels).count == labels.count && labels.allSatisfy { !$0.isEmpty },
+        "mode labels are unique and non-empty")
+}
+
+// allInOneHotkey
+do {
+    let suite = "ClicheHotkeyTest-\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    let settings = AppSettings(defaults: defaults)
+
+    // Every action has a default combo, and no two defaults collide.
+    let combos = HotkeyAction.allCases.map { settings.combo(for: $0) }
+    let keys = combos.map { "\($0.keyCode)-\($0.carbonModifiers)" }
+    expect(HotkeyAction.allCases.contains(.allInOne), "allInOne is a hotkey action")
+    expect(Set(keys).count == keys.count, "no two default hotkeys collide")
+    expect(settings.combo(for: .allInOne).display == "⌃⌥⌘3",
+        "allInOne default is ⌃⌥⌘3")
+
+    // Conflict detection covers the new case.
+    let combo = settings.combo(for: .allInOne)
+    expect(settings.action(using: combo) == .allInOne,
+        "action(using:) finds allInOne — conflict warning covers it")
+    expect(!HotkeyAction.allInOne.label.isEmpty, "allInOne has a label")
+    defaults.removePersistentDomain(forName: suite)
+}
+
+// ocrFromCGImage
+do {
+    let width = 700, height = 100
+    let ctx = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+        bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(cgContext: ctx, flipped: false)
+    ctx.setFillColor(CGColor(gray: 1, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+    ("HELLO CLICHE 42" as NSString).draw(
+        at: NSPoint(x: 30, y: 30),
+        withAttributes: [.font: NSFont.boldSystemFont(ofSize: 40),
+                         .foregroundColor: NSColor.black])
+    NSGraphicsContext.restoreGraphicsState()
+    let image = ctx.makeImage()!
+    let text = (try? OCRService.recognizeText(in: image)) ?? ""
+    expect(text.contains("HELLO") && text.contains("42"),
+        "OCR recognizes text from a CGImage")
+}
+
 // sensitiveTextDetection
 do {
     let width = 900, height = 120

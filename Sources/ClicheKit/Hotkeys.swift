@@ -9,6 +9,7 @@ public enum HotkeyAction: String, CaseIterable, Codable {
     case captureText
     case repeatRegion
     case floatingList
+    case allInOne
 
     public var label: String {
         switch self {
@@ -18,6 +19,7 @@ public enum HotkeyAction: String, CaseIterable, Codable {
         case .captureText: return "Copy text from screen (OCR)"
         case .repeatRegion: return "Repeat last region"
         case .floatingList: return "Floating clipboard list"
+        case .allInOne: return "All-in-one capture"
         }
     }
 }
@@ -73,6 +75,8 @@ extension AppSettings {
             .floatingList: HotkeyCombo(
                 keyCode: UInt32(kVK_ANSI_1), carbonModifiers: UInt32(optionKey),
                 display: "⌥1"),
+            .allInOne: HotkeyCombo(
+                keyCode: UInt32(kVK_ANSI_3), carbonModifiers: base, display: "⌃⌥⌘3"),
         ]
     }()
 

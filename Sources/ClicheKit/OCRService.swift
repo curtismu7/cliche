@@ -19,6 +19,18 @@ public final class OCRService {
         return lines.joined(separator: "\n")
     }
 
+    /// CGImage variant used by the all-in-one overlay, which crops the
+    /// frozen frame directly instead of round-tripping through a file.
+    public static func recognizeText(in image: CGImage) throws -> String {
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+        try VNImageRequestHandler(cgImage: image).perform([request])
+        let lines = (request.results ?? [])
+            .compactMap { $0.topCandidates(1).first?.string }
+        return lines.joined(separator: "\n")
+    }
+
     /// Runs the native region picker, OCRs the selection, and puts the text
     /// on the clipboard. Beeps if nothing was recognized; does nothing if the
     /// user cancels. `onRecognized` runs on the main queue with the text.
