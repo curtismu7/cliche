@@ -8,6 +8,7 @@ public enum HotkeyAction: String, CaseIterable, Codable {
     case captureWindow
     case captureText
     case repeatRegion
+    case floatingList
 
     public var label: String {
         switch self {
@@ -16,6 +17,7 @@ public enum HotkeyAction: String, CaseIterable, Codable {
         case .captureWindow: return "Capture window"
         case .captureText: return "Copy text from screen (OCR)"
         case .repeatRegion: return "Repeat last region"
+        case .floatingList: return "Floating clipboard list"
         }
     }
 }
@@ -68,6 +70,9 @@ extension AppSettings {
                 keyCode: UInt32(kVK_ANSI_6), carbonModifiers: base, display: "⌃⌥⌘6"),
             .repeatRegion: HotkeyCombo(
                 keyCode: UInt32(kVK_ANSI_R), carbonModifiers: base, display: "⌃⌥⌘R"),
+            .floatingList: HotkeyCombo(
+                keyCode: UInt32(kVK_ANSI_1), carbonModifiers: UInt32(optionKey),
+                display: "⌥1"),
         ]
     }()
 

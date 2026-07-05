@@ -87,7 +87,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .captureWindow: capture(.window)
         case .captureText: captureText()
         case .repeatRegion: repeatLastRegion()
+        case .floatingList: toggleFloatingList()
         }
+    }
+
+    /// Maccy-style floating clipboard list at the mouse position.
+    private func toggleFloatingList() {
+        if FloatingListWindow.isVisible {
+            FloatingListWindow.close()
+            return
+        }
+        closeAllPopovers()
+        previousApp = NSWorkspace.shared.frontmostApplication
+        FloatingListWindow.show(content: makeHistoryView(layout: .clipboardOnly))
     }
 
     // MARK: Menu bar
@@ -150,6 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onCopy: { [weak self] item in
                 self?.monitor.copyToPasteboard(item)
                 self?.popover.performClose(nil)
+                FloatingListWindow.close()
             },
             onPaste: { [weak self] item in
                 self?.paste { self?.monitor.copyToPasteboard(item) }
@@ -158,6 +171,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self else { return }
                 self.setPasteboardString(self.snippetsStore.render(snippet))
                 self.popover.performClose(nil)
+                FloatingListWindow.close()
             },
             onPasteSnippet: { [weak self] snippet in
                 guard let self else { return }
@@ -211,6 +225,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func paste(_ populateClipboard: () -> Void) {
         populateClipboard()
         popover.performClose(nil)
+        FloatingListWindow.close()
         guard PasteService.isTrusted else {
             PasteService.requestTrust()
             return
