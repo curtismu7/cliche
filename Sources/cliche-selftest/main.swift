@@ -802,6 +802,45 @@ do {
         "screenshot keeps its position; bar space is added above")
 }
 
+// frameRendering
+do {
+    let w = 400, h = 300
+    let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8,
+        bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.setFillColor(CGColor(red: 0, green: 1, blue: 0, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+    let green = ctx.makeImage()!
+
+    var cfg = BeautifyConfig.gradient(RGBAColor(0, 0, 1), RGBAColor(0, 0, 1))
+    cfg.frame = .browserLight
+    cfg.frameURL = "cliche.app"
+    let out = BeautifyRenderer.render(cfg, to: green)!
+    let expected = BeautifyRenderer.layout(cfg, croppedSize: CGSize(width: w, height: h))
+    expect(out.width == Int(expected.outputSize.width.rounded())
+        && out.height == Int(expected.outputSize.height.rounded()),
+        "framed render matches layout dimensions")
+
+    // Sample the middle of the browser bar: above the screenshot top,
+    // horizontally centered — must be light chrome, not green screenshot
+    // and not the blue gradient.
+    let rep = NSBitmapImageRep(cgImage: out)
+    let barMidYFromBottom = expected.screenshotRect.maxY
+        + FrameRenderer.chromeInsets(.browserLight, minDimension: 300).top / 2
+    let sampleY = out.height - Int(barMidYFromBottom)  // rep is top-left origin
+    let color = rep.colorAt(x: out.width / 2, y: sampleY)!.usingColorSpace(.deviceRGB)!
+    expect(color.greenComponent < 0.9 && color.blueComponent > 0.3
+        && abs(color.redComponent - color.greenComponent) < 0.35,
+        "browser bar pixels are chrome-gray, not screenshot or gradient")
+
+    // Frame-only (no gradient) still renders enlarged output.
+    var frameOnly = BeautifyConfig.identity
+    frameOnly.frame = .phone
+    let bezel = BeautifyRenderer.render(frameOnly, to: green)!
+    expect(bezel.width > w && bezel.height > h,
+        "frame-only config renders enlarged (not identity passthrough)")
+}
+
 // allInOneModeTable
 do {
     expect(AllInOneMode.allCases == [.region, .window, .fullScreen, .ocr],

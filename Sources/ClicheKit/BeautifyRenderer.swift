@@ -101,15 +101,20 @@ public enum BeautifyRenderer {
 
         let shot = l.screenshotRect
         let shotMin = min(shot.width, shot.height)
+        let chrome = FrameRenderer.chromeInsets(config.frame, minDimension: shotMin)
+        let chromePlate = CGRect(
+            x: shot.minX - chrome.left, y: shot.minY - chrome.bottom,
+            width: shot.width + chrome.left + chrome.right,
+            height: shot.height + chrome.top + chrome.bottom)
         let cornerRadius = config.cornerRadius * shotMin
         let insetW = (config.inset?.width ?? 0) * shotMin
-        let matte = shot.insetBy(dx: -insetW, dy: -insetW)
+        let matte = chromePlate.insetBy(dx: -insetW, dy: -insetW)
         let plateRadius = cornerRadius + insetW
         let platePath = CGPath(roundedRect: matte,
                                cornerWidth: plateRadius, cornerHeight: plateRadius,
                                transform: nil)
 
-        // Shadow cast by an opaque plate under the (matte-expanded) screenshot.
+        // Shadow cast by an opaque plate under the whole framed unit.
         if config.shadow.opacity > 0 {
             ctx.saveGState()
             ctx.setShadow(
@@ -122,7 +127,7 @@ public enum BeautifyRenderer {
             ctx.restoreGState()
         }
 
-        // Inset matte fill (color band around the screenshot).
+        // Inset matte fill (color band around the framed unit).
         if let inset = config.inset, insetW > 0 {
             ctx.saveGState()
             ctx.addPath(platePath)
@@ -131,10 +136,18 @@ public enum BeautifyRenderer {
             ctx.restoreGState()
         }
 
-        // Screenshot clipped to its rounded rect.
-        let shotPath = CGPath(roundedRect: shot,
-                              cornerWidth: cornerRadius, cornerHeight: cornerRadius,
-                              transform: nil)
+        // Presentation chrome (browser/mac bar or device bezel).
+        FrameRenderer.draw(config.frame, urlText: config.frameURL,
+                           plateRect: chromePlate, screenshotRect: shot,
+                           cornerRadius: cornerRadius, in: ctx)
+
+        // Screenshot. Frameless: rounded to its own corners. Framed: square
+        // inside the chrome — the chrome plate carries the corner rounding.
+        let shotPath = config.frame == .none
+            ? CGPath(roundedRect: shot, cornerWidth: cornerRadius,
+                     cornerHeight: cornerRadius, transform: nil)
+            : CGPath(roundedRect: chromePlate, cornerWidth: cornerRadius,
+                     cornerHeight: cornerRadius, transform: nil)
         ctx.saveGState()
         ctx.addPath(shotPath)
         ctx.clip()
