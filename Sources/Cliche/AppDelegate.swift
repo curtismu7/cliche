@@ -100,6 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .captureText: captureText()
         case .repeatRegion: repeatLastRegion()
         case .floatingList: toggleFloatingList()
+        case .allInOne: startAllInOne()
         }
     }
 
@@ -301,6 +302,63 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             } catch {
                 NSLog("Cliche: freeze capture failed (\(error)); using CLI")
+                self.captureWithCLI(.region)
+            }
+        }
+    }
+
+    /// ⌃⌥⌘3 — frozen overlay with the Region/Window/Full Screen/OCR strip.
+    private func startAllInOne() {
+        closeAllPopovers()
+        let screen = Self.screenUnderMouse()
+        guard let displayID = screen.displayID else {
+            captureWithCLI(.region)
+            return
+        }
+        let scale = screen.backingScaleFactor
+        Task { @MainActor in
+            do {
+                let frozen = try await ScreenshotEngine.captureImage(
+                    displayID: displayID, scale: scale,
+                    showsCursor: settings.showCursor)
+                RegionSelector.begin(
+                    frozen: frozen, on: screen, allInOne: .region,
+                    onSelect: { [weak self] pixelRect, mode in
+                        guard let self, let cropped = frozen.cropping(to: pixelRect)
+                        else { return }
+                        switch mode {
+                        case .region:
+                            self.settings.lastRegion = (pixelRect, displayID)
+                            self.deliver(cropped)
+                        case .ocr:
+                            let text = (try? OCRService.recognizeText(in: cropped)) ?? ""
+                            if text.isEmpty {
+                                NSSound.beep()
+                            } else {
+                                let pasteboard = NSPasteboard.general
+                                pasteboard.clearContents()
+                                pasteboard.setString(text, forType: .string)
+                                InfoHUD.show("Text copied")
+                            }
+                        case .window, .fullScreen:
+                            break  // not in-place modes; routed via onSwitchAway
+                        }
+                    },
+                    onSwitchAway: { [weak self] mode in
+                        guard let self else { return }
+                        switch mode {
+                        case .window: self.performCapture(.window, on: screen)
+                        case .fullScreen:
+                            // Slight delay so the overlay is fully gone.
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                self.performCapture(.fullScreen, on: screen)
+                            }
+                        case .region, .ocr: break
+                        }
+                    },
+                    onCancel: { })
+            } catch {
+                NSLog("Cliche: all-in-one freeze failed (\(error)); using CLI region")
                 self.captureWithCLI(.region)
             }
         }

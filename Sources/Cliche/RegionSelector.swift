@@ -1,4 +1,6 @@
 import AppKit
+import ClicheKit
+import SwiftUI
 
 /// Full-screen region picker over a FROZEN frame of the display: the screen
 /// stops moving while you select, a magnifier loupe follows the cursor, the
@@ -23,6 +25,75 @@ final class RegionSelector {
         let selector = RegionSelector(completion: completion)
         active = selector
         selector.show(frozen: frozen, on: screen)
+    }
+
+    // MARK: All-in-one variant
+
+    private var mode: AllInOneMode = .region
+    private var onSelectMode: ((CGRect, AllInOneMode) -> Void)?
+    private var onSwitchAway: ((AllInOneMode) -> Void)?
+    private var onCancelAllInOne: (() -> Void)?
+    private var stripHost: NSHostingView<ModeStripView>?
+    private var isAllInOne: Bool { onSelectMode != nil }
+
+    /// All-in-one variant: same frozen-frame picker plus a mode strip.
+    /// Region/OCR select in place; Window/Full Screen call `onSwitchAway`
+    /// after the overlay is dismissed. Esc calls `onCancel`.
+    static func begin(
+        frozen: CGImage, on screen: NSScreen,
+        allInOne initialMode: AllInOneMode,
+        onSelect: @escaping (CGRect, AllInOneMode) -> Void,
+        onSwitchAway: @escaping (AllInOneMode) -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        guard active == nil else {
+            onCancel()
+            return
+        }
+        let selector = RegionSelector(completion: { _ in })
+        selector.mode = initialMode
+        selector.onSelectMode = onSelect
+        selector.onSwitchAway = onSwitchAway
+        selector.onCancelAllInOne = onCancel
+        active = selector
+        selector.show(frozen: frozen, on: screen)
+        selector.installStrip()
+    }
+
+    private func installStrip() {
+        guard isAllInOne, let window, let contentView = window.contentView else { return }
+        let host = NSHostingView(rootView: ModeStripView(
+            current: mode, onPick: { [weak self] in self?.switchMode(to: $0) }))
+        host.frame.size = host.fittingSize
+        host.frame.origin = NSPoint(
+            x: (contentView.bounds.width - host.frame.width) / 2,
+            y: contentView.bounds.height - host.frame.height - 24)
+        contentView.addSubview(host)
+        stripHost = host
+        (contentView as? SelectionView)?.onModeKey = { [weak self] key in
+            guard let mode = AllInOneMode.mode(forKey: key) else { return false }
+            self?.switchMode(to: mode)
+            return true
+        }
+    }
+
+    private func switchMode(to newMode: AllInOneMode) {
+        guard newMode != mode else { return }
+        if newMode.switchesInPlace {
+            mode = newMode
+            stripHost?.rootView = ModeStripView(
+                current: newMode, onPick: { [weak self] in self?.switchMode(to: $0) })
+        } else {
+            let handler = onSwitchAway
+            teardown()
+            handler?(newMode)
+        }
+    }
+
+    private func teardown() {
+        window?.orderOut(nil)
+        window = nil
+        Self.active = nil
     }
 
     private init(completion: @escaping (CGRect?) -> Void) {
@@ -56,19 +127,31 @@ final class RegionSelector {
     }
 
     private func finish(_ pixelRect: CGRect?) {
-        window?.orderOut(nil)
-        window = nil
-        Self.active = nil
+        let selectHandler = onSelectMode
+        let cancelHandler = onCancelAllInOne
+        let currentMode = mode
+        let wasAllInOne = isAllInOne
+        teardown()
         if let rect = pixelRect, rect.width >= 4, rect.height >= 4 {
-            completion(rect.integral)
+            if wasAllInOne {
+                selectHandler?(rect.integral, currentMode)
+            } else {
+                completion(rect.integral)
+            }
         } else {
-            completion(nil)
+            if wasAllInOne {
+                cancelHandler?()
+            } else {
+                completion(nil)
+            }
         }
     }
 }
 
 private final class SelectionView: NSView {
     var onFinish: ((CGRect?) -> Void)?
+    /// All-in-one mode keys (1–4); returns true if the key was handled.
+    var onModeKey: ((String) -> Bool)?
 
     private let frozen: CGImage
     private let frozenNSImage: NSImage
@@ -149,6 +232,11 @@ private final class SelectionView: NSView {
     override func keyDown(with event: NSEvent) {
         if event.keyCode == 53 {  // Esc
             onFinish?(nil)
+            return
+        }
+        if let characters = event.charactersIgnoringModifiers,
+           onModeKey?(characters) == true {
+            return
         }
     }
 
