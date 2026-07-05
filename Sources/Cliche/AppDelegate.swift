@@ -25,6 +25,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hotkeys = HotkeyManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSAppleEventManager.shared().setEventHandler(
+            self, andSelector: #selector(handleURLEvent(_:with:)),
+            forEventClass: AEEventClass(kInternetEventClass),
+            andEventID: AEEventID(kAEGetURL))
         let supportBase = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let appSupport = supportBase.appendingPathComponent("Cliche", isDirectory: true)
@@ -101,6 +105,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .repeatRegion: repeatLastRegion()
         case .floatingList: toggleFloatingList()
         case .allInOne: startAllInOne()
+        }
+    }
+
+    /// cliche:// automation entry point (Raycast, Shortcuts, `open`).
+    @objc private func handleURLEvent(
+        _ event: NSAppleEventDescriptor, with reply: NSAppleEventDescriptor
+    ) {
+        guard let string = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue,
+              let url = URL(string: string),
+              let command = URLCommand.parse(url)
+        else {
+            NSSound.beep()
+            return
+        }
+        switch command {
+        case .captureRegion: capture(.region)
+        case .captureWindow: capture(.window)
+        case .captureFullScreen: capture(.fullScreen)
+        case .allInOne: startAllInOne()
+        case .ocr: captureText()
+        case .repeatRegion: repeatLastRegion()
+        case .panel: togglePopover()
         }
     }
 

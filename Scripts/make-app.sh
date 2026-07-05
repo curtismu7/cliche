@@ -39,6 +39,17 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <true/>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>org.coachcurtis.cliche.url</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>cliche</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>
 PLIST

@@ -72,6 +72,22 @@ make install    # builds, installs to ~/Applications, launches
 
 The **?** button in the panel lists every in-panel shortcut; the **gear** opens Settings (menu bar style, history limits, image format, timer, hotkeys, launch at login, ignore rules).
 
+## Automation
+
+Drive Cliché from Raycast, Shortcuts, Alfred, or the terminal via its URL scheme:
+
+| URL | Action |
+| --- | --- |
+| `cliche://capture` (or `?mode=region`) | Capture a region |
+| `cliche://capture?mode=window` | Capture a window |
+| `cliche://capture?mode=fullscreen` | Capture the full screen |
+| `cliche://capture?mode=allinone` | All-in-one capture overlay |
+| `cliche://ocr` | Copy text from screen |
+| `cliche://repeat` | Repeat the last region |
+| `cliche://panel` | Open the clipboard panel |
+
+Example: `open "cliche://capture?mode=region"`
+
 ## Signing
 
 Cliché is ad-hoc signed — there's no Apple Developer certificate behind it, which is why Gatekeeper asks for a right-click → Open on first launch. The installer clears the quarantine flag for you. Build from source and there's no prompt at all.
