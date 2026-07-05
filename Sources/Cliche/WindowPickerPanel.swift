@@ -30,20 +30,32 @@ enum WindowPickerPanel {
                 onCapture: { selected in
                     window?.close()
                     window = nil
-                    // All selected windows must be on one display; use the
-                    // display containing the first window's center.
-                    let center = CGPoint(
-                        x: selected[0].frame.midX, y: selected[0].frame.midY)
-                    guard let display = content.displays.first(
-                        where: { $0.frame.contains(center) })
-                        ?? content.displays.first
+                    // One display per capture: pick the display overlapping
+                    // the selection the most, and tell the user about any
+                    // window that isn't on it (it would be silently cropped).
+                    func overlap(_ display: SCDisplay) -> CGFloat {
+                        selected.reduce(0) { total, w in
+                            let r = w.frame.intersection(display.frame)
+                            return total + (r.isNull ? 0 : r.width * r.height)
+                        }
+                    }
+                    guard let display = content.displays.max(
+                        by: { overlap($0) < overlap($1) })
                     else { return }
+                    let onDisplay = selected.filter {
+                        $0.frame.intersects(display.frame)
+                    }
+                    if onDisplay.count < selected.count {
+                        InfoHUD.show(
+                            "\(selected.count - onDisplay.count) window(s) on another display were left out")
+                    }
+                    guard !onDisplay.isEmpty else { return }
                     let scale = NSScreen.screens.first {
                         $0.displayID == display.displayID
                     }?.backingScaleFactor ?? 2
                     Task { @MainActor in
                         if let image = try? await ScreenshotEngine.captureWindows(
-                            selected, display: display, scale: scale) {
+                            onDisplay, display: display, scale: scale) {
                             onCapture(image)
                         } else {
                             InfoHUD.show("Multi-window capture failed")

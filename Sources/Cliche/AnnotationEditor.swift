@@ -122,6 +122,9 @@ struct AnnotationEditorView: View {
     let settings: AppSettings
     let onCopy: (CGImage) -> Void
     let onSave: (CGImage, [Annotation], BeautifyConfig) -> Void
+    /// A reopened project's config is that capture's look, not the user's
+    /// global default — don't let edits here clobber lastBeautifyConfig.
+    private let configCameFromProject: Bool
 
     init(base: CGImage, settings: AppSettings,
          project: AnnotationProject? = nil,
@@ -132,6 +135,7 @@ struct AnnotationEditorView: View {
         self.onCopy = onCopy
         self.onSave = onSave
         _config = State(initialValue: project?.config ?? settings.lastBeautifyConfig)
+        self.configCameFromProject = project != nil
         _annotations = State(initialValue: project?.annotations ?? [])
         let highestCounter = (project?.annotations ?? []).compactMap {
             if case .counter(let n) = $0.kind { return n } else { return nil }
@@ -193,7 +197,9 @@ struct AnnotationEditorView: View {
             Divider()
             BeautifyInspector(config: $config, settings: settings)
         }
-        .onChange(of: config) { settings.lastBeautifyConfig = config }
+        .onChange(of: config) {
+            if !configCameFromProject { settings.lastBeautifyConfig = config }
+        }
         .sheet(isPresented: Binding(
             get: { pendingTextPoint != nil },
             set: { if !$0 { pendingTextPoint = nil } }
@@ -252,14 +258,20 @@ struct AnnotationEditorView: View {
     }
 
     private func canvas(in available: CGSize) -> some View {
-        let display = exported
-        let baseW = CGFloat(flattened.width), baseH = CGFloat(flattened.height)
-        // For "None", `exported` is the untouched flattened image, so geometry
+        // Render ONCE per body evaluation: `flattened`/`exported` are
+        // computed properties, and every extra access is a full-resolution
+        // re-render — ruinous during freehand drags on Retina captures.
+        let flat = flattened
+        let display = config.isIdentity
+            ? flat
+            : (BeautifyRenderer.render(config, to: flat) ?? flat)
+        let baseW = CGFloat(flat.width), baseH = CGFloat(flat.height)
+        // For "None", `display` is the untouched flattened image, so geometry
         // must be identity too — layout() would otherwise report a padded size.
         let identity = config.isIdentity
         let crop = identity
             ? CGRect(x: 0, y: 0, width: baseW, height: baseH)
-            : BeautifyRenderer.sourceCrop(config, in: flattened)
+            : BeautifyRenderer.sourceCrop(config, in: flat)
         let croppedSize = CGSize(width: crop.width, height: crop.height)
         let l = identity
             ? BeautifyRenderer.BeautifyLayout(

@@ -2,6 +2,12 @@ import AppKit
 import ClicheKit
 import SwiftUI
 
+/// Borderless windows refuse key status by default, which would silence
+/// keyDown (Esc, the 1–4 mode keys) in the capture overlays.
+final class KeyableOverlayWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+}
+
 /// Full-screen region picker over a FROZEN frame of the display: the screen
 /// stops moving while you select, a magnifier loupe follows the cursor, the
 /// live size label shows pixel dimensions, and holding Shift locks the
@@ -94,6 +100,11 @@ final class RegionSelector {
         window?.orderOut(nil)
         window = nil
         Self.active = nil
+        // A tracking mouseUp can straggle in after Esc/mode-switch; without
+        // this it would deliver a capture that was already cancelled.
+        onSelectMode = nil
+        onSwitchAway = nil
+        onCancelAllInOne = nil
     }
 
     private init(completion: @escaping (CGRect?) -> Void) {
@@ -101,7 +112,7 @@ final class RegionSelector {
     }
 
     private func show(frozen: CGImage, on screen: NSScreen) {
-        let window = NSWindow(
+        let window = KeyableOverlayWindow(
             contentRect: screen.frame,
             styleMask: .borderless,
             backing: .buffered,
@@ -127,6 +138,7 @@ final class RegionSelector {
     }
 
     private func finish(_ pixelRect: CGRect?) {
+        guard Self.active === self else { return }  // already torn down
         let selectHandler = onSelectMode
         let cancelHandler = onCancelAllInOne
         let currentMode = mode

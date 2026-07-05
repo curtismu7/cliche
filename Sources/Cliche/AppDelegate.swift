@@ -24,11 +24,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let ocrService = OCRService()
     private let hotkeys = HotkeyManager()
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // The launch-triggering GetURL event arrives BEFORE
+        // applicationDidFinishLaunching — register here or cold-launch
+        // cliche:// URLs are silently dropped.
         NSAppleEventManager.shared().setEventHandler(
             self, andSelector: #selector(handleURLEvent(_:with:)),
             forEventClass: AEEventClass(kInternetEventClass),
             andEventID: AEEventID(kAEGetURL))
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
         let supportBase = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let appSupport = supportBase.appendingPathComponent("Cliche", isDirectory: true)

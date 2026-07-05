@@ -17,7 +17,7 @@ final class RulerOverlay {
     }
 
     private func show(frozen: CGImage, measure: EdgeMeasure, on screen: NSScreen) {
-        let window = NSWindow(
+        let window = KeyableOverlayWindow(
             contentRect: screen.frame,
             styleMask: .borderless,
             backing: .buffered,
