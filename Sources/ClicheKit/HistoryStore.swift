@@ -47,6 +47,12 @@ public final class HistoryStore {
         insert(ClipItem(id: UUID(), date: Date(), kind: .image(fileName: fileName, sha256: sha)))
     }
 
+    /// On-disk URL of an image item's PNG (for opening in the editor).
+    public func imageFileURL(for item: ClipItem) -> URL? {
+        guard case .image(let fileName, _) = item.kind else { return nil }
+        return imagesDirectory.appendingPathComponent(fileName)
+    }
+
     public func imageData(for item: ClipItem) -> Data? {
         guard case .image(let fileName, _) = item.kind else { return nil }
         return try? Data(contentsOf: imagesDirectory.appendingPathComponent(fileName))

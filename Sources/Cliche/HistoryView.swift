@@ -43,11 +43,24 @@ struct HistoryView: View {
     @State private var editText = ""
     @FocusState private var searchFocused: Bool
 
-    /// Pinned first, then recent, both fuzzy-filtered — the order rows render
-    /// in, shared by mouse and keyboard selection.
+    /// Pinned first, then recent, both fuzzy-filtered.
     private var visibleItems: [ClipItem] {
         let filtered = FuzzyMatcher.filter(store.items, query: query)
         return filtered.filter(\.pinned) + filtered.filter { !$0.pinned }
+    }
+
+    /// Vertical list + keyboard navigation operate on text items.
+    private var textItems: [ClipItem] {
+        visibleItems.filter { if case .text = $0.kind { return true }; return false }
+    }
+
+    /// Images render as a horizontal strip above the text list.
+    private var imageItems: [ClipItem] {
+        visibleItems.filter { if case .image = $0.kind { return true }; return false }
+    }
+
+    private func openPreview(_ item: ClipItem) {
+        PreviewWindow.show(item: item, store: store, onCopy: { onCopy(item) })
     }
 
     private var availableTabs: [Tab] {
@@ -152,16 +165,42 @@ struct HistoryView: View {
     private var clipboardTab: some View {
         VStack(spacing: 0) {
             searchField
-            if visibleItems.isEmpty {
+            if !imageItems.isEmpty {
+                imageStrip
+                Divider()
+            }
+            if textItems.isEmpty && imageItems.isEmpty {
                 emptyState
             } else {
                 itemList
             }
             Text("↩ copy · ⌥↩ paste into app · ⌘1–9 quick copy · ⌘⌫ delete · ⌘P pin")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
                 .padding(.vertical, 4)
         }
+    }
+
+    /// Horizontal row of image clips: click copies, ⌥-click pastes; hover
+    /// buttons preview, pin, and delete.
+    private var imageStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: 6) {
+                ForEach(imageItems) { item in
+                    ImageStripCell(
+                        item: item,
+                        imageData: { store.imageData(for: item) },
+                        onCopy: { onCopy(item) },
+                        onPaste: { onPaste(item) },
+                        onPreview: { openPreview(item) },
+                        onPin: { store.togglePin(item) },
+                        onDelete: { store.remove(item) })
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+        }
+        .frame(height: 84)
     }
 
     private var searchField: some View {
@@ -172,19 +211,19 @@ struct HistoryView: View {
                 .textFieldStyle(.plain)
                 .focused($searchFocused)
                 .onSubmit {
-                    guard visibleItems.indices.contains(selectedIndex) else { return }
-                    onCopy(visibleItems[selectedIndex])
+                    guard textItems.indices.contains(selectedIndex) else { return }
+                    onCopy(textItems[selectedIndex])
                 }
                 .onKeyPress(.return) {
                     // ⌥Return pastes into the previous app; plain Return
                     // falls through to onSubmit (copy).
                     guard NSEvent.modifierFlags.contains(.option) else { return .ignored }
-                    guard visibleItems.indices.contains(selectedIndex) else { return .handled }
-                    onPaste(visibleItems[selectedIndex])
+                    guard textItems.indices.contains(selectedIndex) else { return .handled }
+                    onPaste(textItems[selectedIndex])
                     return .handled
                 }
                 .onKeyPress(.downArrow) {
-                    selectedIndex = min(selectedIndex + 1, visibleItems.count - 1)
+                    selectedIndex = min(selectedIndex + 1, textItems.count - 1)
                     return .handled
                 }
                 .onKeyPress(.upArrow) {
@@ -206,7 +245,7 @@ struct HistoryView: View {
             Spacer()
             Image(systemName: query.isEmpty ? "doc.on.clipboard" : "magnifyingglass")
                 .font(.largeTitle)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
             Text(query.isEmpty ? "Clipboard history appears here" : "No matches")
                 .foregroundStyle(.secondary)
             Spacer()
@@ -218,14 +257,14 @@ struct HistoryView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 2) {
-                    ForEach(Array(visibleItems.enumerated()), id: \.element.id) { index, item in
+                    ForEach(Array(textItems.enumerated()), id: \.element.id) { index, item in
                         ItemRow(
                             item: item,
                             isSelected: index == selectedIndex,
                             shortcutNumber: index < 9 ? index + 1 : nil,
-                            imageData: { store.imageData(for: item) },
                             onCopy: { onCopy(item) },
                             onPaste: { onPaste(item) },
+                            onPreview: { openPreview(item) },
                             onEdit: {
                                 if case .text(let text) = item.kind {
                                     editText = text
@@ -233,12 +272,6 @@ struct HistoryView: View {
                                 }
                             },
                             onPin: { store.togglePin(item) },
-                            onFloat: {
-                                if let data = store.imageData(for: item),
-                                   let image = NSImage(data: data) {
-                                    FloatingImageWindow.show(image: image)
-                                }
-                            },
                             onDelete: { store.remove(item) }
                         )
                         .id(item.id)
@@ -247,8 +280,8 @@ struct HistoryView: View {
                 .padding(6)
             }
             .onChange(of: selectedIndex) {
-                guard visibleItems.indices.contains(selectedIndex) else { return }
-                proxy.scrollTo(visibleItems[selectedIndex].id)
+                guard textItems.indices.contains(selectedIndex) else { return }
+                proxy.scrollTo(textItems[selectedIndex].id)
             }
         }
     }
@@ -261,32 +294,32 @@ struct HistoryView: View {
                 VStack(spacing: 1) {
                     CaptureButton(symbol: "rectangle.dashed") { onCapture(.region) }
                         .help("Capture region  ⌃⌥⌘4")
-                    Text("⌃⌥⌘4").font(.system(size: 8)).foregroundStyle(.tertiary)
+                    Text("⌃⌥⌘4").font(.system(size: 9, weight: .medium)).foregroundStyle(.secondary)
                 }
                 VStack(spacing: 1) {
                     CaptureButton(symbol: "arrow.counterclockwise.square", action: onRepeatRegion)
                         .help("Repeat last region  ⌃⌥⌘R")
-                    Text("⌃⌥⌘R").font(.system(size: 8)).foregroundStyle(.tertiary)
+                    Text("⌃⌥⌘R").font(.system(size: 9, weight: .medium)).foregroundStyle(.secondary)
                 }
                 VStack(spacing: 1) {
                     CaptureButton(symbol: "macwindow") { onCapture(.window) }
                         .help("Capture window  ⌃⌥⌘5")
-                    Text("⌃⌥⌘5").font(.system(size: 8)).foregroundStyle(.tertiary)
+                    Text("⌃⌥⌘5").font(.system(size: 9, weight: .medium)).foregroundStyle(.secondary)
                 }
                 VStack(spacing: 1) {
                     CaptureButton(symbol: "display") { onCapture(.fullScreen) }
                         .help("Capture full screen")
-                    Text("screen").font(.system(size: 8)).foregroundStyle(.tertiary)
+                    Text("screen").font(.system(size: 9, weight: .medium)).foregroundStyle(.secondary)
                 }
                 VStack(spacing: 1) {
                     CaptureButton(symbol: "text.viewfinder", action: onCaptureText)
                         .help("Copy text from screen (OCR)  ⌃⌥⌘6")
-                    Text("⌃⌥⌘6").font(.system(size: 8)).foregroundStyle(.tertiary)
+                    Text("⌃⌥⌘6").font(.system(size: 9, weight: .medium)).foregroundStyle(.secondary)
                 }
                 VStack(spacing: 1) {
                     CaptureButton(symbol: "eyedropper", action: onPickColor)
                         .help("Pick a color — hex + contrast checker")
-                    Text("color").font(.system(size: 8)).foregroundStyle(.tertiary)
+                    Text("color").font(.system(size: 9, weight: .medium)).foregroundStyle(.secondary)
                 }
                 Spacer()
             }
@@ -347,20 +380,20 @@ struct HistoryView: View {
             ForEach(1...9, id: \.self) { number in
                 Button("") {
                     let index = number - 1
-                    guard visibleItems.indices.contains(index) else { return }
-                    onCopy(visibleItems[index])
+                    guard textItems.indices.contains(index) else { return }
+                    onCopy(textItems[index])
                 }
                 .keyboardShortcut(KeyEquivalent(Character("\(number)")), modifiers: .command)
             }
             Button("") {
-                guard visibleItems.indices.contains(selectedIndex) else { return }
-                store.remove(visibleItems[selectedIndex])
-                selectedIndex = min(selectedIndex, max(visibleItems.count - 2, 0))
+                guard textItems.indices.contains(selectedIndex) else { return }
+                store.remove(textItems[selectedIndex])
+                selectedIndex = min(selectedIndex, max(textItems.count - 2, 0))
             }
             .keyboardShortcut(.delete, modifiers: .command)
             Button("") {
-                guard visibleItems.indices.contains(selectedIndex) else { return }
-                store.togglePin(visibleItems[selectedIndex])
+                guard textItems.indices.contains(selectedIndex) else { return }
+                store.togglePin(textItems[selectedIndex])
             }
             .keyboardShortcut("p", modifiers: .command)
         }
@@ -393,35 +426,26 @@ private struct ItemRow: View {
     let item: ClipItem
     let isSelected: Bool
     let shortcutNumber: Int?
-    let imageData: () -> Data?
     let onCopy: () -> Void
     let onPaste: () -> Void
+    let onPreview: () -> Void
     let onEdit: () -> Void
     let onPin: () -> Void
-    let onFloat: () -> Void
     let onDelete: () -> Void
 
     @State private var isHovering = false
-
-    private var isImage: Bool {
-        if case .image = item.kind { return true }
-        return false
-    }
 
     var body: some View {
         HStack(spacing: 8) {
             content
             Spacer(minLength: 4)
             if isHovering {
+                RowButton(symbol: "eye", help: "Preview", action: onPreview)
                 RowButton(
                     symbol: "arrow.turn.down.left",
                     help: "Paste into previous app (⌥Return)",
                     action: onPaste)
-                if isImage {
-                    RowButton(symbol: "pip", help: "Float on top", action: onFloat)
-                } else {
-                    RowButton(symbol: "pencil", help: "Edit text", action: onEdit)
-                }
+                RowButton(symbol: "pencil", help: "Edit text", action: onEdit)
                 RowButton(
                     symbol: item.pinned ? "pin.slash" : "pin",
                     help: item.pinned ? "Unpin" : "Pin",
@@ -435,13 +459,13 @@ private struct ItemRow: View {
                 }
                 if let number = shortcutNumber {
                     Text("⌘\(number)")
-                        .font(.caption2.monospaced())
-                        .foregroundStyle(.tertiary)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
                 }
             }
         }
         .padding(.horizontal, 7)
-        .padding(.vertical, 4)
+        .padding(.vertical, 5)
         .background(
             RoundedRectangle(cornerRadius: 5)
                 .fill(isSelected
@@ -462,29 +486,78 @@ private struct ItemRow: View {
 
     @ViewBuilder
     private var content: some View {
-        switch item.kind {
-        case .text(let text):
+        if case .text(let text) = item.kind {
             Text(text.trimmingCharacters(in: .whitespacesAndNewlines)
                 .replacingOccurrences(of: "\n", with: " ⏎ "))
                 .lineLimit(1)
-                .font(.system(size: 13))
+                .font(.system(size: 14))
                 .frame(maxWidth: .infinity, alignment: .leading)
-        case .image:
-            if let data = imageData(), let nsImage = NSImage(data: data) {
-                Image(nsImage: nsImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxHeight: 38)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .clipShape(RoundedRectangle(cornerRadius: 3))
-            } else {
-                Label("Image unavailable", systemImage: "photo")
-                    .foregroundStyle(.secondary)
-            }
         }
     }
 }
 
+/// Cell in the horizontal image strip.
+private struct ImageStripCell: View {
+    let item: ClipItem
+    let imageData: () -> Data?
+    let onCopy: () -> Void
+    let onPaste: () -> Void
+    let onPreview: () -> Void
+    let onPin: () -> Void
+    let onDelete: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            if let data = imageData(), let nsImage = NSImage(data: data) {
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 100, height: 70)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.black.opacity(0.15)))
+            } else {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(.quaternary)
+                    .frame(width: 100, height: 70)
+                    .overlay(Image(systemName: "photo"))
+            }
+            if isHovering {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(.black.opacity(0.45))
+                    .frame(width: 100, height: 70)
+                HStack(spacing: 8) {
+                    RowButton(symbol: "eye", help: "Preview", action: onPreview)
+                    RowButton(
+                        symbol: item.pinned ? "pin.slash" : "pin",
+                        help: item.pinned ? "Unpin" : "Pin",
+                        action: onPin)
+                    RowButton(symbol: "trash", help: "Delete", action: onDelete)
+                }
+                .foregroundStyle(.white)
+                .frame(width: 100, height: 70)
+            } else if item.pinned {
+                Image(systemName: "pin.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .padding(4)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if NSEvent.modifierFlags.contains(.option) {
+                onPaste()
+            } else {
+                onCopy()
+            }
+        }
+        .onHover { isHovering = $0 }
+        .help("Click to copy · ⌥-click to paste")
+    }
+}
 private struct RowButton: View {
     let symbol: String
     let help: String
@@ -513,8 +586,8 @@ private struct SnippetsList: View {
         VStack(spacing: 0) {
             HStack {
                 Text("Click to copy · ⌥-click to paste · %DATE% %TIME% %CLIPBOARD%")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Spacer()
                 Button {
                     editing = SnippetsStore.Snippet(name: "", template: "")
@@ -531,7 +604,7 @@ private struct SnippetsList: View {
                     Spacer()
                     Image(systemName: "text.badge.plus")
                         .font(.largeTitle)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
                     Text("Reusable text templates live here")
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -632,8 +705,8 @@ private struct SnippetEditor: View {
                     RoundedRectangle(cornerRadius: 4)
                         .stroke(.quaternary))
             Text("Variables: %DATE%, %TIME%, %CLIPBOARD%")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }
@@ -669,12 +742,12 @@ private struct CapturesGrid: View {
                 Spacer()
                 Image(systemName: "camera")
                     .font(.largeTitle)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
                 Text("Screenshots you take appear here")
                     .foregroundStyle(.secondary)
                 Text("⌃⌥⌘4 for a region, or use the buttons above")
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
                 Spacer()
             }
             .frame(maxWidth: .infinity)
@@ -782,7 +855,7 @@ private struct CapturesGrid: View {
                     }
                 }
                 Text(CapturesGrid.dateFormat.string(from: capture.date))
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
             .onHover { isHovering = $0 }

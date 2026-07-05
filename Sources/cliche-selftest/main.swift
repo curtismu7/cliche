@@ -87,6 +87,17 @@ do {
         && store.imageData(for: store.items[0]) == pngData, "image round trip")
 }
 
+// imageFileURL
+do {
+    let store = HistoryStore(directory: makeTempDir())
+    store.addImage(pngData)
+    store.addText("not an image")
+    let url = store.imageFileURL(for: store.items[1])
+    expect(url != nil && FileManager.default.fileExists(atPath: url!.path)
+        && store.imageFileURL(for: store.items[0]) == nil,
+        "imageFileURL points at the stored PNG, nil for text")
+}
+
 // dedupesIdenticalImages
 do {
     let store = HistoryStore(directory: makeTempDir())
