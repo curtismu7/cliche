@@ -32,6 +32,9 @@ struct HistoryView: View {
     let onCaptureText: () -> Void
     let onPickColor: () -> Void
     let onRepeatRegion: () -> Void
+    let onRuler: () -> Void
+    let onScrollCapture: () -> Void
+    let onRecord: () -> Void
     let onQuit: () -> Void
 
     private enum Tab: String, CaseIterable {
@@ -134,7 +137,7 @@ struct HistoryView: View {
             Divider()
             footer
         }
-        .frame(width: 340, height: layout == .captureOnly ? 410 : 490)
+        .frame(width: 340, height: layout == .captureOnly ? 455 : (layout == .full ? 530 : 490))
         .background(Color.white)
         .environment(\.colorScheme, .light)
         .background(shortcutButtons)
@@ -295,44 +298,52 @@ struct HistoryView: View {
     // MARK: Chrome
 
     private var captureBar: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 4) {
-                VStack(spacing: 1) {
-                    CaptureButton(symbol: "rectangle.dashed") { onCapture(.region) }
-                        .help("Capture region  ⌃⌥⌘4")
-                    Text("⌃⌥⌘4").font(.system(size: 10, weight: .medium)).foregroundStyle(Color.ink)
+                labeledCapture("rectangle.dashed", "⌃⌥⌘4", "Capture region  ⌃⌥⌘4") {
+                    onCapture(.region)
                 }
-                VStack(spacing: 1) {
-                    CaptureButton(symbol: "arrow.counterclockwise.square", action: onRepeatRegion)
-                        .help("Repeat last region  ⌃⌥⌘R")
-                    Text("⌃⌥⌘R").font(.system(size: 10, weight: .medium)).foregroundStyle(Color.ink)
+                labeledCapture("arrow.counterclockwise.square", "⌃⌥⌘R",
+                               "Repeat last region  ⌃⌥⌘R", action: onRepeatRegion)
+                labeledCapture("macwindow", "⌃⌥⌘5", "Capture window  ⌃⌥⌘5") {
+                    onCapture(.window)
                 }
-                VStack(spacing: 1) {
-                    CaptureButton(symbol: "macwindow") { onCapture(.window) }
-                        .help("Capture window  ⌃⌥⌘5")
-                    Text("⌃⌥⌘5").font(.system(size: 10, weight: .medium)).foregroundStyle(Color.ink)
+                labeledCapture("display", "screen", "Capture full screen") {
+                    onCapture(.fullScreen)
                 }
-                VStack(spacing: 1) {
-                    CaptureButton(symbol: "display") { onCapture(.fullScreen) }
-                        .help("Capture full screen")
-                    Text("screen").font(.system(size: 10, weight: .medium)).foregroundStyle(Color.ink)
-                }
-                VStack(spacing: 1) {
-                    CaptureButton(symbol: "text.viewfinder", action: onCaptureText)
-                        .help("Copy text from screen (OCR)  ⌃⌥⌘6")
-                    Text("⌃⌥⌘6").font(.system(size: 10, weight: .medium)).foregroundStyle(Color.ink)
-                }
-                VStack(spacing: 1) {
-                    CaptureButton(symbol: "eyedropper", action: onPickColor)
-                        .help("Pick a color — hex + contrast checker")
-                    Text("color").font(.system(size: 10, weight: .medium)).foregroundStyle(Color.ink)
-                }
+                labeledCapture("text.viewfinder", "⌃⌥⌘6",
+                               "Copy text from screen (OCR)  ⌃⌥⌘6", action: onCaptureText)
+                Spacer()
+            }
+            HStack(spacing: 4) {
+                labeledCapture("eyedropper", "color",
+                               "Pick a color — hex + contrast checker", action: onPickColor)
+                labeledCapture("ruler", "ruler",
+                               "Pixel ruler — measure anything on screen", action: onRuler)
+                labeledCapture("rectangle.expand.vertical", "scroll",
+                               "Scrolling capture — you scroll, Cliché stitches",
+                               action: onScrollCapture)
+                labeledCapture("record.circle", "record",
+                               "Record region to MP4 (optional GIF)", action: onRecord)
                 Spacer()
             }
         }
         .padding(.horizontal, 8)
         .padding(.top, 8)
         .padding(.bottom, 4)
+    }
+
+    private func labeledCapture(
+        _ symbol: String, _ label: String, _ help: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        VStack(spacing: 1) {
+            CaptureButton(symbol: symbol, action: action)
+                .help(help)
+            Text(label)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(Color.ink)
+        }
     }
 
     private var footerCount: String {

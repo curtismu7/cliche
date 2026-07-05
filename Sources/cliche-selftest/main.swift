@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 import Foundation
 import ClicheKit
 
@@ -621,6 +622,131 @@ do {
     let clean = ctx.makeImage()!
     expect(SensitiveTextDetector.detect(in: clean).isEmpty,
         "sensitive detector quiet on blank image")
+}
+
+// edgeMeasure
+do {
+    // White canvas with a black rectangle x:50..149, y(top-left):40..109.
+    let ctx = CGContext(
+        data: nil, width: 200, height: 150, bitsPerComponent: 8, bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.setFillColor(CGColor(gray: 1, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 0, width: 200, height: 150))
+    ctx.setFillColor(CGColor(gray: 0, alpha: 1))
+    ctx.fill(CGRect(x: 50, y: 150 - 110, width: 100, height: 70))  // CG bottom-left
+    let image = ctx.makeImage()!
+
+    let measure = EdgeMeasure(image: image)!
+    let span = measure.span(x: 100, y: 75)!  // inside the black box (top-left coords)
+    let boxWidth = span.left + span.right + 1
+    let boxHeight = span.up + span.down + 1
+    expect((98...102).contains(boxWidth) && (68...72).contains(boxHeight),
+        "edge measure finds enclosing box \(boxWidth)x\(boxHeight)")
+    expect(measure.span(x: 500, y: 20) == nil, "edge measure rejects out-of-bounds")
+}
+
+// stitcher
+do {
+    // A tall, feature-rich source image; slice overlapping windows and expect
+    // the stitcher to reconstruct roughly the original height.
+    let tallW = 320, tallH = 1200
+    let ctx = CGContext(
+        data: nil, width: tallW, height: tallH, bitsPerComponent: 8, bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(cgContext: ctx, flipped: false)
+    ctx.setFillColor(CGColor(gray: 1, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 0, width: tallW, height: tallH))
+    for line in 0..<24 {
+        ("Line \(line) — lorem ipsum dolor \(line * 37)" as NSString).draw(
+            at: NSPoint(x: CGFloat(12 + (line % 5) * 8), y: CGFloat(line) * 50 + 8),
+            withAttributes: [
+                .font: NSFont.systemFont(ofSize: 20),
+                .foregroundColor: NSColor.black,
+            ])
+    }
+    NSGraphicsContext.restoreGraphicsState()
+    let tall = ctx.makeImage()!
+
+    // Windows of height 400 starting every 150 px from the top.
+    let frameH = 400
+    var frames: [CGImage] = []
+    var top = 0
+    while top + frameH <= tallH {
+        frames.append(tall.cropping(
+            to: CGRect(x: 0, y: top, width: tallW, height: frameH))!)
+        top += 150
+    }
+    let stitched = Stitcher.stitch(frames)
+    let heightOK = stitched.map { abs($0.height - tallH) <= 60 } ?? false
+    expect(stitched != nil && stitched!.width == tallW && heightOK,
+        "stitcher reconstructs tall image (got \(stitched?.height ?? 0) vs \(tallH))")
+    expect(Stitcher.stitch([]) == nil, "stitcher rejects empty input")
+}
+
+// videoToGIF (writes a tiny synthetic MP4, converts it to GIF)
+do {
+    let videoURL = makeTempDir().appendingPathComponent("test.mp4")
+    let width = 64, height = 64
+    let writer = try! AVAssetWriter(outputURL: videoURL, fileType: .mp4)
+    let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
+        AVVideoCodecKey: AVVideoCodecType.h264,
+        AVVideoWidthKey: width,
+        AVVideoHeightKey: height,
+    ])
+    let adaptor = AVAssetWriterInputPixelBufferAdaptor(
+        assetWriterInput: input,
+        sourcePixelBufferAttributes: [
+            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32ARGB,
+            kCVPixelBufferWidthKey as String: width,
+            kCVPixelBufferHeightKey as String: height,
+        ])
+    writer.add(input)
+    writer.startWriting()
+    writer.startSession(atSourceTime: .zero)
+
+    for frame in 0..<8 {
+        var buffer: CVPixelBuffer?
+        CVPixelBufferPoolCreatePixelBuffer(nil, adaptor.pixelBufferPool!, &buffer)
+        let pixelBuffer = buffer!
+        CVPixelBufferLockBaseAddress(pixelBuffer, [])
+        let ctx = CGContext(
+            data: CVPixelBufferGetBaseAddress(pixelBuffer),
+            width: width, height: height, bitsPerComponent: 8,
+            bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer),
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue)!
+        ctx.setFillColor(CGColor(
+            red: CGFloat(frame) / 8, green: 0.3, blue: 0.7, alpha: 1))
+        ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
+        while !input.isReadyForMoreMediaData { usleep(5000) }
+        adaptor.append(pixelBuffer, withPresentationTime:
+            CMTime(value: CMTimeValue(frame), timescale: 10))
+    }
+    input.markAsFinished()
+    let group = DispatchGroup()
+    group.enter()
+    writer.finishWriting { group.leave() }
+    group.wait()
+
+    var gif: Data?
+    let gifGroup = DispatchGroup()
+    gifGroup.enter()
+    Task {
+        gif = await VideoGIF.gifData(from: videoURL, fps: 8)
+        gifGroup.leave()
+    }
+    gifGroup.wait()
+
+    let frameCount = gif.flatMap {
+        CGImageSourceCreateWithData($0 as CFData, nil).map(CGImageSourceGetCount)
+    } ?? 0
+    expect(gif?.prefix(4).elementsEqual([0x47, 0x49, 0x46, 0x38]) == true
+        && frameCount >= 3,
+        "video converts to multi-frame GIF (\(frameCount) frames)")
 }
 
 // ocrRecognizesRenderedText

@@ -83,7 +83,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .combined:
             popover.contentViewController = NSHostingController(
                 rootView: makeHistoryView(layout: .full))
-            popover.contentSize = NSSize(width: 340, height: 490)
+            popover.contentSize = NSSize(width: 340, height: 530)
             clipboardItem = makeStatusItem(
                 symbol: "scissors.badge.ellipsis", description: "Cliché",
                 action: #selector(togglePopover))
@@ -93,7 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             popover.contentSize = NSSize(width: 340, height: 490)
             capturePopover.contentViewController = NSHostingController(
                 rootView: makeHistoryView(layout: .captureOnly))
-            capturePopover.contentSize = NSSize(width: 340, height: 410)
+            capturePopover.contentSize = NSSize(width: 340, height: 455)
             // Items added later sit further left; add capture first so the
             // clipboard icon stays in the accustomed spot.
             captureItem = makeStatusItem(
@@ -150,6 +150,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.closeAllPopovers()
                 self?.repeatLastRegion()
             },
+            onRuler: { [weak self] in self?.startRuler() },
+            onScrollCapture: { [weak self] in self?.startScrollingCapture() },
+            onRecord: { [weak self] in self?.startRecording() },
             onQuit: { NSApp.terminate(nil) }
         )
     }
@@ -347,6 +350,74 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 InfoHUD.show("\(hex) copied — pick another color for contrast")
             }
             self.lastPickedColor = color
+        }
+    }
+
+    /// Pixel ruler over a frozen frame of the current display.
+    private func startRuler() {
+        closeAllPopovers()
+        let screen = Self.screenUnderMouse()
+        guard let displayID = screen.displayID else { return }
+        Task { @MainActor in
+            if let frozen = try? await ScreenshotEngine.captureImage(
+                displayID: displayID, scale: screen.backingScaleFactor) {
+                RulerOverlay.begin(frozen: frozen, on: screen)
+            } else {
+                InfoHUD.show("Ruler needs the Screen Recording permission")
+            }
+        }
+    }
+
+    /// Panoramic capture: select a region, scroll the content, Done stitches.
+    private func startScrollingCapture() {
+        closeAllPopovers()
+        let screen = Self.screenUnderMouse()
+        guard let displayID = screen.displayID else { return }
+        let scale = screen.backingScaleFactor
+        Task { @MainActor in
+            guard let frozen = try? await ScreenshotEngine.captureImage(
+                displayID: displayID, scale: scale) else {
+                InfoHUD.show("Scrolling capture needs the Screen Recording permission")
+                return
+            }
+            RegionSelector.begin(frozen: frozen, on: screen) { [weak self] pixelRect in
+                guard let self, let pixelRect else { return }
+                ScrollingCapture.begin(
+                    displayID: displayID, pixelRect: pixelRect, scale: scale,
+                    showsCursor: false, on: screen
+                ) { stitched in
+                    self.deliver(stitched)
+                }
+            }
+        }
+    }
+
+    /// Region recording to MP4 (optional GIF), controlled by a floating HUD.
+    private func startRecording() {
+        closeAllPopovers()
+        guard !RecordingController.isRecording else {
+            InfoHUD.show("Already recording — use the Stop button")
+            return
+        }
+        let screen = Self.screenUnderMouse()
+        guard let displayID = screen.displayID else { return }
+        let scale = screen.backingScaleFactor
+        Task { @MainActor in
+            guard let frozen = try? await ScreenshotEngine.captureImage(
+                displayID: displayID, scale: scale) else {
+                InfoHUD.show("Recording needs the Screen Recording permission")
+                return
+            }
+            RegionSelector.begin(frozen: frozen, on: screen) { [weak self] pixelRect in
+                guard let self, let pixelRect else { return }
+                RecordingController.begin(
+                    displayID: displayID, pixelRect: pixelRect, scale: scale,
+                    showsCursor: self.settings.showCursor, on: screen
+                ) { url in
+                    self.capturesStore.add(path: url.path)
+                    InfoHUD.show("Recording saved to Desktop")
+                }
+            }
         }
     }
 
