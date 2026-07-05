@@ -485,6 +485,34 @@ do {
     defaults.removePersistentDomain(forName: suite)
 }
 
+// hotkeyCombos
+do {
+    let suite = "cliche-selftest-\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    let settings = AppSettings(defaults: defaults)
+    expect(settings.combo(for: .captureRegion).display == "⌃⌥⌘4"
+        && settings.combo(for: .togglePanel).display == "⌃⌥⌘C",
+        "hotkeys default to ⌃⌥⌘ set")
+
+    let custom = HotkeyCombo(
+        keyCode: 40,  // kVK_ANSI_K
+        carbonModifiers: HotkeyCombo.carbonModifiers(from: [.command, .shift]),
+        display: "⇧⌘K")
+    settings.setCombo(custom, for: .captureRegion)
+    let reloaded = AppSettings(defaults: defaults)
+    expect(reloaded.combo(for: .captureRegion) == custom
+        && reloaded.combo(for: .captureWindow).display == "⌃⌥⌘5",
+        "custom hotkey persists, others keep defaults")
+    expect(reloaded.action(using: custom) == .captureRegion,
+        "conflict lookup finds the owning action")
+    settings.setCombo(nil, for: .captureRegion)
+    expect(AppSettings(defaults: defaults).combo(for: .captureRegion).display == "⌃⌥⌘4",
+        "clearing a hotkey restores the default")
+    expect(HotkeyCombo.displaySymbols(for: [.control, .command]) == "⌃⌘",
+        "modifier symbols render in canonical order")
+    defaults.removePersistentDomain(forName: suite)
+}
+
 // annotationRenderer
 do {
     // 200x150 base: left half white, with black/white 1px vertical stripes

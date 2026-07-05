@@ -1,7 +1,10 @@
+import ClicheKit
 import SwiftUI
 
 /// Shortcuts & help sheet, opened from the ? button in the panel footer.
 struct HelpView: View {
+    let settings: AppSettings
+
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -17,13 +20,10 @@ struct HelpView: View {
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    section("Global Hotkeys (work anywhere)", rows: [
-                        ("⌃⌥⌘C", "Open / close this panel"),
-                        ("⌃⌥⌘4", "Capture a region"),
-                        ("⌃⌥⌘R", "Repeat the last region capture (no UI)"),
-                        ("⌃⌥⌘5", "Capture a window"),
-                        ("⌃⌥⌘6", "Copy text from screen (OCR)"),
-                    ])
+                    section("Global Hotkeys (customizable in Settings)",
+                        rows: HotkeyAction.allCases.map {
+                            (settings.combo(for: $0).display, $0.label)
+                        })
                     section("Region Selection", rows: [
                         ("frozen screen", "The display freezes while you select; a loupe magnifies pixels at the cursor"),
                         ("⇧ while dragging", "Lock the selection to a square"),

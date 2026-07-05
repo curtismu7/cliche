@@ -59,12 +59,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // ⌃⌥⌘: C panel, 4 region, 5 window, 6 OCR, R repeat last region
-        hotkeys.register(keyCode: kVK_ANSI_C) { [weak self] in self?.togglePopover() }
-        hotkeys.register(keyCode: kVK_ANSI_4) { [weak self] in self?.capture(.region) }
-        hotkeys.register(keyCode: kVK_ANSI_5) { [weak self] in self?.capture(.window) }
-        hotkeys.register(keyCode: kVK_ANSI_6) { [weak self] in self?.captureText() }
-        hotkeys.register(keyCode: kVK_ANSI_R) { [weak self] in self?.repeatLastRegion() }
+        registerHotkeys()
+        NotificationCenter.default.addObserver(
+            forName: AppSettings.hotkeysChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.registerHotkeys()
+        }
+    }
+
+    /// (Re)binds every global hotkey from settings.
+    private func registerHotkeys() {
+        hotkeys.unregisterAll()
+        for action in HotkeyAction.allCases {
+            let combo = settings.combo(for: action)
+            hotkeys.register(
+                keyCode: Int(combo.keyCode), modifiers: combo.carbonModifiers
+            ) { [weak self] in
+                self?.perform(action)
+            }
+        }
+    }
+
+    private func perform(_ action: HotkeyAction) {
+        switch action {
+        case .togglePanel: togglePopover()
+        case .captureRegion: capture(.region)
+        case .captureWindow: capture(.window)
+        case .captureText: captureText()
+        case .repeatRegion: repeatLastRegion()
+        }
     }
 
     // MARK: Menu bar

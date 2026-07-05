@@ -42,6 +42,15 @@ public final class HotkeyManager {
             &eventHandlerRef)
     }
 
+    /// Removes every registered hotkey (before re-registering from settings).
+    public func unregisterAll() {
+        for ref in hotKeyRefs {
+            if let ref { UnregisterEventHotKey(ref) }
+        }
+        hotKeyRefs.removeAll()
+        handlers.removeAll()
+    }
+
     @discardableResult
     public func register(
         keyCode: Int,

@@ -141,7 +141,7 @@ struct HistoryView: View {
         .background(Color.white)
         .environment(\.colorScheme, .light)
         .background(shortcutButtons)
-        .sheet(isPresented: $showingHelp) { HelpView() }
+        .sheet(isPresented: $showingHelp) { HelpView(settings: settings) }
         .sheet(isPresented: $showingSettings) {
             SettingsView(settings: settings, ignoreRulesURL: ignoreRulesURL)
         }
@@ -300,19 +300,27 @@ struct HistoryView: View {
     private var captureBar: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 4) {
-                labeledCapture("rectangle.dashed", "⌃⌥⌘4", "Capture region  ⌃⌥⌘4") {
+                labeledCapture("rectangle.dashed",
+                               settings.combo(for: .captureRegion).display,
+                               "Capture region  \(settings.combo(for: .captureRegion).display)") {
                     onCapture(.region)
                 }
-                labeledCapture("arrow.counterclockwise.square", "⌃⌥⌘R",
-                               "Repeat last region  ⌃⌥⌘R", action: onRepeatRegion)
-                labeledCapture("macwindow", "⌃⌥⌘5", "Capture window  ⌃⌥⌘5") {
+                labeledCapture("arrow.counterclockwise.square",
+                               settings.combo(for: .repeatRegion).display,
+                               "Repeat last region  \(settings.combo(for: .repeatRegion).display)",
+                               action: onRepeatRegion)
+                labeledCapture("macwindow",
+                               settings.combo(for: .captureWindow).display,
+                               "Capture window  \(settings.combo(for: .captureWindow).display)") {
                     onCapture(.window)
                 }
                 labeledCapture("display", "screen", "Capture full screen") {
                     onCapture(.fullScreen)
                 }
-                labeledCapture("text.viewfinder", "⌃⌥⌘6",
-                               "Copy text from screen (OCR)  ⌃⌥⌘6", action: onCaptureText)
+                labeledCapture("text.viewfinder",
+                               settings.combo(for: .captureText).display,
+                               "Copy text from screen (OCR)  \(settings.combo(for: .captureText).display)",
+                               action: onCaptureText)
                 Spacer()
             }
             HStack(spacing: 4) {

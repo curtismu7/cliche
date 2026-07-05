@@ -54,6 +54,8 @@ public final class AppSettings {
     }
 
     private let defaults: UserDefaults
+    /// Same store, exposed for the hotkeys extension.
+    var hotkeysDefaults: UserDefaults { defaults }
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
