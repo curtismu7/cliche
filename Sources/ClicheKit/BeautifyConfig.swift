@@ -102,7 +102,7 @@ public struct BeautifyConfig: Codable, Equatable {
         canvas: .free, autoBalance: false)
 
     /// Default look for a new gradient config (reproduces the old fixed look).
-    static func gradient(_ start: RGBAColor, _ end: RGBAColor) -> BeautifyConfig {
+    public static func gradient(_ start: RGBAColor, _ end: RGBAColor) -> BeautifyConfig {
         BeautifyConfig(
             background: .linear(start, end),
             padding: 0.09, inset: nil, cornerRadius: 0.017,

@@ -689,6 +689,57 @@ do {
     expect(CanvasSize.socialPresets.first == .free, "social presets start with .free")
 }
 
+// beautifyLayoutAndCrop
+do {
+    // layout: .free canvas → output is cropped size + 2·padding (no inset).
+    let cfg = BeautifyConfig.gradient(RGBAColor(0, 0, 1), RGBAColor(0, 1, 0))
+    let cropped = CGSize(width: 800, height: 600)
+    let L = BeautifyRenderer.layout(cfg, croppedSize: cropped)
+    let pad = 0.09 * 600.0
+    expect(abs(L.outputSize.width - (800 + 2 * pad)) < 0.5
+        && abs(L.outputSize.height - (600 + 2 * pad)) < 0.5,
+        "free layout = cropped size + 2·padding")
+    expect(abs(L.screenshotRect.origin.x - pad) < 0.5
+        && abs(L.screenshotRect.width - 800) < 0.5,
+        "free layout centers screenshot inside padding")
+
+    // layout: fixed canvas → output is EXACTLY the target size.
+    var fixedCfg = cfg
+    fixedCfg.canvas = .fixed(width: 1600, height: 900, label: "X")
+    let F = BeautifyRenderer.layout(fixedCfg, croppedSize: cropped)
+    expect(F.outputSize == CGSize(width: 1600, height: 900),
+        "fixed layout output equals exact target size")
+    expect(F.screenshotRect.midX == 800 && F.screenshotRect.midY == 450,
+        "fixed layout centers screenshot in canvas")
+
+    // sourceCrop: auto-balance trims a uniform border to the inner block.
+    let bw = 200, bh = 160
+    let bctx = CGContext(data: nil, width: bw, height: bh, bitsPerComponent: 8,
+        bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    bctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+    bctx.fill(CGRect(x: 0, y: 0, width: bw, height: bh))
+    bctx.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1))
+    bctx.fill(CGRect(x: 40, y: 30, width: 100, height: 80))  // inner red block
+    let bordered = bctx.makeImage()!
+    var balCfg = cfg
+    balCfg.autoBalance = true
+    let crop = BeautifyRenderer.sourceCrop(balCfg, in: bordered)
+    expect(crop.width <= 108 && crop.width >= 96
+        && crop.height <= 88 && crop.height >= 76,
+        "auto-balance trims uniform margins to the inner block (±1 row/col)")
+
+    // render: identity returns the image unchanged.
+    let idImg = bctx.makeImage()!
+    let out = BeautifyRenderer.render(.identity, to: idImg)
+    expect(out?.width == bw && out?.height == bh, "render identity leaves image unchanged")
+
+    // render: fixed canvas produces exactly the target pixel size.
+    let styled = BeautifyRenderer.render(fixedCfg, to: idImg)
+    expect(styled?.width == 1600 && styled?.height == 900,
+        "render fixed canvas outputs exact target pixel size")
+}
+
 // sensitiveTextDetection
 do {
     let width = 900, height = 120
