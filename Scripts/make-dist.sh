@@ -41,6 +41,20 @@ EOF
 ZIP="build/Cliche-$VERSION.zip"
 rm -f "$ZIP"
 ditto -c -k --keepParent "$STAGE" "$ZIP"
+
+# DMG: the familiar drag-to-Applications experience. Note for recipients:
+# the app is ad-hoc signed, so first launch is right-click → Open (the
+# zip's installer clears quarantine automatically; a DMG can't).
+DMG="build/Cliche-$VERSION.dmg"
+DMG_STAGE="build/dmg"
+rm -rf "$DMG_STAGE" "$DMG"
+mkdir -p "$DMG_STAGE"
+ditto build/Cliche.app "$DMG_STAGE/Cliche.app"
+ln -s /Applications "$DMG_STAGE/Applications"
+cp "$STAGE/READ ME FIRST.txt" "$DMG_STAGE/READ ME FIRST.txt"
+hdiutil create -volname "Cliché $VERSION" -srcfolder "$DMG_STAGE" \
+    -ov -format UDZO -quiet "$DMG"
+
 echo "──────────────────────────────────────────────"
-echo "Distributable ready: $ZIP"
-echo "Send that zip; recipients double-click 'Install Cliché.command'."
+echo "Distributables ready: $ZIP + $DMG"
+echo "Zip: double-click 'Install Cliché.command'. DMG: drag to Applications."

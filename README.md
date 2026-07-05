@@ -17,12 +17,10 @@ Pin and search everything you copy · capture, mark up, redact, record, and meas
 
 ## Install
 
-**Option 1 — download the app** (no developer tools needed):
+**Option 1 — download the app** (no developer tools needed). Grab either file from the [latest release](https://github.com/curtismu7/cliche/releases/latest):
 
-1. Grab `Cliche-x.x.x.zip` from the [latest release](https://github.com/curtismu7/cliche/releases/latest).
-2. Unzip it and double-click **`Install Cliché.command`**.
-   - If macOS says it "cannot be opened because it is from an unidentified developer," right-click the file → **Open** → **Open**. This is normal for apps shared outside the App Store (Cliché isn't notarized — see [Signing](#signing)).
-3. Done — Cliché appears in your menu bar and can start at login.
+- **`Cliche-x.x.x.dmg`** — open it and drag Cliché to Applications. On first launch, right-click the app → **Open** → **Open** (needed once because Cliché isn't notarized — see [Signing](#signing)).
+- **`Cliche-x.x.x.zip`** — unzip and double-click **`Install Cliché.command`**; it installs, clears the Gatekeeper flag for you, and offers launch-at-login. If macOS balks at the installer itself, right-click it → **Open**.
 
 **Option 2 — Homebrew:**
 

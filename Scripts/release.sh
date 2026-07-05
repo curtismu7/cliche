@@ -24,7 +24,7 @@ Scripts/make-dist.sh
 
 git tag "$TAG"
 git push origin main "$TAG"
-gh release create "$TAG" "build/Cliche-$VERSION.zip" \
+gh release create "$TAG" "build/Cliche-$VERSION.zip" "build/Cliche-$VERSION.dmg" \
     --title "Cliché $VERSION" \
     --generate-notes
 echo "✅ Released: https://github.com/curtismu7/cliche/releases/tag/$TAG"
