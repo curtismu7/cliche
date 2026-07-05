@@ -69,9 +69,33 @@ public final class AppSettings {
         }
     }
 
+    /// Last beautify config used in the editor; the editor opens with this.
+    public var lastBeautifyConfig: BeautifyConfig {
+        didSet { Self.encode(lastBeautifyConfig, to: defaults, key: "lastBeautifyConfig") }
+    }
+
+    /// User-saved named beautify presets.
+    public var beautifyPresets: [NamedBeautifyConfig] {
+        didSet { Self.encode(beautifyPresets, to: defaults, key: "beautifyPresets") }
+    }
+
     private let defaults: UserDefaults
     /// Same store, exposed for the hotkeys extension.
     var hotkeysDefaults: UserDefaults { defaults }
+
+    private static func encode<T: Encodable>(_ value: T, to defaults: UserDefaults, key: String) {
+        if let data = try? JSONEncoder().encode(value) {
+            defaults.set(data, forKey: key)
+        }
+    }
+
+    private static func decode<T: Decodable>(_ type: T.Type, from defaults: UserDefaults,
+                                             key: String, default fallback: T) -> T {
+        guard let data = defaults.data(forKey: key),
+              let value = try? JSONDecoder().decode(type, from: data)
+        else { return fallback }
+        return value
+    }
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -86,6 +110,12 @@ public final class AppSettings {
             .flatMap(MenuBarStyle.init(rawValue:)) ?? .combined
         self.maxTextEntries = defaults.object(forKey: "maxTextEntries") as? Int ?? 150
         self.maxImageEntries = defaults.object(forKey: "maxImageEntries") as? Int ?? 50
+        self.lastBeautifyConfig = Self.decode(
+            BeautifyConfig.self, from: defaults,
+            key: "lastBeautifyConfig", default: .identity)
+        self.beautifyPresets = Self.decode(
+            [NamedBeautifyConfig].self, from: defaults,
+            key: "beautifyPresets", default: [])
     }
 
     // MARK: Last capture region (for repeat-area capture)

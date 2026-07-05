@@ -740,6 +740,28 @@ do {
         "render fixed canvas outputs exact target pixel size")
 }
 
+// beautifyPersistence
+do {
+    let suite = "ClicheBeautifyTest-\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    let settings = AppSettings(defaults: defaults)
+
+    expect(settings.lastBeautifyConfig.isIdentity, "lastBeautifyConfig defaults to identity")
+    expect(settings.beautifyPresets.isEmpty, "beautifyPresets default to empty")
+
+    var cfg = BeautifyConfig.gradient(RGBAColor(1, 0, 0), RGBAColor(0, 0, 1))
+    cfg.padding = 0.2
+    settings.lastBeautifyConfig = cfg
+    settings.beautifyPresets = [NamedBeautifyConfig(name: "Launch shot", config: cfg)]
+
+    let reloaded = AppSettings(defaults: defaults)
+    expect(reloaded.lastBeautifyConfig == cfg, "lastBeautifyConfig persists across instances")
+    expect(reloaded.beautifyPresets.count == 1
+        && reloaded.beautifyPresets[0].name == "Launch shot",
+        "beautifyPresets persist across instances")
+    defaults.removePersistentDomain(forName: suite)
+}
+
 // sensitiveTextDetection
 do {
     let width = 900, height = 120
