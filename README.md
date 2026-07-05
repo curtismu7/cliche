@@ -24,7 +24,16 @@ Pin and search everything you copy · capture, mark up, redact, record, and meas
    - If macOS says it "cannot be opened because it is from an unidentified developer," right-click the file → **Open** → **Open**. This is normal for apps shared outside the App Store (Cliché isn't notarized — see [Signing](#signing)).
 3. Done — Cliché appears in your menu bar and can start at login.
 
-**Option 2 — build from source** (macOS 14+, Xcode Command Line Tools):
+**Option 2 — Homebrew:**
+
+```sh
+brew tap curtismu7/cliche
+brew install --cask cliche
+```
+
+(Homebrew asks you to `brew trust curtismu7/cliche` once — standard for third-party taps.)
+
+**Option 3 — build from source** (macOS 14+, Xcode Command Line Tools):
 
 ```sh
 git clone https://github.com/curtismu7/cliche.git
