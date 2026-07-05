@@ -116,6 +116,8 @@ struct HistoryView: View {
             footer
         }
         .frame(width: 340, height: layout == .captureOnly ? 410 : 490)
+        .background(Color.white)
+        .environment(\.colorScheme, .light)
         .background(shortcutButtons)
         .sheet(isPresented: $showingHelp) { HelpView() }
         .sheet(isPresented: $showingSettings) {

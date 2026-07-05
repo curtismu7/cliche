@@ -46,6 +46,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         popover.behavior = .transient
         capturePopover.behavior = .transient
+        // White panels regardless of system dark mode.
+        popover.appearance = NSAppearance(named: .aqua)
+        capturePopover.appearance = NSAppearance(named: .aqua)
         configureMenuBar()
         NotificationCenter.default.addObserver(
             forName: AppSettings.menuBarStyleChanged, object: nil, queue: .main
@@ -74,18 +77,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         clipboardItem = nil
         captureItem = nil
 
+        // Explicit contentSize matching each HistoryView frame — without it
+        // NSPopover under-allocates and clips the top of the SwiftUI content.
         switch settings.menuBarStyle {
         case .combined:
             popover.contentViewController = NSHostingController(
                 rootView: makeHistoryView(layout: .full))
+            popover.contentSize = NSSize(width: 340, height: 490)
             clipboardItem = makeStatusItem(
                 symbol: "scissors.badge.ellipsis", description: "Cliché",
                 action: #selector(togglePopover))
         case .split:
             popover.contentViewController = NSHostingController(
                 rootView: makeHistoryView(layout: .clipboardOnly))
+            popover.contentSize = NSSize(width: 340, height: 490)
             capturePopover.contentViewController = NSHostingController(
                 rootView: makeHistoryView(layout: .captureOnly))
+            capturePopover.contentSize = NSSize(width: 340, height: 410)
             // Items added later sit further left; add capture first so the
             // clipboard icon stays in the accustomed spot.
             captureItem = makeStatusItem(
