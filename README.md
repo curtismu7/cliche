@@ -48,12 +48,14 @@ make install    # builds, installs to ~/Applications, launches
 - **Region capture on a frozen screen** with a magnifier loupe, live pixel-size label, and Shift-to-square — plus window, full-screen, and timed (3/5/10 s) capture.
 - **All-in-one capture** — one hotkey (`⌃⌥⌘3`) opens the overlay with a mode strip: Region, Window, Full Screen, or Copy Text, switchable with keys 1–4.
 - **Hide desktop clutter** — a Settings toggle excludes desktop icons from captures and recordings; your wallpaper stays.
+- **Multi-window capture** — pick several windows and capture just those together, everything else excluded.
+- **Combine captures** — stitch screenshots side-by-side, stacked, or in a grid from the Captures tab.
 - **Repeat last region** with one hotkey — perfect for iterating on the same area.
 - **OCR** — select any region, the text in it lands on your clipboard (on-device Vision).
 - **Scrolling capture** — select a region, scroll the content, Cliché stitches one tall image.
 - **Screen recording** — region to MP4, with optional GIF export.
 - **Pixel ruler** — hover snaps to UI element edges and shows dimensions; drag measures; click copies.
-- **Annotation editor** — arrows, boxes, text, pixelate, counter badges, and **one-click auto-redaction** of emails/links/phone numbers/API keys.
+- **Annotation editor** — arrows, lines, boxes, ellipses, freehand, highlighter, text, pixelate, **true blur** (unrecoverable), counter badges, and **one-click auto-redaction** of emails/links/phone numbers/API keys. Saved captures stay **re-editable** — reopen one and your layers are still there.
 - **Beautify panel** — make any capture social-ready with a live preview: editable gradient backdrops (colors + angle), padding, rounded corners, shadow, and an optional matte border; **browser/device frames** — Safari-style bar (light/dark) with editable URL, Mac window bar, or phone/tablet bezel; **auto-balance** trims uneven margins; export at exact social sizes (X 1600×900, Square, IG Portrait); save your look as a **named preset**.
 - **Quick Access Overlay** — post-capture thumbnail you can drag into Slack/Mail or click to annotate; QR codes in captures get a "copy link" button.
 - **Color picker** with hex copy and a WCAG contrast checker; before/after GIFs from any two captures.
