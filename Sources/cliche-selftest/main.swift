@@ -1015,6 +1015,36 @@ do {
         "remove deletes project and original")
 }
 
+// multiWindowGeometry
+do {
+    let display = CGRect(x: 0, y: 0, width: 1512, height: 982)
+    let frames = [
+        CGRect(x: 100, y: 100, width: 400, height: 300),
+        CGRect(x: 450, y: 250, width: 500, height: 400),
+    ]
+    let crop = ScreenshotEngine.unionPixelRect(
+        frames: frames, displayFrame: display, scale: 2, marginPoints: 12)!
+    // Union = (100,100)-(950,650); +12pt margin → (88,88)-(962,662); ×2.
+    expect(crop == CGRect(x: 176, y: 176, width: 1748, height: 1148),
+        "union pixel rect covers both windows plus margin at 2x")
+
+    // Margin clamps to the display edge.
+    let edge = ScreenshotEngine.unionPixelRect(
+        frames: [CGRect(x: 0, y: 0, width: 200, height: 200)],
+        displayFrame: display, scale: 1, marginPoints: 12)!
+    expect(edge.minX == 0 && edge.minY == 0,
+        "margin clamps at the display edge")
+
+    // Off-display frames → nil; empty input → nil.
+    expect(ScreenshotEngine.unionPixelRect(
+        frames: [CGRect(x: -900, y: -900, width: 100, height: 100)],
+        displayFrame: display, scale: 2) == nil,
+        "fully off-display union is nil")
+    expect(ScreenshotEngine.unionPixelRect(
+        frames: [], displayFrame: display, scale: 2) == nil,
+        "empty frame list is nil")
+}
+
 // desktopClutter
 do {
     let iconLayer = Int(CGWindowLevelForKey(.desktopIconWindow))

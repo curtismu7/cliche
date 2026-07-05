@@ -222,6 +222,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onCapture: { [weak self] mode in self?.capture(mode) },
             onCaptureText: { [weak self] in self?.captureText() },
             onAllInOne: { [weak self] in self?.startAllInOne() },
+            onMultiWindow: { [weak self] in self?.startMultiWindowCapture() },
             onPickColor: { [weak self] in self?.pickColor() },
             onRepeatRegion: { [weak self] in
                 self?.closeAllPopovers()
@@ -390,6 +391,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSLog("Cliche: all-in-one freeze failed (\(error)); using CLI region")
                 self.captureWithCLI(.region)
             }
+        }
+    }
+
+    /// Multi-window combined capture: picker panel → SCK include-filter.
+    private func startMultiWindowCapture() {
+        closeAllPopovers()
+        WindowPickerPanel.show { [weak self] image in
+            self?.deliver(image)
         }
     }
 

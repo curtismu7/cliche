@@ -40,4 +40,44 @@ public enum ScreenshotEngine {
         return try await SCScreenshotManager.captureImage(
             contentFilter: filter, configuration: configuration)
     }
+
+    // MARK: Multi-window combined capture
+
+    /// Pixel crop covering all `frames` (screen points, global top-left
+    /// origin) on the given display, with a margin. Nil when nothing of the
+    /// union lands on the display.
+    public static func unionPixelRect(
+        frames: [CGRect], displayFrame: CGRect, scale: CGFloat,
+        marginPoints: CGFloat = 12
+    ) -> CGRect? {
+        guard let first = frames.first else { return nil }
+        var union = frames.dropFirst().reduce(first) { $0.union($1) }
+        union = union.insetBy(dx: -marginPoints, dy: -marginPoints)
+            .intersection(displayFrame)
+        guard !union.isEmpty else { return nil }
+        return CGRect(
+            x: (union.minX - displayFrame.minX) * scale,
+            y: (union.minY - displayFrame.minY) * scale,
+            width: union.width * scale,
+            height: union.height * scale).integral
+    }
+
+    /// Captures ONLY the given windows (everything else transparent falls
+    /// away to the gradient-free backdrop of the display capture), cropped
+    /// to their union.
+    public static func captureWindows(
+        _ windows: [SCWindow], display: SCDisplay, scale: CGFloat
+    ) async throws -> CGImage {
+        let filter = SCContentFilter(display: display, including: windows)
+        let configuration = SCStreamConfiguration()
+        configuration.width = Int(CGFloat(display.width) * scale)
+        configuration.height = Int(CGFloat(display.height) * scale)
+        let full = try await SCScreenshotManager.captureImage(
+            contentFilter: filter, configuration: configuration)
+        guard let crop = unionPixelRect(
+            frames: windows.map(\.frame), displayFrame: display.frame, scale: scale),
+              let cropped = full.cropping(to: crop)
+        else { return full }
+        return cropped
+    }
 }

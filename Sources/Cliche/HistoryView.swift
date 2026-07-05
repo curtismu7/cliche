@@ -31,6 +31,7 @@ struct HistoryView: View {
     let onCapture: (CaptureMode) -> Void
     let onCaptureText: () -> Void
     let onAllInOne: () -> Void
+    let onMultiWindow: () -> Void
     let onPickColor: () -> Void
     let onRepeatRegion: () -> Void
     let onRuler: () -> Void
@@ -426,6 +427,8 @@ struct HistoryView: View {
                                action: onScrollCapture)
                 labeledCapture("record.circle", "record",
                                "Record region to MP4 (optional GIF)", action: onRecord)
+                labeledCapture("macwindow.on.rectangle", "multi",
+                               "Capture several windows together", action: onMultiWindow)
                 Spacer()
             }
         }
