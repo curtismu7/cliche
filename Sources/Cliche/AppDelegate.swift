@@ -120,7 +120,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // Items added later sit further left; add capture first so the
             // clipboard icon stays in the accustomed spot.
             captureItem = makeStatusItem(
-                symbol: "camera.viewfinder", description: "Cliché Capture",
+                symbol: "camera.viewfinder", description: "Cliché Image Capture",
                 action: #selector(toggleCapturePopover))
             clipboardItem = makeStatusItem(
                 symbol: "doc.on.clipboard", description: "Cliché Clipboard",

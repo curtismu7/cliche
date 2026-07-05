@@ -90,7 +90,7 @@ struct HistoryView: View {
         switch layout {
         case .full: return "Cliché"
         case .clipboardOnly: return "Cliché — Clipboard"
-        case .captureOnly: return "Cliché — Capture"
+        case .captureOnly: return "Cliché — Image Capture"
         }
     }
 
