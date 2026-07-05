@@ -49,12 +49,17 @@ struct HelpView: View {
                         ("pick twice", "Consecutive picks show the WCAG contrast ratio between the two colors"),
                     ])
                     section("More Capture Tools", rows: [
+                        ("ruler", "Pixel ruler: hover shows an element's size, drag measures, click copies"),
+                        ("scroll", "Scrolling capture: select a region, scroll the content, Done stitches one tall image"),
+                        ("record", "Record a region to MP4 on the Desktop, optionally also as GIF"),
                         ("timer", "Settings → capture timer (3/5/10 s countdown) for menus and hover states"),
                         ("QR codes", "If a capture contains a QR code, the thumbnail overlay offers Copy Link"),
                         ("film button", "On a capture: before/after GIF with the previous capture"),
                         ("cursor / shadow", "Settings toggles: show mouse pointer, keep window shadow"),
                     ])
                     section("Annotation Editor", rows: [
+                        ("eye.slash button", "Auto-redact: blurs emails, links, phone numbers, API keys"),
+                        ("Backdrop menu", "Gradient background + padding + shadow for social-ready shots"),
                         ("drag", "Arrow, rectangle, or pixelate (by tool)"),
                         ("click", "Place text label or numbered counter"),
                         ("⌘Z", "Undo"),

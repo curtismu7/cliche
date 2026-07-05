@@ -34,6 +34,16 @@ A macOS menu bar app combining a clipboard history manager and screen capture.
   looping two-frame GIF from the Captures tab.
 - **Contrast checker** — pick two colors in a row with the eyedropper and
   Cliché shows the WCAG contrast ratio and AA/AAA verdict.
+- **Pixel ruler** — measure anything on screen: hover snaps to UI element
+  edges and shows its size, drag measures point-to-point, click copies.
+- **Scrolling capture** — select a region, scroll the content yourself, and
+  Cliché stitches the frames into one tall image (Vision-aligned).
+- **Screen recording** — record a region to MP4 on the Desktop, with an
+  optional GIF export, driven by a floating stop/timer HUD.
+- **Beautify backdrops** — the annotation editor can wrap any shot in a
+  gradient backdrop with padding, rounded corners, and a drop shadow.
+- **Auto-redaction** — one click in the editor blurs everything that looks
+  sensitive: emails, links, phone numbers, API-key-shaped tokens.
 - **Copy text from screen (OCR)** — the Text button (or `⌃⌥⌘6`) lets you
   select any region; the text in it is recognized on-device with Apple's
   Vision framework and copied to the clipboard. Beeps if no text was found.
