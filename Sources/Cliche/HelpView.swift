@@ -37,7 +37,8 @@ struct HelpView: View {
                         ("⌥↩ / ⌥-click", "Paste straight into the previous app"),
                         ("⌘1 – ⌘9", "Copy the numbered item"),
                         ("⌘⌫", "Delete selection"),
-                        ("⌥P", "Pin / unpin selection (pins stick to the top; ⌘P also works)"),
+                        ("⌥P", "Pin selection to the top"),
+                        ("⌥U", "Unpin selection (⌘P toggles either way)"),
                         ("hover", "Row buttons: paste ↵, edit ✏️ (text), float (image), pin, delete"),
                     ])
                     section("Captures Tab", rows: [

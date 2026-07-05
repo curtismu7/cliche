@@ -183,7 +183,7 @@ struct HistoryView: View {
             } else {
                 itemList
             }
-            Text("↩ copy · ⌥↩ paste into app · ⌘1–9 quick copy · ⌘⌫ delete · ⌥P pin")
+            Text("↩ copy · ⌥↩ paste into app · ⌘1–9 quick copy · ⌘⌫ delete · ⌥P pin · ⌥U unpin")
                 .font(.system(size: 12))
                 .foregroundStyle(Color.ink)
                 .padding(.vertical, 4)
@@ -459,11 +459,21 @@ struct HistoryView: View {
             }
             .keyboardShortcut(.delete, modifiers: .command)
             Button("") {
-                guard textItems.indices.contains(selectedIndex) else { return }
+                // ⌥P pins only (no-op if already pinned)
+                guard textItems.indices.contains(selectedIndex),
+                      !textItems[selectedIndex].pinned else { return }
                 store.togglePin(textItems[selectedIndex])
             }
             .keyboardShortcut("p", modifiers: .option)
             Button("") {
+                // ⌥U unpins only
+                guard textItems.indices.contains(selectedIndex),
+                      textItems[selectedIndex].pinned else { return }
+                store.togglePin(textItems[selectedIndex])
+            }
+            .keyboardShortcut("u", modifiers: .option)
+            Button("") {
+                // ⌘P kept as a toggle for old muscle memory
                 guard textItems.indices.contains(selectedIndex) else { return }
                 store.togglePin(textItems[selectedIndex])
             }
