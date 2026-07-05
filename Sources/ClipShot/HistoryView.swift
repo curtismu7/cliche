@@ -25,6 +25,7 @@ struct HistoryView: View {
     @State private var query = ""
     @State private var selectedIndex = 0
     @State private var launchAtLogin = LoginItem.isEnabled
+    @State private var showingHelp = false
     @FocusState private var searchFocused: Bool
 
     /// Pinned first, then recent, both fuzzy-filtered — the order rows render
@@ -59,6 +60,7 @@ struct HistoryView: View {
         }
         .frame(width: 340, height: 460)
         .background(shortcutButtons)
+        .sheet(isPresented: $showingHelp) { HelpView() }
     }
 
     // MARK: Clipboard tab
@@ -71,6 +73,10 @@ struct HistoryView: View {
             } else {
                 itemList
             }
+            Text("↩ copy · ⌥↩ paste into app · ⌘1–9 quick copy · ⌘⌫ delete · ⌘P pin")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .padding(.vertical, 4)
         }
     }
 
@@ -165,14 +171,17 @@ struct HistoryView: View {
             CaptureButton(title: "Region", symbol: "rectangle.dashed") {
                 onCapture(.region)
             }
+            .help("Capture region  ⌃⌥⌘4")
             CaptureButton(title: "Window", symbol: "macwindow") {
                 onCapture(.window)
             }
+            .help("Capture window  ⌃⌥⌘5")
             CaptureButton(title: "Screen", symbol: "display") {
                 onCapture(.fullScreen)
             }
+            .help("Capture full screen")
             CaptureButton(title: "Text", symbol: "text.viewfinder", action: onCaptureText)
-                .help("Copy text from screen (OCR)")
+                .help("Copy text from screen (OCR)  ⌃⌥⌘6")
             Spacer()
             Button(action: onQuit) {
                 Image(systemName: "power")
@@ -200,6 +209,15 @@ struct HistoryView: View {
                 let actual = LoginItem.setEnabled(wanted)
                 if actual != wanted { launchAtLogin = actual }
             }
+
+            Button {
+                showingHelp = true
+            } label: {
+                Image(systemName: "questionmark.circle")
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .help("Shortcuts & help")
 
             Text("\(store.items.count) items")
                 .font(.caption)
@@ -255,7 +273,6 @@ private struct CaptureButton: View {
             }
             .frame(width: 52)
         }
-        .help("Capture \(title.lowercased())")
     }
 }
 

@@ -1,0 +1,87 @@
+import SwiftUI
+
+/// Shortcuts & help sheet, opened from the ? button in the panel footer.
+struct HelpView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("ClipShot Shortcuts & Help")
+                    .font(.headline)
+                Spacer()
+                Button("Done") { dismiss() }
+                    .keyboardShortcut(.defaultAction)
+            }
+            .padding(12)
+            Divider()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    section("Global Hotkeys (work anywhere)", rows: [
+                        ("⌃⌥⌘C", "Open / close this panel"),
+                        ("⌃⌥⌘4", "Capture a region"),
+                        ("⌃⌥⌘5", "Capture a window"),
+                        ("⌃⌥⌘6", "Copy text from screen (OCR)"),
+                    ])
+                    section("Clipboard Tab", rows: [
+                        ("type", "Search history (fuzzy — \"hw\" finds \"hello world\")"),
+                        ("↑ / ↓", "Move selection"),
+                        ("↩", "Copy selection, close panel"),
+                        ("⌥↩ / ⌥-click", "Paste straight into the previous app"),
+                        ("⌘1 – ⌘9", "Copy the numbered item"),
+                        ("⌘⌫", "Delete selection"),
+                        ("⌘P", "Pin / unpin selection"),
+                        ("hover", "Row buttons: paste ↵, float, pin, delete"),
+                    ])
+                    section("Captures Tab", rows: [
+                        ("click thumbnail overlay", "After a capture: click to annotate, or drag it into another app"),
+                        ("hover a capture", "Copy, annotate ✏️, float, show in Finder, trash"),
+                    ])
+                    section("Annotation Editor", rows: [
+                        ("drag", "Arrow, rectangle, or pixelate (by tool)"),
+                        ("click", "Place text label or numbered counter"),
+                        ("⌘Z", "Undo"),
+                        ("⇧⌘C", "Copy annotated image"),
+                        ("↩", "Save (overwrites the capture file)"),
+                    ])
+                    section("Snippets Tab", rows: [
+                        ("click", "Copy rendered snippet"),
+                        ("⌥-click", "Paste it into the previous app"),
+                        ("%DATE% %TIME% %CLIPBOARD%", "Variables replaced at copy time"),
+                    ])
+                    section("Good to Know", rows: [
+                        ("Screenshots", "Saved to the Desktop + clipboard + Captures tab"),
+                        ("History", "Keeps 150 texts and 50 images; pinned items are never evicted"),
+                        ("Privacy", "Password-manager copies are never recorded (gear → Edit Ignore Rules…)"),
+                        ("Permissions", "Screen Recording: needed for captures. Accessibility: only for direct paste"),
+                    ])
+                }
+                .padding(12)
+            }
+        }
+        .frame(width: 380, height: 460)
+    }
+
+    private func section(_ title: String, rows: [(String, String)]) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+            ForEach(rows, id: \.0) { key, description in
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(key)
+                        .font(.caption.monospaced())
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.primary.opacity(0.08)))
+                        .frame(minWidth: 88, alignment: .leading)
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+}
