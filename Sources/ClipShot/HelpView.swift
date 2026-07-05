@@ -53,7 +53,7 @@ struct HelpView: View {
                         ("%DATE% %TIME% %CLIPBOARD%", "Variables replaced at copy time"),
                     ])
                     section("Good to Know", rows: [
-                        ("Screenshots", "Saved to the Desktop + clipboard + Captures tab"),
+                        ("Screenshots", "Saved to the Desktop + clipboard + Captures tab (format and clipboard behavior: gear → Settings)"),
                         ("History", "Keeps 150 texts and 50 images; pinned items are never evicted"),
                         ("Privacy", "Password-manager copies are never recorded (gear → Edit Ignore Rules…)"),
                         ("Permissions", "Screen Recording: needed for captures. Accessibility: only for direct paste"),

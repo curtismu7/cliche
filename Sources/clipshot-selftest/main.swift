@@ -347,6 +347,63 @@ do {
         "color converts to hex string")
 }
 
+// clipboardWriterWritesPNGAndTIFF
+do {
+    let pasteboard = NSPasteboard(name: NSPasteboard.Name("clipshot-selftest-\(UUID().uuidString)"))
+    let wrote = ClipboardWriter.writeImage(pngData: pngData, to: pasteboard)
+    let readPNG = pasteboard.data(forType: .png)
+    let readTIFF = pasteboard.data(forType: .tiff)
+    expect(wrote && readPNG == pngData
+        && readTIFF != nil
+        && NSBitmapImageRep(data: readTIFF!)?.pixelsWide == 1,
+        "clipboard writer provides both PNG and TIFF")
+    expect(!ClipboardWriter.writeImage(pngData: Data([1, 2, 3]), to: pasteboard),
+        "clipboard writer rejects non-image data")
+    pasteboard.releaseGlobally()
+}
+
+// appSettingsPersistence
+do {
+    let suite = "clipshot-selftest-\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    let settings = AppSettings(defaults: defaults)
+    expect(settings.captureFormat == .png && settings.copyCapturesToClipboard,
+        "settings default to PNG + copy to clipboard")
+    settings.captureFormat = .jpeg
+    settings.copyCapturesToClipboard = false
+    let reloaded = AppSettings(defaults: defaults)
+    expect(reloaded.captureFormat == .jpeg && !reloaded.copyCapturesToClipboard,
+        "settings persist across reload")
+    defaults.removePersistentDomain(forName: suite)
+}
+
+// captureFormatEncoding
+do {
+    let context = CGContext(
+        data: nil, width: 6, height: 4, bitsPerComponent: 8, bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    context.setFillColor(CGColor(red: 0, green: 0.5, blue: 1, alpha: 1))
+    context.fill(CGRect(x: 0, y: 0, width: 6, height: 4))
+    let image = context.makeImage()!
+
+    let png = CaptureDelivery.encode(image, as: .png)!
+    let jpeg = CaptureDelivery.encode(image, as: .jpeg)!
+    expect(png.prefix(4).elementsEqual([0x89, 0x50, 0x4E, 0x47])
+        && jpeg.prefix(2).elementsEqual([0xFF, 0xD8]),
+        "capture encodes to PNG and JPEG formats")
+
+    // JPEG data through the clipboard writer still yields PNG + TIFF types.
+    let pasteboard = NSPasteboard(name: NSPasteboard.Name("clipshot-selftest-\(UUID().uuidString)"))
+    let wrote = ClipboardWriter.writeImage(pngData: jpeg, to: pasteboard)
+    let outPNG = pasteboard.data(forType: .png)
+    expect(wrote && outPNG != nil
+        && outPNG!.prefix(4).elementsEqual([0x89, 0x50, 0x4E, 0x47])
+        && pasteboard.data(forType: .tiff) != nil,
+        "clipboard writer transcodes JPEG input to PNG + TIFF")
+    pasteboard.releaseGlobally()
+}
+
 // annotationRenderer
 do {
     // 200x150 base: left half white, with black/white 1px vertical stripes

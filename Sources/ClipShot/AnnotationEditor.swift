@@ -56,9 +56,7 @@ enum AnnotationEditor {
 
     private static func copyToClipboard(_ image: CGImage) {
         guard let data = CaptureDelivery.pngData(from: image) else { return }
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setData(data, forType: .png)
+        ClipboardWriter.writeImage(pngData: data)
     }
 }
 

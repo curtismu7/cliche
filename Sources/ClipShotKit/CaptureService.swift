@@ -14,15 +14,20 @@ public final class CaptureService {
 
     /// `onSaved` runs on the main queue with the file URL when a screenshot
     /// was actually written (not when the user cancels with Esc).
-    public func capture(_ mode: CaptureMode, onSaved: ((URL) -> Void)? = nil) {
-        let outputURL = Self.outputURL()
+    public func capture(
+        _ mode: CaptureMode,
+        format: AppSettings.ImageFormat = .png,
+        copyToClipboard: Bool = true,
+        onSaved: ((URL) -> Void)? = nil
+    ) {
+        let outputURL = Self.outputURL(fileExtension: format.fileExtension)
         var arguments: [String]
         switch mode {
         case .region: arguments = ["-i"]
         case .window: arguments = ["-iWo"]
         case .fullScreen: arguments = []
         }
-        arguments.append(outputURL.path)
+        arguments += ["-t", format == .png ? "png" : "jpg", outputURL.path]
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
@@ -32,9 +37,9 @@ public final class CaptureService {
                 // No file means the user pressed Esc — silently do nothing,
                 // matching the native ⌘⇧4 behavior.
                 if let data = try? Data(contentsOf: outputURL) {
-                    let pasteboard = NSPasteboard.general
-                    pasteboard.clearContents()
-                    pasteboard.setData(data, forType: .png)
+                    if copyToClipboard {
+                        ClipboardWriter.writeImage(pngData: data)
+                    }
                     onSaved?(outputURL)
                 }
             }
@@ -46,11 +51,11 @@ public final class CaptureService {
         }
     }
 
-    public static func outputURL() -> URL {
+    public static func outputURL(fileExtension: String = "png") -> URL {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd 'at' HH.mm.ss"
         let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
         return desktop.appendingPathComponent(
-            "ClipShot \(formatter.string(from: Date())).png")
+            "ClipShot \(formatter.string(from: Date())).\(fileExtension)")
     }
 }

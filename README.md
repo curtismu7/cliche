@@ -45,8 +45,11 @@ A macOS menu bar app combining a clipboard history manager and screen capture.
   (position and pin state are kept).
 - **Float on top** — pin any screenshot or history image as an always-on-top
   window for reference while you work.
-- **Launch at login** — toggle in the gear menu (System Settings shows it
-  under Login Items).
+- **Settings** (gear button) — screenshot format (PNG or JPEG), whether
+  captures are copied to the clipboard (all modes, including whole-screen)
+  or saved to disk only, launch at login, and the ignore-rules editor.
+  Images are always written to the clipboard as both PNG and TIFF so every
+  app can paste them.
 - **Global hotkeys** — no Accessibility permission required:
   - `⌃⌥⌘C` — open/close the history panel
   - `⌃⌥⌘4` — capture region

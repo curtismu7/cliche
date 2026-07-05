@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var store: HistoryStore!
     private var capturesStore: CapturesStore!
     private var snippetsStore: SnippetsStore!
+    private let settings = AppSettings()
     private var monitor: ClipboardMonitor!
     /// The app that was frontmost when the panel opened — the paste target.
     private var previousApp: NSRunningApplication?
@@ -44,6 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 store: store,
                 capturesStore: capturesStore,
                 snippetsStore: snippetsStore,
+                settings: settings,
                 ignoreRulesURL: ignoreRulesURL,
                 onCopy: { [weak self] item in
                     self?.monitor.copyToPasteboard(item)
@@ -161,7 +163,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 let image = try await ScreenshotEngine.captureImage(
                     displayID: displayID, sourceRect: rect, scale: scale)
-                if let url = CaptureDelivery.deliver(image) {
+                if let url = CaptureDelivery.deliver(
+                    image,
+                    format: self.settings.captureFormat,
+                    copyToClipboard: self.settings.copyCapturesToClipboard
+                ) {
                     capturesStore?.add(path: url.path)
                     CaptureOverlay.show(fileURL: url) { AnnotationEditor.open(fileURL: $0) }
                 }
@@ -173,7 +179,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func captureWithCLI(_ mode: CaptureMode) {
-        captureService.capture(mode) { [weak self] url in
+        captureService.capture(
+            mode,
+            format: settings.captureFormat,
+            copyToClipboard: settings.copyCapturesToClipboard
+        ) { [weak self] url in
             self?.capturesStore.add(path: url.path)
             CaptureOverlay.show(fileURL: url) { AnnotationEditor.open(fileURL: $0) }
         }

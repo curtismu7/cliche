@@ -37,13 +37,13 @@ public final class ClipboardMonitor {
     /// Writes a history item back to the pasteboard. The next poll sees the
     /// change and moves the item to the front of history via dedupe.
     public func copyToPasteboard(_ item: ClipItem) {
-        pasteboard.clearContents()
         switch item.kind {
         case .text(let text):
+            pasteboard.clearContents()
             pasteboard.setString(text, forType: .string)
         case .image:
             if let data = store.imageData(for: item) {
-                pasteboard.setData(data, forType: .png)
+                ClipboardWriter.writeImage(pngData: data)
             }
         }
     }

@@ -6,6 +6,7 @@ struct HistoryView: View {
     let store: HistoryStore
     let capturesStore: CapturesStore
     let snippetsStore: SnippetsStore
+    let settings: AppSettings
     let ignoreRulesURL: URL
     let onCopy: (ClipItem) -> Void
     let onPaste: (ClipItem) -> Void
@@ -25,8 +26,8 @@ struct HistoryView: View {
     @State private var tab: Tab = .clipboard
     @State private var query = ""
     @State private var selectedIndex = 0
-    @State private var launchAtLogin = LoginItem.isEnabled
     @State private var showingHelp = false
+    @State private var showingSettings = false
     @State private var editingItem: ClipItem?
     @State private var editText = ""
     @FocusState private var searchFocused: Bool
@@ -64,6 +65,9 @@ struct HistoryView: View {
         .frame(width: 340, height: 460)
         .background(shortcutButtons)
         .sheet(isPresented: $showingHelp) { HelpView() }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView(settings: settings, ignoreRulesURL: ignoreRulesURL)
+        }
         .sheet(item: $editingItem) { item in
             VStack(alignment: .leading, spacing: 10) {
                 Text("Edit Clip")
@@ -137,7 +141,6 @@ struct HistoryView: View {
         .onAppear {
             query = ""
             selectedIndex = 0
-            launchAtLogin = LoginItem.isEnabled
             DispatchQueue.main.async { searchFocused = true }
         }
         .onChange(of: query) { selectedIndex = 0 }
@@ -228,20 +231,14 @@ struct HistoryView: View {
 
     private var footer: some View {
         HStack {
-            Menu {
-                Toggle("Launch at Login", isOn: $launchAtLogin)
-                Button("Edit Ignore Rules…") {
-                    NSWorkspace.shared.open(ignoreRulesURL)
-                }
+            Button {
+                showingSettings = true
             } label: {
                 Image(systemName: "gearshape")
             }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
-            .onChange(of: launchAtLogin) { _, wanted in
-                let actual = LoginItem.setEnabled(wanted)
-                if actual != wanted { launchAtLogin = actual }
-            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .help("Settings")
 
             Button {
                 showingHelp = true
@@ -639,8 +636,7 @@ private struct CapturesGrid: View {
                             .help("Share…")
                             RowButton(symbol: "doc.on.doc", help: "Copy") {
                                 if let data = try? Data(contentsOf: URL(fileURLWithPath: capture.path)) {
-                                    NSPasteboard.general.clearContents()
-                                    NSPasteboard.general.setData(data, forType: .png)
+                                    ClipboardWriter.writeImage(pngData: data)
                                 }
                             }
                             RowButton(symbol: "pencil.tip.crop.circle", help: "Annotate") {
