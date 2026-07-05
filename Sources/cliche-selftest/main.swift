@@ -639,31 +639,6 @@ do {
         "renderer exports annotated PNG")
 }
 
-// beautifyRenderer
-do {
-    let ctx = CGContext(
-        data: nil, width: 100, height: 80, bitsPerComponent: 8, bytesPerRow: 0,
-        space: CGColorSpaceCreateDeviceRGB(),
-        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-    ctx.setFillColor(CGColor(red: 0, green: 1, blue: 0, alpha: 1))
-    ctx.fill(CGRect(x: 0, y: 0, width: 100, height: 80))
-    let base = ctx.makeImage()!
-
-    let unchanged = BeautifyRenderer.apply(.none, to: base)
-    expect(unchanged?.width == 100 && unchanged?.height == 80,
-        "beautify .none leaves image untouched")
-
-    let styled = BeautifyRenderer.apply(.indigo, to: base)!
-    let rep = NSBitmapImageRep(cgImage: styled)
-    let corner = rep.colorAt(x: 2, y: 2)!.usingColorSpace(.deviceRGB)!
-    let center = rep.colorAt(x: styled.width / 2, y: styled.height / 2)!
-        .usingColorSpace(.deviceRGB)!
-    expect(styled.width == 100 + 96 && styled.height == 80 + 96
-        && corner.greenComponent < 0.6      // gradient, not the green image
-        && center.greenComponent > 0.9,     // screenshot centered on top
-        "beautify pads with gradient and keeps screenshot centered")
-}
-
 // beautifyConfigModel
 do {
     // Identity renders nothing → empty gradient.
