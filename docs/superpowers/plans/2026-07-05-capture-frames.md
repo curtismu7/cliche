@@ -37,7 +37,7 @@
 **Interfaces:**
 - Produces: `public enum FrameStyle: String, Codable, CaseIterable, Equatable { case none, browserLight, browserDark, macWindow, phone, tablet }` with `var label: String`, `var isBrowser: Bool`; `BeautifyConfig.frame: FrameStyle`, `BeautifyConfig.frameURL: String`; `isIdentity == background.isEmpty && frame == .none`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `Sources/cliche-selftest/main.swift` (after the `// beautifyPersistence` block):
 
@@ -80,12 +80,12 @@ do {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | grep error: | head -3`
 Expected: `cannot find 'FrameStyle' in scope`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 In `Sources/ClicheKit/BeautifyConfig.swift`:
 
@@ -150,12 +150,12 @@ public enum FrameStyle: String, Codable, CaseIterable, Equatable {
     }
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest 2>&1 | grep -iE "frame|legacy|FAIL"`
 Expected: new lines `PASS`; zero `FAIL` anywhere (existing beautify tests unaffected).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/ClicheKit/BeautifyConfig.swift Sources/cliche-selftest/main.swift
@@ -175,7 +175,7 @@ git commit -m "feat(frames): FrameStyle model with backward-compatible config de
 - Consumes: `FrameStyle` (Task 1), `BeautifyRenderer.layout(_:croppedSize:)`.
 - Produces: `FrameRenderer.chromeInsets(_ style: FrameStyle, minDimension: CGFloat) -> NSEdgeInsets`; `layout` output includes chrome insets.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `Sources/cliche-selftest/main.swift`:
 
@@ -210,12 +210,12 @@ do {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | grep error: | head -3`
 Expected: `cannot find 'FrameRenderer' in scope`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `Sources/ClicheKit/FrameRenderer.swift`:
 
@@ -282,12 +282,12 @@ In `Sources/ClicheKit/BeautifyRenderer.swift`, update `layout` — replace its b
 
 (Note: `screenshotRect.minY` is unchanged for a top-bar frame because the bar sits ABOVE the screenshot in CG's bottom-left coordinates — the height grows instead.)
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest 2>&1 | grep -iE "chrome|bar height|bezel|FAIL"`
 Expected: all new lines `PASS`, zero `FAIL` (existing layout tests still pass — chrome is zero for frameless configs).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/ClicheKit/FrameRenderer.swift Sources/ClicheKit/BeautifyRenderer.swift Sources/cliche-selftest/main.swift
@@ -307,7 +307,7 @@ git commit -m "feat(frames): chrome insets and layout integration"
 - Consumes: Task 2's `chromeInsets`, existing `render` internals (`platePath`, `shot`, `shotMin`).
 - Produces: `FrameRenderer.draw(_ style: FrameStyle, urlText: String, plateRect: CGRect, screenshotRect: CGRect, cornerRadius: CGFloat, in ctx: CGContext)`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `Sources/cliche-selftest/main.swift`:
 
@@ -352,12 +352,12 @@ do {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | grep error: | head -3`
 Expected: `type 'FrameRenderer' has no member 'draw'`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Add to `Sources/ClicheKit/FrameRenderer.swift` inside the enum:
 
@@ -521,12 +521,12 @@ In `Sources/ClicheKit/BeautifyRenderer.swift`, update `render`. After the inset-
         return ctx.makeImage()
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest 2>&1 | grep -iE "framed|chrome-gray|enlarged|FAIL"; swift run cliche-selftest >/dev/null 2>&1; echo exit=$?`
 Expected: new lines `PASS`, `exit=0` (all existing beautify tests still pass).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/ClicheKit/FrameRenderer.swift Sources/ClicheKit/BeautifyRenderer.swift Sources/cliche-selftest/main.swift
@@ -544,7 +544,7 @@ git commit -m "feat(frames): procedural chrome drawing wired into beautify rende
 **Interfaces:**
 - Consumes: `FrameStyle` (Task 1), `$config.frame`, `$config.frameURL`.
 
-- [ ] **Step 1: Add the Frame Style section**
+- [x] **Step 1: Add the Frame Style section**
 
 In `Sources/Cliche/BeautifyInspector.swift`, add to the `body` VStack between `backgroundSection` and `frameSection`: `Divider()` + `frameStyleSection`, and add the section view:
 
@@ -567,11 +567,11 @@ In `Sources/Cliche/BeautifyInspector.swift`, add to the `body` VStack between `b
     }
 ```
 
-- [ ] **Step 2: Update README**
+- [x] **Step 2: Update README**
 
 In `README.md`, extend the Beautify bullet: after "optional matte border;" insert "**browser/device frames** — Safari-style bar (light/dark) with editable URL, Mac window bar, or phone/tablet bezel;".
 
-- [ ] **Step 3: Full verification**
+- [x] **Step 3: Full verification**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest >/dev/null 2>&1; echo exit=$?; make app 2>&1 | tail -1`
 Expected: `exit=0`, `Built build/Cliche.app`.
@@ -580,7 +580,7 @@ Render a visual proof through the real pipeline (temporary snippet, delete after
 
 Manual: open the annotation editor, pick each frame style, type a URL, confirm live preview + Save output + annotations landing on content.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add Sources/Cliche/BeautifyInspector.swift README.md

@@ -35,7 +35,7 @@
 **Interfaces:**
 - Produces: `public enum URLCommand: Equatable { case captureRegion, captureWindow, captureFullScreen, allInOne, ocr, repeatRegion, panel; public static func parse(_ url: URL) -> URLCommand? }`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `Sources/cliche-selftest/main.swift` (after the `// allInOneHotkey` block):
 
@@ -58,12 +58,12 @@ do {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | grep error: | head -3`
 Expected: `cannot find 'URLCommand' in scope`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `Sources/ClicheKit/URLCommand.swift`:
 
@@ -99,12 +99,12 @@ public enum URLCommand: Equatable {
 }
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest 2>&1 | grep -iE "mode=|hosts parse|case-insensitive|→ nil|FAIL"`
 Expected: all `PASS`, no `FAIL`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/ClicheKit/URLCommand.swift Sources/cliche-selftest/main.swift
@@ -123,7 +123,7 @@ git commit -m "feat(url-scheme): URLCommand parser for cliche:// automation"
 **Interfaces:**
 - Consumes: `URLCommand.parse` (Task 1); existing `capture(_:)`, `startAllInOne()`, `captureText()`, `repeatLastRegion()`, `togglePopover()`.
 
-- [ ] **Step 1: Register the scheme in the plist**
+- [x] **Step 1: Register the scheme in the plist**
 
 In `Scripts/make-app.sh`, inside the Info.plist heredoc, add before the closing `</dict>`:
 
@@ -141,7 +141,7 @@ In `Scripts/make-app.sh`, inside the Info.plist heredoc, add before the closing 
     </array>
 ```
 
-- [ ] **Step 2: Handle and route the URLs**
+- [x] **Step 2: Handle and route the URLs**
 
 In `Sources/Cliche/AppDelegate.swift`, add at the top of `applicationDidFinishLaunching`:
 
@@ -178,7 +178,7 @@ Add near `perform(_:)`:
     }
 ```
 
-- [ ] **Step 3: README Automation section**
+- [x] **Step 3: README Automation section**
 
 Add after the "Default shortcuts" section:
 
@@ -200,14 +200,14 @@ Drive Cliché from Raycast, Shortcuts, Alfred, or the terminal via its URL schem
 Example: `open "cliche://capture?mode=region"`
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest >/dev/null 2>&1; echo exit=$?; make install 2>&1 | tail -1`
 Expected: `exit=0`, app reinstalls.
 
 Then: `sleep 2 && open "cliche://panel"` — the clipboard panel opens. `open "cliche://nope"` — beep, nothing else.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Scripts/make-app.sh Sources/Cliche/AppDelegate.swift README.md
