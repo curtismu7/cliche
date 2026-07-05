@@ -1,4 +1,4 @@
-.PHONY: build test app run install dist clean
+.PHONY: build test app run install dist release clean
 
 build:
 	swift build
@@ -22,6 +22,10 @@ install: app
 # Shareable zip for other Macs (app + installer + readme).
 dist:
 	Scripts/make-dist.sh
+
+# Bump VERSION, commit, then: tags + pushes + publishes a GitHub release.
+release:
+	Scripts/release.sh
 
 clean:
 	rm -rf .build build

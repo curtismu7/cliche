@@ -36,7 +36,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         ignoreRulesURL = appSupport.appendingPathComponent("ignore-rules.json")
 
-        store = HistoryStore(directory: appSupport)
+        store = HistoryStore(
+            directory: appSupport,
+            maxTexts: settings.maxTextEntries,
+            maxImages: settings.maxImageEntries)
         capturesStore = CapturesStore(directory: appSupport)
         snippetsStore = SnippetsStore(directory: appSupport)
         monitor = ClipboardMonitor(
@@ -57,6 +60,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.closeAllPopovers()
                 self?.configureMenuBar()
             }
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: AppSettings.historyLimitsChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.store.setLimits(
+                maxTexts: self.settings.maxTextEntries,
+                maxImages: self.settings.maxImageEntries)
         }
 
         registerHotkeys()

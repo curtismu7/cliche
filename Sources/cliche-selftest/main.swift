@@ -207,6 +207,35 @@ do {
         "pin state persists across reload")
 }
 
+// setLimitsEvictsImmediately
+do {
+    let dir = makeTempDir()
+    let store = HistoryStore(directory: dir)
+    for i in 1...6 { store.addText("t\(i)") }
+    store.togglePin(store.items[5])  // pin the oldest, "t1"
+    store.setLimits(maxTexts: 2, maxImages: 50)
+    let reloaded = HistoryStore(directory: dir)
+    expect(store.items.filter({ !$0.pinned }).count == 2
+        && store.items.contains(where: { $0.kind == .text("t1") })
+        && reloaded.items.count == 3,
+        "setLimits evicts overflow immediately, keeps pinned, persists")
+}
+
+// historyLimitSettings
+do {
+    let suite = "cliche-selftest-\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    let settings = AppSettings(defaults: defaults)
+    expect(settings.maxTextEntries == 150 && settings.maxImageEntries == 50,
+        "history limits default to 150/50")
+    settings.maxTextEntries = 300
+    settings.maxImageEntries = 100
+    let reloaded = AppSettings(defaults: defaults)
+    expect(reloaded.maxTextEntries == 300 && reloaded.maxImageEntries == 100,
+        "history limits persist")
+    defaults.removePersistentDomain(forName: suite)
+}
+
 // fuzzyMatcher
 do {
     expect(FuzzyMatcher.matches("", in: "anything")

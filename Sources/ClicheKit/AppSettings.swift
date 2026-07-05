@@ -45,6 +45,22 @@ public final class AppSettings {
     }
 
     public static let menuBarStyleChanged = Notification.Name("ClicheMenuBarStyleChanged")
+    public static let historyLimitsChanged = Notification.Name("ClicheHistoryLimitsChanged")
+
+    /// History caps (pinned items never count against them).
+    public var maxTextEntries: Int {
+        didSet {
+            defaults.set(maxTextEntries, forKey: "maxTextEntries")
+            NotificationCenter.default.post(name: Self.historyLimitsChanged, object: nil)
+        }
+    }
+
+    public var maxImageEntries: Int {
+        didSet {
+            defaults.set(maxImageEntries, forKey: "maxImageEntries")
+            NotificationCenter.default.post(name: Self.historyLimitsChanged, object: nil)
+        }
+    }
 
     public var menuBarStyle: MenuBarStyle {
         didSet {
@@ -68,6 +84,8 @@ public final class AppSettings {
         self.windowShadow = defaults.object(forKey: "windowShadow") as? Bool ?? false
         self.menuBarStyle = defaults.string(forKey: "menuBarStyle")
             .flatMap(MenuBarStyle.init(rawValue:)) ?? .combined
+        self.maxTextEntries = defaults.object(forKey: "maxTextEntries") as? Int ?? 150
+        self.maxImageEntries = defaults.object(forKey: "maxImageEntries") as? Int ?? 50
     }
 
     // MARK: Last capture region (for repeat-area capture)

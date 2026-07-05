@@ -1,117 +1,87 @@
-# Cliché
+<p align="center">
+  <img src="Assets/icon-200.png" width="128" alt="Cliché icon">
+</p>
 
-A macOS menu bar app combining a clipboard history manager and screen capture.
+<h1 align="center">Cliché</h1>
 
-## Features
+<p align="center"><b>Clipboard history + screen capture for macOS, in one menu bar app.</b><br>
+Think Maccy and CleanShot had a French child. Free, open source, 100% local — no accounts, no network, no telemetry.</p>
 
-- **Clipboard history** — remembers the last 150 text snippets and 50 images
-  copied anywhere on your Mac. Click any item to copy it back. Pin items to
-  keep them forever (pinned items survive Clear History and are never evicted).
-- **Fuzzy search** — the search field is focused when the panel opens; just
-  type to filter (subsequence match, e.g. `hw` finds "hello world").
-- **Keyboard navigation** — `↑`/`↓` select, `Return` copies the selection,
-  `⌘1`–`⌘9` copy the first nine items, `⌘⌫` deletes and `⌘P` pins the
-  selection. Everything is always copied as plain text — no formatting.
-- **Paste directly** — `⌥Return`, `⌥-click`, or a row's ↵ hover button pastes
-  the item straight into the app you were using (works for images too).
-  Requires the Accessibility permission, requested only on first use; until
-  granted, the item is on the clipboard for a manual `⌘V`.
-- **Snippets** — reusable text templates in their own tab, with `%DATE%`,
-  `%TIME%`, and `%CLIPBOARD%` variables rendered at copy time. Click to copy,
-  ⌥-click to paste directly.
-- **Screen capture** — region and full-screen captures run in-process via
-  ScreenCaptureKit (instant, silent, Cliché's own windows excluded).
-  Region selection happens on a **frozen frame** with a magnifier loupe,
-  live pixel-size label, and Shift-to-lock-square; `⌃⌥⌘R` recaptures the
-  exact previous region with no UI. Optional capture timer (3/5/10 s),
-  show-cursor and window-shadow settings. Window capture uses the native
-  macOS picker. Screenshots land on the Desktop and the clipboard. If
-  ScreenCaptureKit is unavailable, capture falls back to the system
-  `screencapture` tool automatically.
-- **QR codes** — captures containing a QR code get a "copy its link" button
-  on the post-capture thumbnail.
-- **Before/after GIFs** — combine any capture with the previous one into a
-  looping two-frame GIF from the Captures tab.
-- **Contrast checker** — pick two colors in a row with the eyedropper and
-  Cliché shows the WCAG contrast ratio and AA/AAA verdict.
-- **Pixel ruler** — measure anything on screen: hover snaps to UI element
-  edges and shows its size, drag measures point-to-point, click copies.
-- **Scrolling capture** — select a region, scroll the content yourself, and
-  Cliché stitches the frames into one tall image (Vision-aligned).
-- **Screen recording** — record a region to MP4 on the Desktop, with an
-  optional GIF export, driven by a floating stop/timer HUD.
-- **Beautify backdrops** — the annotation editor can wrap any shot in a
-  gradient backdrop with padding, rounded corners, and a drop shadow.
-- **Auto-redaction** — one click in the editor blurs everything that looks
-  sensitive: emails, links, phone numbers, API-key-shaped tokens.
-- **Copy text from screen (OCR)** — the Text button (or `⌃⌥⌘6`) lets you
-  select any region; the text in it is recognized on-device with Apple's
-  Vision framework and copied to the clipboard. Beeps if no text was found.
-- **Quick Access Overlay** — after each capture a small thumbnail floats in
-  the bottom-left corner: drag it straight into another app, click it to
-  annotate, or let it auto-dismiss after a few seconds.
-- **Annotation editor** — arrows, rectangles, text labels, pixelate/redact,
-  and auto-numbered counter badges. ⌘Z undoes, Copy puts the annotated image
-  on the clipboard, Save overwrites the capture file. Open it from the
-  overlay or any capture's ✏️ button.
-- **Captures tab** — a thumbnail grid of past screenshots with share
-  (AirDrop/Mail/Messages), copy, annotate, show-in-Finder, move-to-Trash,
-  and float actions.
-- **Color picker** — eyedropper button opens the native magnifier loupe;
-  the picked pixel's hex code (e.g. `#3A7BD5`) is copied to the clipboard.
-- **Edit clips** — hover a text item's ✏️ to edit its content in place
-  (position and pin state are kept).
-- **Float on top** — pin any screenshot or history image as an always-on-top
-  window for reference while you work.
-- **Settings** (gear button) — screenshot format (PNG or JPEG), whether
-  captures are copied to the clipboard (all modes, including whole-screen)
-  or saved to disk only, launch at login, and the ignore-rules editor.
-  Images are always written to the clipboard as both PNG and TIFF so every
-  app can paste them.
-- **Global hotkeys** — no Accessibility permission required:
-  - `⌃⌥⌘C` — open/close the history panel
-  - `⌃⌥⌘4` — capture region
-  - `⌃⌥⌘5` — capture window
-  - `⌃⌥⌘6` — copy text from screen (OCR)
-  - `⌃⌥⌘R` — repeat the last region capture
+---
 
-History persists across restarts in `~/Library/Application Support/Cliche/`.
-Content marked concealed/transient/auto-generated (e.g. password managers) is
-never recorded; gear menu → "Edit Ignore Rules…" opens `ignore-rules.json`
-where you can add more pasteboard types or app bundle IDs to ignore.
+## Install
 
-## Build & run
+**Option 1 — download the app** (no developer tools needed):
 
-Requires macOS 14+ and Swift 6 (Xcode Command Line Tools are enough):
+1. Grab `Cliche-x.x.x.zip` from the [latest release](https://github.com/curtismu7/cliche/releases/latest).
+2. Unzip it and double-click **`Install Cliché.command`**.
+   - If macOS says it "cannot be opened because it is from an unidentified developer," right-click the file → **Open** → **Open**. This is normal for apps shared outside the App Store (Cliché isn't notarized — see [Signing](#signing)).
+3. Done — Cliché appears in your menu bar and can start at login.
+
+**Option 2 — build from source** (macOS 14+, Xcode Command Line Tools):
 
 ```sh
 git clone https://github.com/curtismu7/cliche.git
 cd cliche
+make install    # builds, installs to ~/Applications, launches
 ```
 
-```sh
-make test   # run the self-test suite
-make app    # build build/Cliche.app
-make run    # build and launch
-```
+**Permissions** (macOS asks once each): *Screen Recording* on your first screenshot, and *Accessibility* only if you use direct paste. Everything else works with no permissions at all.
 
-The first screen capture prompts for the Screen Recording permission
-(System Settings → Privacy & Security → Screen & System Audio Recording).
+## What it does
 
-## Sharing with others
+### 📋 Clipboard history
+- Remembers your last **150 text snippets and 50 images** (both configurable in Settings) from anywhere on your Mac; history survives restarts.
+- **Fuzzy search** — the panel opens with search focused; `hw` finds "hello world".
+- **Keyboard-first** — `↑↓` select, `↩` copies, `⌘1–9` grab the first nine, `⌘⌫` deletes, `⌘P` pins.
+- **Paste directly into the app you were using** — `⌥↩` or ⌥-click types the item where your cursor was.
+- **Pin** anything to keep it forever; **edit text clips in place**; **preview** long text or images in a floating window with copy/pin/edit corners.
+- **Images in a horizontal strip**, previewable, pinnable, annotatable.
+- **Snippets** — reusable templates with `%DATE%`, `%TIME%`, `%CLIPBOARD%` variables.
+- **Privacy built in** — anything copied from password managers (concealed/transient pasteboard types) is never recorded, with a user-editable ignore list.
+- **⌥1 floating list** — Maccy-style popup at your cursor from anywhere.
 
-`make dist` produces `build/Cliche-<version>.zip` containing the app, a
-double-clickable installer ("Install Cliché.command"), and a readme.
-Send the zip; recipients unzip and run the installer — it copies the app
-to `~/Applications`, clears the Gatekeeper quarantine (the app is ad-hoc
-signed, not notarized), optionally adds a login item, and launches it.
-If macOS blocks the installer itself, right-click → Open once.
+### 📷 Screen capture
+- **Region capture on a frozen screen** with a magnifier loupe, live pixel-size label, and Shift-to-square — plus window, full-screen, and timed (3/5/10 s) capture.
+- **Repeat last region** with one hotkey — perfect for iterating on the same area.
+- **OCR** — select any region, the text in it lands on your clipboard (on-device Vision).
+- **Scrolling capture** — select a region, scroll the content, Cliché stitches one tall image.
+- **Screen recording** — region to MP4, with optional GIF export.
+- **Pixel ruler** — hover snaps to UI element edges and shows dimensions; drag measures; click copies.
+- **Annotation editor** — arrows, boxes, text, pixelate, counter badges, **one-click auto-redaction** of emails/links/phone numbers/API keys, and **gradient backdrops** for social-ready shots.
+- **Quick Access Overlay** — post-capture thumbnail you can drag into Slack/Mail or click to annotate; QR codes in captures get a "copy link" button.
+- **Color picker** with hex copy and a WCAG contrast checker; before/after GIFs from any two captures.
+- Screenshots land on the **Desktop + clipboard + Captures tab** (format and clipboard behavior configurable).
+
+## Default shortcuts (all customizable in Settings)
+
+| Shortcut | Action |
+|---|---|
+| `⌃⌥⌘C` | Open the clipboard panel |
+| `⌥1` | Floating clipboard list at the cursor |
+| `⌃⌥⌘4` | Capture a region |
+| `⌃⌥⌘R` | Repeat the last region |
+| `⌃⌥⌘5` | Capture a window |
+| `⌃⌥⌘6` | Copy text from screen (OCR) |
+
+The **?** button in the panel lists every in-panel shortcut; the **gear** opens Settings (menu bar style, history limits, image format, timer, hotkeys, launch at login, ignore rules).
+
+## Signing
+
+Cliché is ad-hoc signed — there's no Apple Developer certificate behind it, which is why Gatekeeper asks for a right-click → Open on first launch. The installer clears the quarantine flag for you. Build from source and there's no prompt at all.
+
+## Uninstall
+
+Quit Cliché from the panel, then delete `~/Applications/Cliche.app` and `~/Library/Application Support/Cliche/`, and remove it from System Settings → Login Items if enabled.
 
 ## Development
 
-- `Sources/ClicheKit` — library: history store, clipboard monitor,
-  capture service, hotkey manager
-- `Sources/Cliche` — the menu bar app (AppKit shell + SwiftUI panel)
-- `Sources/cliche-selftest` — assertion-based tests run with
-  `swift run cliche-selftest` (Command Line Tools ship no XCTest)
-- `docs/superpowers/specs/` — design docs
+- `Sources/ClicheKit` — library: history store, clipboard monitor, screenshot engine, recorder, stitcher, OCR, annotation renderer
+- `Sources/Cliche` — the menu bar app (AppKit shell + SwiftUI panels)
+- `Sources/cliche-selftest` — assertion-based tests: `make test` (Command Line Tools ship no XCTest)
+- `make install` — build + reinstall locally · `make dist` — shareable zip · `make release` — tag, push, and publish a GitHub release
+- `docs/` — design spec, roadmap, and the feature research that drove the app
+
+## License
+
+[MIT](LICENSE)

@@ -7,8 +7,8 @@ public final class HistoryStore {
     public private(set) var items: [ClipItem] = []
 
     public let directory: URL
-    public let maxTexts: Int
-    public let maxImages: Int
+    public private(set) var maxTexts: Int
+    public private(set) var maxImages: Int
 
     private var imagesDirectory: URL {
         directory.appendingPathComponent("images", isDirectory: true)
@@ -24,6 +24,17 @@ public final class HistoryStore {
         try? FileManager.default.createDirectory(
             at: imagesDirectory, withIntermediateDirectories: true)
         load()
+    }
+
+    /// Applies new caps immediately (evicting oldest unpinned overflow).
+    public func setLimits(maxTexts: Int, maxImages: Int) {
+        self.maxTexts = maxTexts
+        self.maxImages = maxImages
+        evictOldest(where: { if case .text = $0.kind { return true }; return false },
+                    cap: maxTexts)
+        evictOldest(where: { if case .image = $0.kind { return true }; return false },
+                    cap: maxImages)
+        save()
     }
 
     public func addText(_ text: String) {
