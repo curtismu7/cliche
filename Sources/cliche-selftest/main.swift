@@ -897,6 +897,32 @@ do {
         "wrong scheme, unknown host, unknown mode → nil")
 }
 
+// desktopClutter
+do {
+    let iconLayer = Int(CGWindowLevelForKey(.desktopIconWindow))
+    expect(DesktopClutter.isDesktopIconWindow(
+        owningBundleID: "com.apple.finder", windowLayer: iconLayer),
+        "Finder window at desktop-icon layer is clutter")
+    expect(!DesktopClutter.isDesktopIconWindow(
+        owningBundleID: "com.apple.finder", windowLayer: 0),
+        "normal Finder window is not clutter")
+    expect(!DesktopClutter.isDesktopIconWindow(
+        owningBundleID: "com.example.other", windowLayer: iconLayer),
+        "non-Finder window at icon layer is not clutter")
+    expect(!DesktopClutter.isDesktopIconWindow(
+        owningBundleID: nil, windowLayer: iconLayer),
+        "nil bundle id is not clutter")
+
+    let suite = "ClicheClutterTest-\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    let settings = AppSettings(defaults: defaults)
+    expect(!settings.hideDesktopIcons, "hideDesktopIcons defaults to off")
+    settings.hideDesktopIcons = true
+    expect(AppSettings(defaults: defaults).hideDesktopIcons,
+        "hideDesktopIcons persists")
+    defaults.removePersistentDomain(forName: suite)
+}
+
 // ocrFromCGImage
 do {
     let width = 700, height = 100

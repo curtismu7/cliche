@@ -36,6 +36,11 @@ public final class AppSettings {
         didSet { defaults.set(windowShadow, forKey: "windowShadow") }
     }
 
+    /// Exclude Finder's desktop-icon windows from captures (wallpaper stays).
+    public var hideDesktopIcons: Bool {
+        didSet { defaults.set(hideDesktopIcons, forKey: "hideDesktopIcons") }
+    }
+
     public enum MenuBarStyle: String, CaseIterable {
         /// One icon opening the full panel.
         case combined
@@ -106,6 +111,8 @@ public final class AppSettings {
         self.timerSeconds = defaults.object(forKey: "timerSeconds") as? Int ?? 0
         self.showCursor = defaults.object(forKey: "showCursor") as? Bool ?? false
         self.windowShadow = defaults.object(forKey: "windowShadow") as? Bool ?? false
+        self.hideDesktopIcons =
+            defaults.object(forKey: "hideDesktopIcons") as? Bool ?? false
         self.menuBarStyle = defaults.string(forKey: "menuBarStyle")
             .flatMap(MenuBarStyle.init(rawValue:)) ?? .combined
         self.maxTextEntries = defaults.object(forKey: "maxTextEntries") as? Int ?? 150
