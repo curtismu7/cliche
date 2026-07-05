@@ -60,4 +60,24 @@ public enum CaptureNaming {
         directory.appendingPathComponent(
             filename(pattern: pattern, fileExtension: fileExtension, date: date))
     }
+
+    /// Like `outputURL`, but never overwrites: same-second captures and
+    /// token-less patterns get " 2", " 3", … suffixes.
+    public static func uniqueOutputURL(
+        directory: URL, pattern: String, fileExtension: String, date: Date = Date()
+    ) -> URL {
+        let base = outputURL(
+            directory: directory, pattern: pattern,
+            fileExtension: fileExtension, date: date)
+        guard FileManager.default.fileExists(atPath: base.path) else { return base }
+        let stem = base.deletingPathExtension().lastPathComponent
+        for n in 2...999 {
+            let candidate = directory
+                .appendingPathComponent("\(stem) \(n).\(fileExtension)")
+            if !FileManager.default.fileExists(atPath: candidate.path) {
+                return candidate
+            }
+        }
+        return base
+    }
 }

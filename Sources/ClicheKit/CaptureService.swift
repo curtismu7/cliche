@@ -57,7 +57,7 @@ public final class CaptureService {
 
     public static func outputURL(fileExtension: String = "png") -> URL {
         let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
-        return CaptureNaming.outputURL(
+        return CaptureNaming.uniqueOutputURL(
             directory: desktop, pattern: CaptureNaming.defaultPattern,
             fileExtension: fileExtension)
     }

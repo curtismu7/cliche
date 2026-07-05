@@ -478,7 +478,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let preset {
             try? FileManager.default.createDirectory(
                 at: preset.destinationURL, withIntermediateDirectories: true)
-            explicitURL = CaptureNaming.outputURL(
+            explicitURL = CaptureNaming.uniqueOutputURL(
                 directory: preset.destinationURL,
                 pattern: preset.filenamePattern,
                 fileExtension: format.fileExtension)

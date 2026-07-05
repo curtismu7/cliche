@@ -31,7 +31,7 @@ public enum Combiner {
             let height = CGFloat(images.map(\.height).min()!)
             let gap = (height * gapFraction).rounded()
             let widths = images.map {
-                (CGFloat($0.width) * height / CGFloat($0.height)).rounded()
+                max(1, (CGFloat($0.width) * height / CGFloat($0.height)).rounded())
             }
             let totalW = widths.reduce(0, +) + gap * CGFloat(images.count - 1)
             return draw(size: CGSize(width: totalW, height: height),
@@ -46,7 +46,7 @@ public enum Combiner {
             let width = CGFloat(images.map(\.width).min()!)
             let gap = (width * gapFraction).rounded()
             let heights = images.map {
-                (CGFloat($0.height) * width / CGFloat($0.width)).rounded()
+                max(1, (CGFloat($0.height) * width / CGFloat($0.width)).rounded())
             }
             let totalH = heights.reduce(0, +) + gap * CGFloat(images.count - 1)
             return draw(size: CGSize(width: width, height: totalH),
@@ -66,7 +66,7 @@ public enum Combiner {
             // width = widest scaled image.
             let cellH = CGFloat(images.map(\.height).min()!)
             let scaledWidths = images.map {
-                (CGFloat($0.width) * cellH / CGFloat($0.height)).rounded()
+                max(1, (CGFloat($0.width) * cellH / CGFloat($0.height)).rounded())
             }
             let cellW = scaledWidths.max()!
             let gap = (cellH * gapFraction).rounded()

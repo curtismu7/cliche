@@ -33,7 +33,7 @@ public enum CaptureDelivery {
         if let directory {
             try? FileManager.default.createDirectory(
                 at: directory, withIntermediateDirectories: true)
-            url = CaptureNaming.outputURL(
+            url = CaptureNaming.uniqueOutputURL(
                 directory: directory, pattern: pattern,
                 fileExtension: format.fileExtension)
         } else {

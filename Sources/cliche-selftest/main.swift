@@ -1013,6 +1013,23 @@ do {
     expect(store.load(for: captureURL) == nil
         && store.originalPNG(for: captureURL) == nil,
         "remove deletes project and original")
+
+    // Same filename in DIFFERENT folders must not share a project.
+    let a = URL(fileURLWithPath: "/tmp/folderA/doc.png")
+    let b = URL(fileURLWithPath: "/tmp/folderB/doc.png")
+    let projectA = AnnotationProject(annotations: [], config: .identity)
+    var cfgB = BeautifyConfig.identity
+    cfgB.frame = .phone
+    let projectB = AnnotationProject(annotations: [], config: cfgB)
+    try! store.save(projectA, originalPNG: Data([1]), for: a)
+    try! store.save(projectB, originalPNG: Data([2]), for: b)
+    expect(store.load(for: a) == projectA && store.load(for: b) == projectB
+        && store.originalPNG(for: a) == Data([1])
+        && store.originalPNG(for: b) == Data([2]),
+        "same-named captures in different folders keep separate projects")
+    store.remove(for: a)
+    expect(store.load(for: b) == projectB,
+        "removing one capture's project leaves the same-named other intact")
 }
 
 // multiWindowGeometry
@@ -1084,6 +1101,29 @@ do {
     let right = rep.colorAt(x: 500, y: 100)!.usingColorSpace(.deviceRGB)!
     expect(left.redComponent < 0.4 && right.redComponent > 0.6,
         "horizontal combine keeps image order left-to-right")
+
+    // Extreme aspect ratios never scale an image to zero width/height.
+    let sliver = solid(10, 3000, gray: 0.5)
+    let extreme = Combiner.combine([sliver, b], layout: .horizontal)!
+    expect(extreme.width >= 1 + 200 && extreme.height == 200,
+        "extreme aspect ratios keep every image at least 1px wide")
+}
+
+// captureNamingUniqueness
+do {
+    let dir = makeTempDir()
+    let first = CaptureNaming.uniqueOutputURL(
+        directory: dir, pattern: "plain", fileExtension: "png")
+    try! Data([1]).write(to: first)
+    let second = CaptureNaming.uniqueOutputURL(
+        directory: dir, pattern: "plain", fileExtension: "png")
+    try! Data([2]).write(to: second)
+    let third = CaptureNaming.uniqueOutputURL(
+        directory: dir, pattern: "plain", fileExtension: "png")
+    expect(first.lastPathComponent == "plain.png"
+        && second.lastPathComponent == "plain 2.png"
+        && third.lastPathComponent == "plain 3.png",
+        "colliding filenames get 2, 3, ... suffixes instead of overwriting")
 }
 
 // capturePresets

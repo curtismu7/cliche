@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// Non-destructive editing: a sidecar "project" per capture holding the
@@ -21,8 +22,14 @@ public final class ProjectStore {
             .appendingPathComponent("Cliche/Projects", isDirectory: true)
     }
 
+    /// Keyed by a hash of the FULL path — two captures named alike in
+    /// different folders (easy with preset filename patterns) must never
+    /// share a project. The filename suffix is only for human browsing.
     private func folder(for captureURL: URL) -> URL {
-        root.appendingPathComponent(captureURL.lastPathComponent, isDirectory: true)
+        let digest = SHA256.hash(data: Data(captureURL.path.utf8))
+        let hex = digest.map { String(format: "%02x", $0) }.joined().prefix(16)
+        return root.appendingPathComponent(
+            "\(hex)-\(captureURL.lastPathComponent)", isDirectory: true)
     }
     private func originalURL(for captureURL: URL) -> URL {
         folder(for: captureURL).appendingPathComponent("original.png")
@@ -52,10 +59,10 @@ public final class ProjectStore {
             at: dir, withIntermediateDirectories: true)
         let originalFile = originalURL(for: captureURL)
         if !FileManager.default.fileExists(atPath: originalFile.path) {
-            try originalPNG.write(to: originalFile)
+            try originalPNG.write(to: originalFile, options: .atomic)
         }
         let data = try JSONEncoder().encode(project)
-        try data.write(to: projectURL(for: captureURL))
+        try data.write(to: projectURL(for: captureURL), options: .atomic)
     }
 
     /// Removes the sidecar when its capture is deleted.
