@@ -1,5 +1,5 @@
 import AppKit
-import ClipShotKit
+import ClicheKit
 import SwiftUI
 
 /// The post-capture markup window: arrows, rectangles, text, blur, counters.

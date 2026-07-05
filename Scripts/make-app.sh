@@ -1,14 +1,14 @@
 #!/bin/bash
-# Builds ClipShot in release mode and assembles build/ClipShot.app.
+# Builds Cliche in release mode and assembles build/Cliche.app.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-swift build -c release --product ClipShot
+swift build -c release --product Cliche
 
-APP=build/ClipShot.app
+APP=build/Cliche.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
-cp .build/release/ClipShot "$APP/Contents/MacOS/ClipShot"
+cp .build/release/Cliche "$APP/Contents/MacOS/Cliche"
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -17,11 +17,11 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>ClipShot</string>
+    <string>Cliche</string>
     <key>CFBundleIdentifier</key>
-    <string>org.coachcurtis.clipshot</string>
+    <string>org.coachcurtis.cliche</string>
     <key>CFBundleName</key>
-    <string>ClipShot</string>
+    <string>Cliché</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

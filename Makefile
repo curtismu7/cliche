@@ -4,13 +4,13 @@ build:
 	swift build
 
 test:
-	swift run clipshot-selftest
+	swift run cliche-selftest
 
 app:
 	Scripts/make-app.sh
 
 run: app
-	open build/ClipShot.app
+	open build/Cliche.app
 
 clean:
 	rm -rf .build build

@@ -77,7 +77,7 @@ public final class SnippetsStore {
             let data = try JSONEncoder().encode(snippets)
             try data.write(to: file, options: .atomic)
         } catch {
-            NSLog("ClipShot: failed to save snippets: \(error)")
+            NSLog("Cliche: failed to save snippets: \(error)")
         }
     }
 }

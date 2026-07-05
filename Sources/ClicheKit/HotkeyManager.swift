@@ -59,7 +59,7 @@ public final class HotkeyManager {
             GetApplicationEventTarget(), 0, &ref)
         hotKeyRefs.append(ref)
         if status != noErr {
-            NSLog("ClipShot: failed to register hotkey (code \(keyCode)): \(status)")
+            NSLog("Cliche: failed to register hotkey (code \(keyCode)): \(status)")
         }
         return status == noErr
     }

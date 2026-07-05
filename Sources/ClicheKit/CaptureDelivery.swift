@@ -30,7 +30,7 @@ public enum CaptureDelivery {
         do {
             try data.write(to: url)
         } catch {
-            NSLog("ClipShot: failed to write capture: \(error)")
+            NSLog("Cliche: failed to write capture: \(error)")
             return nil
         }
         if copyToClipboard {

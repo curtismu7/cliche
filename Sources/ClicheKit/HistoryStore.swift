@@ -131,7 +131,7 @@ public final class HistoryStore {
             let data = try JSONEncoder().encode(items)
             try data.write(to: historyFile, options: .atomic)
         } catch {
-            NSLog("ClipShot: failed to save history: \(error)")
+            NSLog("Cliche: failed to save history: \(error)")
         }
     }
 

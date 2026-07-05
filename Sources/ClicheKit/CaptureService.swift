@@ -50,7 +50,7 @@ public final class CaptureService {
         do {
             try process.run()
         } catch {
-            NSLog("ClipShot: failed to launch screencapture: \(error)")
+            NSLog("Cliche: failed to launch screencapture: \(error)")
         }
     }
 
@@ -59,6 +59,6 @@ public final class CaptureService {
         formatter.dateFormat = "yyyy-MM-dd 'at' HH.mm.ss"
         let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
         return desktop.appendingPathComponent(
-            "ClipShot \(formatter.string(from: Date())).\(fileExtension)")
+            "Cliché \(formatter.string(from: Date())).\(fileExtension)")
     }
 }

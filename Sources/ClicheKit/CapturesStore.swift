@@ -55,7 +55,7 @@ public final class CapturesStore {
             let data = try JSONEncoder().encode(captures)
             try data.write(to: indexFile, options: .atomic)
         } catch {
-            NSLog("ClipShot: failed to save captures index: \(error)")
+            NSLog("Cliche: failed to save captures index: \(error)")
         }
     }
 }

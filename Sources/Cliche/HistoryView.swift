@@ -1,5 +1,5 @@
 import AppKit
-import ClipShotKit
+import ClicheKit
 import SwiftUI
 
 struct HistoryView: View {
@@ -252,7 +252,7 @@ struct HistoryView: View {
             Button("Quit", action: onQuit)
                 .font(.caption)
                 .keyboardShortcut("q", modifiers: .command)
-                .help("Quit ClipShot (⌘Q)")
+                .help("Quit Cliché (⌘Q)")
         }
         .padding(8)
     }
@@ -630,7 +630,7 @@ private struct CapturesGrid: View {
                 store.add(path: url.path)
                 InfoHUD.show("Before/after GIF saved to Desktop")
             } catch {
-                NSLog("ClipShot: failed to write GIF: \(error)")
+                NSLog("Cliche: failed to write GIF: \(error)")
             }
         }
 

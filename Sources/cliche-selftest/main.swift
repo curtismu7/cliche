@@ -1,6 +1,6 @@
 import AppKit
 import Foundation
-import ClipShotKit
+import ClicheKit
 
 // Minimal test harness: Command Line Tools provide no XCTest/swift-testing,
 // so assertions run in a plain executable. Exits 1 if any check fails.
@@ -18,7 +18,7 @@ func expect(_ condition: Bool, _ label: String) {
 
 func makeTempDir() -> URL {
     let url = FileManager.default.temporaryDirectory
-        .appendingPathComponent("ClipShotTests-\(UUID().uuidString)", isDirectory: true)
+        .appendingPathComponent("ClicheTests-\(UUID().uuidString)", isDirectory: true)
     try! FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url
 }
@@ -349,7 +349,7 @@ do {
 
 // clipboardWriterWritesPNGAndTIFF
 do {
-    let pasteboard = NSPasteboard(name: NSPasteboard.Name("clipshot-selftest-\(UUID().uuidString)"))
+    let pasteboard = NSPasteboard(name: NSPasteboard.Name("cliche-selftest-\(UUID().uuidString)"))
     let wrote = ClipboardWriter.writeImage(pngData: pngData, to: pasteboard)
     let readPNG = pasteboard.data(forType: .png)
     let readTIFF = pasteboard.data(forType: .tiff)
@@ -364,7 +364,7 @@ do {
 
 // appSettingsPersistence
 do {
-    let suite = "clipshot-selftest-\(UUID().uuidString)"
+    let suite = "cliche-selftest-\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: suite)!
     let settings = AppSettings(defaults: defaults)
     expect(settings.captureFormat == .png && settings.copyCapturesToClipboard,
@@ -394,7 +394,7 @@ do {
         "capture encodes to PNG and JPEG formats")
 
     // JPEG data through the clipboard writer still yields PNG + TIFF types.
-    let pasteboard = NSPasteboard(name: NSPasteboard.Name("clipshot-selftest-\(UUID().uuidString)"))
+    let pasteboard = NSPasteboard(name: NSPasteboard.Name("cliche-selftest-\(UUID().uuidString)"))
     let wrote = ClipboardWriter.writeImage(pngData: jpeg, to: pasteboard)
     let outPNG = pasteboard.data(forType: .png)
     expect(wrote && outPNG != nil
@@ -407,10 +407,10 @@ do {
 // qrDetection
 do {
     let filter = CIFilter(name: "CIQRCodeGenerator")!
-    filter.setValue("https://example.com/clipshot".data(using: .utf8)!, forKey: "inputMessage")
+    filter.setValue("https://example.com/cliche".data(using: .utf8)!, forKey: "inputMessage")
     let output = filter.outputImage!.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
     let qrImage = CIContext().createCGImage(output, from: output.extent)!
-    expect(QRDetector.firstQRPayload(in: qrImage) == "https://example.com/clipshot",
+    expect(QRDetector.firstQRPayload(in: qrImage) == "https://example.com/cliche",
         "QR detector decodes payload")
 
     let blank = CGContext(
@@ -459,7 +459,7 @@ do {
 
 // lastRegionPersistence
 do {
-    let suite = "clipshot-selftest-\(UUID().uuidString)"
+    let suite = "cliche-selftest-\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: suite)!
     let settings = AppSettings(defaults: defaults)
     expect(settings.lastRegion == nil, "last region starts nil")
@@ -557,7 +557,7 @@ do {
     image.lockFocus()
     NSColor.white.setFill()
     NSRect(origin: .zero, size: size).fill()
-    ("Hello ClipShot 42" as NSString).draw(
+    ("Hello Cliche 42" as NSString).draw(
         at: NSPoint(x: 24, y: 40),
         withAttributes: [
             .font: NSFont.systemFont(ofSize: 48, weight: .bold),
@@ -570,7 +570,7 @@ do {
     try! png.write(to: url)
 
     let recognized = (try? OCRService.recognizeText(in: url)) ?? ""
-    expect(recognized.lowercased().contains("clipshot")
+    expect(recognized.lowercased().contains("cliche")
         && recognized.contains("42"), "OCR recognizes rendered text")
 }
 

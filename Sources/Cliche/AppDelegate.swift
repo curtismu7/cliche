@@ -1,6 +1,6 @@
 import AppKit
 import Carbon.HIToolbox
-import ClipShotKit
+import ClicheKit
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -22,9 +22,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hotkeys = HotkeyManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let appSupport = FileManager.default
+        let supportBase = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("ClipShot", isDirectory: true)
+        let appSupport = supportBase.appendingPathComponent("Cliche", isDirectory: true)
+        // One-time migration from the app's previous name.
+        let legacySupport = supportBase.appendingPathComponent("ClipShot", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: appSupport.path),
+           FileManager.default.fileExists(atPath: legacySupport.path) {
+            try? FileManager.default.moveItem(at: legacySupport, to: appSupport)
+        }
         let ignoreRulesURL = appSupport.appendingPathComponent("ignore-rules.json")
 
         store = HistoryStore(directory: appSupport)
@@ -38,7 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = NSImage(
             systemSymbolName: "scissors.badge.ellipsis",
-            accessibilityDescription: "ClipShot")
+            accessibilityDescription: "Cliché")
         statusItem.button?.action = #selector(togglePopover)
         statusItem.button?.target = self
 
@@ -167,7 +173,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
             } catch {
-                NSLog("ClipShot: freeze capture failed (\(error)); using CLI")
+                NSLog("Cliche: freeze capture failed (\(error)); using CLI")
                 self.captureWithCLI(.region)
             }
         }
@@ -190,7 +196,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self.deliver(cropped)
                 }
             } catch {
-                NSLog("ClipShot: repeat-area capture failed: \(error)")
+                NSLog("Cliche: repeat-area capture failed: \(error)")
             }
         }
     }
@@ -208,7 +214,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     showsCursor: settings.showCursor)
                 self.deliver(image)
             } catch {
-                NSLog("ClipShot: ScreenCaptureKit failed (\(error)); using screencapture CLI")
+                NSLog("Cliche: ScreenCaptureKit failed (\(error)); using screencapture CLI")
                 self.captureWithCLI(cliFallback)
             }
         }

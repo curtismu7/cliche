@@ -7,7 +7,7 @@ struct HelpView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("ClipShot Shortcuts & Help")
+                Text("Cliché Shortcuts & Help")
                     .font(.headline)
                 Spacer()
                 Button("Done") { dismiss() }

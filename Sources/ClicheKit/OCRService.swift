@@ -24,7 +24,7 @@ public final class OCRService {
     /// user cancels. `onRecognized` runs on the main queue with the text.
     public func captureText(onRecognized: ((String) -> Void)? = nil) {
         let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("clipshot-ocr-\(UUID().uuidString).png")
+            .appendingPathComponent("cliche-ocr-\(UUID().uuidString).png")
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
         process.arguments = ["-i", tempURL.path]
@@ -47,7 +47,7 @@ public final class OCRService {
         do {
             try process.run()
         } catch {
-            NSLog("ClipShot: failed to launch screencapture for OCR: \(error)")
+            NSLog("Cliche: failed to launch screencapture for OCR: \(error)")
         }
     }
 }

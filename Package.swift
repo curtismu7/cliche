@@ -2,23 +2,23 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClipShot",
+    name: "Cliche",
     platforms: [.macOS(.v14)],
     targets: [
         .target(
-            name: "ClipShotKit",
+            name: "ClicheKit",
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .executableTarget(
-            name: "ClipShot",
-            dependencies: ["ClipShotKit"],
+            name: "Cliche",
+            dependencies: ["ClicheKit"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         // Command Line Tools ship no XCTest/swift-testing, so tests run as a
-        // plain executable: `swift run clipshot-selftest`
+        // plain executable: `swift run cliche-selftest`
         .executableTarget(
-            name: "clipshot-selftest",
-            dependencies: ["ClipShotKit"],
+            name: "cliche-selftest",
+            dependencies: ["ClicheKit"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
     ]

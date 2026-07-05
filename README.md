@@ -1,4 +1,4 @@
-# ClipShot
+# Cliché
 
 A macOS menu bar app combining a clipboard history manager and screen capture.
 
@@ -20,7 +20,7 @@ A macOS menu bar app combining a clipboard history manager and screen capture.
   `%TIME%`, and `%CLIPBOARD%` variables rendered at copy time. Click to copy,
   ⌥-click to paste directly.
 - **Screen capture** — region and full-screen captures run in-process via
-  ScreenCaptureKit (instant, silent, ClipShot's own windows excluded).
+  ScreenCaptureKit (instant, silent, Cliché's own windows excluded).
   Region selection happens on a **frozen frame** with a magnifier loupe,
   live pixel-size label, and Shift-to-lock-square; `⌃⌥⌘R` recaptures the
   exact previous region with no UI. Optional capture timer (3/5/10 s),
@@ -33,7 +33,7 @@ A macOS menu bar app combining a clipboard history manager and screen capture.
 - **Before/after GIFs** — combine any capture with the previous one into a
   looping two-frame GIF from the Captures tab.
 - **Contrast checker** — pick two colors in a row with the eyedropper and
-  ClipShot shows the WCAG contrast ratio and AA/AAA verdict.
+  Cliché shows the WCAG contrast ratio and AA/AAA verdict.
 - **Copy text from screen (OCR)** — the Text button (or `⌃⌥⌘6`) lets you
   select any region; the text in it is recognized on-device with Apple's
   Vision framework and copied to the clipboard. Beeps if no text was found.
@@ -63,8 +63,9 @@ A macOS menu bar app combining a clipboard history manager and screen capture.
   - `⌃⌥⌘4` — capture region
   - `⌃⌥⌘5` — capture window
   - `⌃⌥⌘6` — copy text from screen (OCR)
+  - `⌃⌥⌘R` — repeat the last region capture
 
-History persists across restarts in `~/Library/Application Support/ClipShot/`.
+History persists across restarts in `~/Library/Application Support/Cliche/`.
 Content marked concealed/transient/auto-generated (e.g. password managers) is
 never recorded; gear menu → "Edit Ignore Rules…" opens `ignore-rules.json`
 where you can add more pasteboard types or app bundle IDs to ignore.
@@ -75,7 +76,7 @@ Requires macOS 14+ and Swift 6 (Xcode Command Line Tools are enough).
 
 ```sh
 make test   # run the self-test suite
-make app    # build build/ClipShot.app
+make app    # build build/Cliche.app
 make run    # build and launch
 ```
 
@@ -84,9 +85,9 @@ The first screen capture prompts for the Screen Recording permission
 
 ## Development
 
-- `Sources/ClipShotKit` — library: history store, clipboard monitor,
+- `Sources/ClicheKit` — library: history store, clipboard monitor,
   capture service, hotkey manager
-- `Sources/ClipShot` — the menu bar app (AppKit shell + SwiftUI panel)
-- `Sources/clipshot-selftest` — assertion-based tests run with
-  `swift run clipshot-selftest` (Command Line Tools ship no XCTest)
+- `Sources/Cliche` — the menu bar app (AppKit shell + SwiftUI panel)
+- `Sources/cliche-selftest` — assertion-based tests run with
+  `swift run cliche-selftest` (Command Line Tools ship no XCTest)
 - `docs/superpowers/specs/` — design docs

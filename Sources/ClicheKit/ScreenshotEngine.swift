@@ -2,7 +2,7 @@ import AppKit
 import ScreenCaptureKit
 
 /// In-process screenshots via ScreenCaptureKit — no shell-out, no shutter
-/// sound, and ClipShot's own windows are excluded from the image.
+/// sound, and Cliche's own windows are excluded from the image.
 public enum ScreenshotEngine {
     public enum EngineError: Error {
         case displayNotFound

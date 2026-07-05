@@ -2,7 +2,7 @@ import Foundation
 import ServiceManagement
 
 /// Launch-at-login via SMAppService. Only effective when running from the
-/// bundled ClipShot.app (registration needs a bundle identity).
+/// bundled Cliche.app (registration needs a bundle identity).
 enum LoginItem {
     static var isEnabled: Bool {
         SMAppService.mainApp.status == .enabled
@@ -18,7 +18,7 @@ enum LoginItem {
                 try SMAppService.mainApp.unregister()
             }
         } catch {
-            NSLog("ClipShot: launch-at-login change failed: \(error)")
+            NSLog("Cliche: launch-at-login change failed: \(error)")
         }
         return isEnabled
     }

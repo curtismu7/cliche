@@ -1,5 +1,5 @@
 import AppKit
-import ClipShotKit
+import ClicheKit
 import SwiftUI
 
 struct SettingsView: View {
