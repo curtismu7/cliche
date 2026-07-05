@@ -183,7 +183,7 @@ struct HistoryView: View {
             } else {
                 itemList
             }
-            Text("↩ copy · ⌥↩ paste into app · ⌘1–9 quick copy · ⌘⌫ delete · ⌘P pin")
+            Text("↩ copy · ⌥↩ paste into app · ⌘1–9 quick copy · ⌘⌫ delete · ⌥P pin")
                 .font(.system(size: 12))
                 .foregroundStyle(Color.ink)
                 .padding(.vertical, 4)
@@ -262,11 +262,53 @@ struct HistoryView: View {
         .frame(maxWidth: .infinity)
     }
 
+    private var pinnedCount: Int {
+        textItems.prefix(while: \.pinned).count
+    }
+
+    private var pinnedHeader: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "pin.fill")
+                .font(.system(size: 10))
+                .foregroundStyle(.orange)
+            Text("Pinned")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.ink)
+            Spacer()
+            Button("Unpin All") { store.unpinAll() }
+                .buttonStyle(.plain)
+                .font(.system(size: 11))
+                .foregroundStyle(Color.ink)
+                .help("Remove all pins (items rejoin normal history)")
+        }
+        .padding(.horizontal, 8)
+        .padding(.top, 2)
+    }
+
+    private var recentSeparator: some View {
+        HStack(spacing: 6) {
+            Rectangle().fill(Color.black.opacity(0.15)).frame(height: 1)
+            Text("Recent")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.ink)
+                .fixedSize()
+            Rectangle().fill(Color.black.opacity(0.15)).frame(height: 1)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+    }
+
     private var itemList: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 2) {
+                    if pinnedCount > 0 {
+                        pinnedHeader
+                    }
                     ForEach(Array(textItems.enumerated()), id: \.element.id) { index, item in
+                        if index == pinnedCount, pinnedCount > 0 {
+                            recentSeparator
+                        }
                         ItemRow(
                             item: item,
                             isSelected: index == selectedIndex,
@@ -416,6 +458,11 @@ struct HistoryView: View {
                 selectedIndex = min(selectedIndex, max(textItems.count - 2, 0))
             }
             .keyboardShortcut(.delete, modifiers: .command)
+            Button("") {
+                guard textItems.indices.contains(selectedIndex) else { return }
+                store.togglePin(textItems[selectedIndex])
+            }
+            .keyboardShortcut("p", modifiers: .option)
             Button("") {
                 guard textItems.indices.contains(selectedIndex) else { return }
                 store.togglePin(textItems[selectedIndex])

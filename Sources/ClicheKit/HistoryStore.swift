@@ -80,6 +80,19 @@ public final class HistoryStore {
         save()
     }
 
+    /// Unpins everything; former pins count against the caps again, so
+    /// overflow is evicted immediately.
+    public func unpinAll() {
+        for index in items.indices {
+            items[index].pinned = false
+        }
+        evictOldest(where: { if case .text = $0.kind { return true }; return false },
+                    cap: maxTexts)
+        evictOldest(where: { if case .image = $0.kind { return true }; return false },
+                    cap: maxImages)
+        save()
+    }
+
     public func togglePin(_ item: ClipItem) {
         guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
         items[index].pinned.toggle()

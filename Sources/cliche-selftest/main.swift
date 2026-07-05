@@ -236,6 +236,23 @@ do {
     defaults.removePersistentDomain(forName: suite)
 }
 
+// unpinAll
+do {
+    let dir = makeTempDir()
+    let store = HistoryStore(directory: dir, maxTexts: 2)
+    for i in 1...2 { store.addText("t\(i)") }
+    store.togglePin(store.items[0])
+    store.togglePin(store.items[1])
+    store.addText("t3")  // pins don't count, so 3 items live
+    expect(store.items.count == 3, "pins exempt from cap before unpinAll")
+    store.unpinAll()
+    let reloaded = HistoryStore(directory: dir)
+    expect(store.items.allSatisfy { !$0.pinned }
+        && store.items.count == 2
+        && reloaded.items.count == 2,
+        "unpinAll clears pins, re-applies caps, persists")
+}
+
 // fuzzyMatcher
 do {
     expect(FuzzyMatcher.matches("", in: "anything")
