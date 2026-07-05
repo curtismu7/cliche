@@ -84,7 +84,10 @@ struct HistoryView: View {
         pinKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             guard event.modifierFlags.contains(.option),
                   !event.modifierFlags.contains(.command),
-                  let window = hostWindow, event.window === window,
+                  let eventWindow = event.window, eventWindow.isKeyWindow,
+                  // Scope to this panel's window; if attachment reporting
+                  // hasn't landed yet, fall back to the key window.
+                  hostWindow == nil || eventWindow === hostWindow,
                   effectiveTab == .clipboard,
                   let key = event.charactersIgnoringModifiers?.lowercased()
             else { return event }
@@ -980,16 +983,27 @@ private struct CapturesGrid: View {
 
 
 /// Reports the hosting NSWindow so views can scope event monitors to it.
+/// Fires every time the view moves into a window (popovers attach late).
 private struct WindowAccessor: NSViewRepresentable {
     let onWindow: (NSWindow?) -> Void
 
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        DispatchQueue.main.async { [weak view] in onWindow(view?.window) }
+    func makeNSView(context: Context) -> WindowReportingView {
+        let view = WindowReportingView()
+        view.onWindow = onWindow
         return view
     }
 
-    func updateNSView(_ view: NSView, context: Context) {
-        DispatchQueue.main.async { [weak view] in onWindow(view?.window) }
+    func updateNSView(_ view: WindowReportingView, context: Context) {
+        view.onWindow = onWindow
+        view.onWindow?(view.window)
+    }
+}
+
+private final class WindowReportingView: NSView {
+    var onWindow: ((NSWindow?) -> Void)?
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        onWindow?(window)
     }
 }
