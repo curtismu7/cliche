@@ -1045,6 +1045,47 @@ do {
         "empty frame list is nil")
 }
 
+// combiner
+do {
+    func solid(_ w: Int, _ h: Int, gray: CGFloat) -> CGImage {
+        let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8,
+            bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        ctx.setFillColor(CGColor(gray: gray, alpha: 1))
+        ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+        return ctx.makeImage()!
+    }
+    let a = solid(400, 200, gray: 0.2)   // wide
+    let b = solid(200, 200, gray: 0.8)   // square
+
+    // Horizontal: min height 200, gap 4 (2% of 200) → widths 400 + 200.
+    let h = Combiner.combine([a, b], layout: .horizontal)!
+    expect(h.width == 604 && h.height == 200,
+        "horizontal combine = summed widths + gap at min height")
+
+    // Vertical: min width 200 → a scales to 200×100; gap 4 → height 304.
+    let v = Combiner.combine([a, b], layout: .vertical)!
+    expect(v.width == 200 && v.height == 304,
+        "vertical combine = summed scaled heights + gap at min width")
+
+    // Grid of 3: 2 columns, 2 rows; cellH 200, cellW 400; gap 4.
+    let g = Combiner.combine([a, b, b], layout: .grid)!
+    expect(g.width == 804 && g.height == 404,
+        "grid combine uses ceil(sqrt(n)) columns with uniform cells")
+
+    // Fewer than 2 images → nil.
+    expect(Combiner.combine([a], layout: .horizontal) == nil
+        && Combiner.combine([], layout: .grid) == nil,
+        "combine needs at least two images")
+
+    // Content lands where expected: left half dark, right half light.
+    let rep = NSBitmapImageRep(cgImage: h)
+    let left = rep.colorAt(x: 100, y: 100)!.usingColorSpace(.deviceRGB)!
+    let right = rep.colorAt(x: 500, y: 100)!.usingColorSpace(.deviceRGB)!
+    expect(left.redComponent < 0.4 && right.redComponent > 0.6,
+        "horizontal combine keeps image order left-to-right")
+}
+
 // desktopClutter
 do {
     let iconLayer = Int(CGWindowLevelForKey(.desktopIconWindow))

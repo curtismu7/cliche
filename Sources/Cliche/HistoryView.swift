@@ -854,6 +854,8 @@ private struct SnippetEditor: View {
 private struct CapturesGrid: View {
     let store: CapturesStore
 
+    @State private var showingCombine = false
+
     private static let dateFormat: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
@@ -877,17 +879,38 @@ private struct CapturesGrid: View {
             }
             .frame(maxWidth: .infinity)
         } else {
-            ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 8)], spacing: 8) {
-                    ForEach(Array(store.captures.enumerated()), id: \.element.id) { index, capture in
-                        CaptureCell(
-                            capture: capture,
-                            older: index + 1 < store.captures.count
-                                ? store.captures[index + 1] : nil,
-                            store: store)
+            VStack(spacing: 0) {
+                if store.captures.count >= 2 {
+                    HStack {
+                        Spacer()
+                        Button {
+                            showingCombine = true
+                        } label: {
+                            Label("Combine…", systemImage: "square.grid.2x1")
+                                .font(.system(size: 11.5))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.ink)
+                        .help("Stitch several captures into one image")
                     }
+                    .padding(.horizontal, 10)
+                    .padding(.top, 6)
                 }
-                .padding(8)
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 8)], spacing: 8) {
+                        ForEach(Array(store.captures.enumerated()), id: \.element.id) { index, capture in
+                            CaptureCell(
+                                capture: capture,
+                                older: index + 1 < store.captures.count
+                                    ? store.captures[index + 1] : nil,
+                                store: store)
+                        }
+                    }
+                    .padding(8)
+                }
+            }
+            .sheet(isPresented: $showingCombine) {
+                CombineSheet(store: store) { showingCombine = false }
             }
         }
     }
