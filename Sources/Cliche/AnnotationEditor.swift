@@ -4,26 +4,47 @@ import SwiftUI
 
 /// The post-capture markup window: arrows, rectangles, text, blur, counters.
 /// Save overwrites the capture's PNG and refreshes the clipboard, so history
-/// and the Captures tab stay in sync.
+/// and the Captures tab stay in sync. A sidecar project preserves the
+/// original image and the annotation layers, so reopening the editor on a
+/// saved capture resumes editing instead of flattening twice.
 enum AnnotationEditor {
     private static var window: NSWindow?
 
     static func open(fileURL: URL, settings: AppSettings = AppSettings()) {
-        guard let nsImage = NSImage(contentsOf: fileURL),
-              let base = nsImage.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        let store = ProjectStore()
+        let project = store.load(for: fileURL)
+
+        // With a project, edit the preserved original; otherwise the file.
+        let nsImage: NSImage
+        if project != nil, let data = store.originalPNG(for: fileURL),
+           let original = NSImage(data: data) {
+            nsImage = original
+        } else if let fromFile = NSImage(contentsOf: fileURL) {
+            nsImage = fromFile
+        } else {
+            return
+        }
+        guard let base = nsImage.cgImage(forProposedRect: nil, context: nil, hints: nil)
         else { return }
+        let basePNG = CaptureDelivery.pngData(from: base)
 
         window?.close()
 
         let view = AnnotationEditorView(
             base: base,
             settings: settings,
+            project: project,
             onCopy: { flattened in
                 copyToClipboard(flattened)
             },
-            onSave: { flattened in
+            onSave: { flattened, annotations, config in
                 if let data = CaptureDelivery.pngData(from: flattened) {
                     try? data.write(to: fileURL)
+                }
+                if let basePNG {
+                    try? store.save(
+                        AnnotationProject(annotations: annotations, config: config),
+                        originalPNG: basePNG, for: fileURL)
                 }
                 copyToClipboard(flattened)
                 window?.close()
@@ -100,16 +121,22 @@ struct AnnotationEditorView: View {
     let base: CGImage
     let settings: AppSettings
     let onCopy: (CGImage) -> Void
-    let onSave: (CGImage) -> Void
+    let onSave: (CGImage, [Annotation], BeautifyConfig) -> Void
 
     init(base: CGImage, settings: AppSettings,
+         project: AnnotationProject? = nil,
          onCopy: @escaping (CGImage) -> Void,
-         onSave: @escaping (CGImage) -> Void) {
+         onSave: @escaping (CGImage, [Annotation], BeautifyConfig) -> Void) {
         self.base = base
         self.settings = settings
         self.onCopy = onCopy
         self.onSave = onSave
-        _config = State(initialValue: settings.lastBeautifyConfig)
+        _config = State(initialValue: project?.config ?? settings.lastBeautifyConfig)
+        _annotations = State(initialValue: project?.annotations ?? [])
+        let highestCounter = (project?.annotations ?? []).compactMap {
+            if case .counter(let n) = $0.kind { return n } else { return nil }
+        }.max() ?? 0
+        _nextCounter = State(initialValue: highestCounter + 1)
     }
 
     @State private var tool: EditorTool = .arrow
@@ -217,9 +244,9 @@ struct AnnotationEditorView: View {
             Button("Copy") { onCopy(exported) }
                 .keyboardShortcut("c", modifiers: [.command, .shift])
                 .help("Copy annotated image to clipboard")
-            Button("Save") { onSave(exported) }
+            Button("Save") { onSave(exported, annotations, config) }
                 .keyboardShortcut(.defaultAction)
-                .help("Overwrite the capture file and copy to clipboard")
+                .help("Overwrite the capture file and copy to clipboard (layers stay editable)")
         }
         .padding(10)
     }

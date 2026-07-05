@@ -979,6 +979,42 @@ do {
         "gaussian blur flattens detail inside, leaves outside sharp")
 }
 
+// projectStore
+do {
+    let dir = makeTempDir()
+    let store = ProjectStore(directory: dir)
+    let captureURL = URL(fileURLWithPath: "/tmp/fake/Cliché test.png")
+
+    expect(store.load(for: captureURL) == nil, "missing project loads nil")
+
+    var cfg = BeautifyConfig.gradient(RGBAColor(1, 0, 0), RGBAColor(0, 0, 1))
+    cfg.frame = .browserLight
+    let project = AnnotationProject(
+        annotations: [
+            Annotation(kind: .freehand(points: [CGPoint(x: 1, y: 2)]),
+                       start: .zero, end: CGPoint(x: 1, y: 2)),
+            Annotation(kind: .counter(3), start: .zero, end: .zero),
+        ],
+        config: cfg)
+    let originalV1 = Data([1, 2, 3, 4])
+    try! store.save(project, originalPNG: originalV1, for: captureURL)
+
+    let loaded = store.load(for: captureURL)
+    expect(loaded == project, "project round-trips annotations and config")
+    expect(store.originalPNG(for: captureURL) == originalV1,
+        "original bytes stored")
+
+    // Second save must NOT overwrite the true original.
+    try! store.save(project, originalPNG: Data([9, 9]), for: captureURL)
+    expect(store.originalPNG(for: captureURL) == originalV1,
+        "repeated saves keep the first original")
+
+    store.remove(for: captureURL)
+    expect(store.load(for: captureURL) == nil
+        && store.originalPNG(for: captureURL) == nil,
+        "remove deletes project and original")
+}
+
 // desktopClutter
 do {
     let iconLayer = Int(CGWindowLevelForKey(.desktopIconWindow))

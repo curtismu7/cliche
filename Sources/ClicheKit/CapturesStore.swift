@@ -34,11 +34,13 @@ public final class CapturesStore {
     }
 
     /// Removes the index entry; optionally moves the file to the Trash.
+    /// The capture's annotation project (if any) goes with it.
     public func remove(_ capture: Capture, deleteFile: Bool) {
         captures.removeAll { $0.id == capture.id }
+        let url = URL(fileURLWithPath: capture.path)
+        ProjectStore().remove(for: url)
         if deleteFile {
-            try? FileManager.default.trashItem(
-                at: URL(fileURLWithPath: capture.path), resultingItemURL: nil)
+            try? FileManager.default.trashItem(at: url, resultingItemURL: nil)
         }
         save()
     }
