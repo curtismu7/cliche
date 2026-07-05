@@ -66,6 +66,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 onCapture: { [weak self] mode in self?.capture(mode) },
                 onCaptureText: { [weak self] in self?.captureText() },
+                onPickColor: { [weak self] in self?.pickColor() },
                 onQuit: { NSApp.terminate(nil) }
             ))
 
@@ -107,6 +108,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
+    }
+
+    /// Native magnifier loupe; the picked color's hex code goes onto the
+    /// clipboard (and into history via the monitor).
+    private func pickColor() {
+        popover.performClose(nil)
+        NSColorSampler().show { [weak self] color in
+            guard let color, let hex = ColorUtil.hexString(color) else { return }
+            self?.setPasteboardString(hex)
+        }
     }
 
     private func captureText() {

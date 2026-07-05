@@ -36,8 +36,13 @@ A macOS menu bar app combining a clipboard history manager and screen capture.
   and auto-numbered counter badges. ⌘Z undoes, Copy puts the annotated image
   on the clipboard, Save overwrites the capture file. Open it from the
   overlay or any capture's ✏️ button.
-- **Captures tab** — a thumbnail grid of past screenshots with copy,
-  annotate, show-in-Finder, move-to-Trash, and float actions.
+- **Captures tab** — a thumbnail grid of past screenshots with share
+  (AirDrop/Mail/Messages), copy, annotate, show-in-Finder, move-to-Trash,
+  and float actions.
+- **Color picker** — eyedropper button opens the native magnifier loupe;
+  the picked pixel's hex code (e.g. `#3A7BD5`) is copied to the clipboard.
+- **Edit clips** — hover a text item's ✏️ to edit its content in place
+  (position and pin state are kept).
 - **Float on top** — pin any screenshot or history image as an always-on-top
   window for reference while you work.
 - **Launch at login** — toggle in the gear menu (System Settings shows it

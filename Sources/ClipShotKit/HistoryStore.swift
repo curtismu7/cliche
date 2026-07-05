@@ -52,6 +52,17 @@ public final class HistoryStore {
         return try? Data(contentsOf: imagesDirectory.appendingPathComponent(fileName))
     }
 
+    /// Replaces a text item's content in place (position and pin state kept).
+    public func updateText(_ item: ClipItem, to newText: String) {
+        guard case .text = item.kind, !newText.isEmpty,
+              let index = items.firstIndex(where: { $0.id == item.id })
+        else { return }
+        items[index] = ClipItem(
+            id: item.id, date: Date(), kind: .text(newText),
+            pinned: items[index].pinned)
+        save()
+    }
+
     public func togglePin(_ item: ClipItem) {
         guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
         items[index].pinned.toggle()

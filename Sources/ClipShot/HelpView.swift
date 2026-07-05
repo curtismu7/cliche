@@ -31,11 +31,14 @@ struct HelpView: View {
                         ("⌘1 – ⌘9", "Copy the numbered item"),
                         ("⌘⌫", "Delete selection"),
                         ("⌘P", "Pin / unpin selection"),
-                        ("hover", "Row buttons: paste ↵, float, pin, delete"),
+                        ("hover", "Row buttons: paste ↵, edit ✏️ (text), float (image), pin, delete"),
                     ])
                     section("Captures Tab", rows: [
                         ("click thumbnail overlay", "After a capture: click to annotate, or drag it into another app"),
-                        ("hover a capture", "Copy, annotate ✏️, float, show in Finder, trash"),
+                        ("hover a capture", "Share, copy, annotate ✏️, float, show in Finder, trash"),
+                    ])
+                    section("Color Picker", rows: [
+                        ("eyedropper button", "Magnifier loupe — click any pixel; its hex code (#3A7BD5) is copied"),
                     ])
                     section("Annotation Editor", rows: [
                         ("drag", "Arrow, rectangle, or pixelate (by tool)"),

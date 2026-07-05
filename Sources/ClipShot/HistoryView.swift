@@ -13,6 +13,7 @@ struct HistoryView: View {
     let onPasteSnippet: (SnippetsStore.Snippet) -> Void
     let onCapture: (CaptureMode) -> Void
     let onCaptureText: () -> Void
+    let onPickColor: () -> Void
     let onQuit: () -> Void
 
     private enum Tab: String, CaseIterable {
@@ -26,6 +27,8 @@ struct HistoryView: View {
     @State private var selectedIndex = 0
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var showingHelp = false
+    @State private var editingItem: ClipItem?
+    @State private var editText = ""
     @FocusState private var searchFocused: Bool
 
     /// Pinned first, then recent, both fuzzy-filtered — the order rows render
@@ -61,6 +64,28 @@ struct HistoryView: View {
         .frame(width: 340, height: 460)
         .background(shortcutButtons)
         .sheet(isPresented: $showingHelp) { HelpView() }
+        .sheet(item: $editingItem) { item in
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Edit Clip")
+                    .font(.headline)
+                TextEditor(text: $editText)
+                    .font(.body)
+                    .frame(width: 280, height: 110)
+                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(.quaternary))
+                HStack {
+                    Spacer()
+                    Button("Cancel") { editingItem = nil }
+                        .keyboardShortcut(.cancelAction)
+                    Button("Save") {
+                        store.updateText(item, to: editText)
+                        editingItem = nil
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(editText.isEmpty)
+                }
+            }
+            .padding(14)
+        }
     }
 
     // MARK: Clipboard tab
@@ -143,6 +168,12 @@ struct HistoryView: View {
                             imageData: { store.imageData(for: item) },
                             onCopy: { onCopy(item) },
                             onPaste: { onPaste(item) },
+                            onEdit: {
+                                if case .text(let text) = item.kind {
+                                    editText = text
+                                    editingItem = item
+                                }
+                            },
                             onPin: { store.togglePin(item) },
                             onFloat: {
                                 if let data = store.imageData(for: item),
@@ -182,6 +213,8 @@ struct HistoryView: View {
             .help("Capture full screen")
             CaptureButton(title: "Text", symbol: "text.viewfinder", action: onCaptureText)
                 .help("Copy text from screen (OCR)  ⌃⌥⌘6")
+            CaptureButton(title: "Color", symbol: "eyedropper", action: onPickColor)
+                .help("Pick a color — hex code goes to the clipboard")
             Spacer()
             Button(action: onQuit) {
                 Image(systemName: "power")
@@ -283,6 +316,7 @@ private struct ItemRow: View {
     let imageData: () -> Data?
     let onCopy: () -> Void
     let onPaste: () -> Void
+    let onEdit: () -> Void
     let onPin: () -> Void
     let onFloat: () -> Void
     let onDelete: () -> Void
@@ -305,6 +339,8 @@ private struct ItemRow: View {
                     action: onPaste)
                 if isImage {
                     RowButton(symbol: "pip", help: "Float on top", action: onFloat)
+                } else {
+                    RowButton(symbol: "pencil", help: "Edit text", action: onEdit)
                 }
                 RowButton(
                     symbol: item.pinned ? "pin.slash" : "pin",
@@ -595,7 +631,12 @@ private struct CapturesGrid: View {
                         RoundedRectangle(cornerRadius: 6)
                             .fill(.black.opacity(0.5))
                             .frame(height: 72)
-                        HStack(spacing: 10) {
+                        HStack(spacing: 8) {
+                            ShareLink(item: URL(fileURLWithPath: capture.path)) {
+                                Image(systemName: "square.and.arrow.up")
+                            }
+                            .buttonStyle(.plain)
+                            .help("Share…")
                             RowButton(symbol: "doc.on.doc", help: "Copy") {
                                 if let data = try? Data(contentsOf: URL(fileURLWithPath: capture.path)) {
                                     NSPasteboard.general.clearContents()

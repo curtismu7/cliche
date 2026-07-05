@@ -318,6 +318,35 @@ do {
         "capture delivery encodes CGImage to decodable PNG")
 }
 
+// updateTextInPlace
+do {
+    let dir = makeTempDir()
+    let store = HistoryStore(directory: dir)
+    store.addText("first")
+    store.addText("second")
+    store.togglePin(store.items[1])  // pin "first"
+    let target = store.items[1]
+    store.updateText(target, to: "first (edited)")
+    let reloaded = HistoryStore(directory: dir)
+    expect(store.items[1].kind == .text("first (edited)")
+        && store.items[1].pinned
+        && store.items[1].id == target.id
+        && reloaded.items[1].kind == .text("first (edited)"),
+        "updateText edits in place, keeps pin and position, persists")
+
+    store.updateText(store.items[1], to: "")
+    expect(store.items[1].kind == .text("first (edited)"),
+        "updateText rejects empty text")
+}
+
+// colorHex
+do {
+    expect(ColorUtil.hexString(NSColor(srgbRed: 1, green: 0, blue: 0, alpha: 1)) == "#FF0000"
+        && ColorUtil.hexString(NSColor(srgbRed: 0.229, green: 0.482, blue: 0.835, alpha: 1)) == "#3A7BD5"
+        && ColorUtil.hexString(.white) == "#FFFFFF",
+        "color converts to hex string")
+}
+
 // annotationRenderer
 do {
     // 200x150 base: left half white, with black/white 1px vertical stripes
