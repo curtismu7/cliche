@@ -39,7 +39,7 @@
 **Interfaces:**
 - Produces: `DesktopClutter.isDesktopIconWindow(owningBundleID: String?, windowLayer: Int) -> Bool`; `DesktopClutter.exclusions(in: [SCWindow], hideDesktopIcons: Bool) -> [SCWindow]` (own windows + optional icon windows); `AppSettings.hideDesktopIcons: Bool`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `Sources/cliche-selftest/main.swift` (after the `// urlCommandParsing` block):
 
@@ -71,12 +71,12 @@ do {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd /Users/cmuir/Development/cliche && swift build 2>&1 | grep error: | head -3`
 Expected: `cannot find 'DesktopClutter' in scope`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `Sources/ClicheKit/DesktopClutter.swift`:
 
@@ -126,12 +126,12 @@ and in `init` (after the `windowShadow` line):
             defaults.object(forKey: "hideDesktopIcons") as? Bool ?? false
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest 2>&1 | grep -iE "clutter|hideDesktopIcons|FAIL"`
 Expected: all `PASS`, no `FAIL`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/ClicheKit/DesktopClutter.swift Sources/ClicheKit/AppSettings.swift Sources/cliche-selftest/main.swift
@@ -151,7 +151,7 @@ git commit -m "feat(clutter): desktop-icon window classifier and settings toggle
 - Consumes: `DesktopClutter.exclusions(in:hideDesktopIcons:)`, `AppSettings.hideDesktopIcons` (Task 1).
 - Produces: `ScreenshotEngine.captureImage(displayID:sourceRect:scale:showsCursor:hideDesktopIcons:)` (new defaulted param); same on `ScreenRecorder.start` / `RecordingController.begin` / `ScrollingCapture.begin`.
 
-- [ ] **Step 1: Engine + recorder use the shared exclusion helper**
+- [x] **Step 1: Engine + recorder use the shared exclusion helper**
 
 In `Sources/ClicheKit/ScreenshotEngine.swift`, add parameter `hideDesktopIcons: Bool = false` after `showsCursor` and replace the own-windows filter block with:
 
@@ -163,11 +163,11 @@ In `Sources/ClicheKit/ScreenshotEngine.swift`, add parameter `hideDesktopIcons: 
 
 Apply the same two changes in `Sources/ClicheKit/ScreenRecorder.swift` (`start` gains `hideDesktopIcons: Bool = false`; its own-windows block becomes the helper call).
 
-- [ ] **Step 2: Thread the flag from settings**
+- [x] **Step 2: Thread the flag from settings**
 
 In `Sources/Cliche/AppDelegate.swift`, every `ScreenshotEngine.captureImage(...)` call gains `hideDesktopIcons: settings.hideDesktopIcons` (7 sites — lines ~320/348/404/424/497/513/541). `RecordingController.begin` and `ScrollingCapture.begin` each gain a `hideDesktopIcons: Bool` parameter passed through to their internal `ScreenRecorder.start`/`captureImage` calls; AppDelegate passes `settings.hideDesktopIcons` at those two call sites.
 
-- [ ] **Step 3: Settings row + README**
+- [x] **Step 3: Settings row + README**
 
 In `Sources/Cliche/SettingsView.swift`, after the "Show mouse pointer" toggle:
 
@@ -181,12 +181,12 @@ In `README.md`, under `### 📷 Screen capture` add:
 - **Hide desktop clutter** — a Settings toggle excludes desktop icons from captures and recordings; your wallpaper stays.
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `cd /Users/cmuir/Development/cliche && swift run cliche-selftest >/dev/null 2>&1; echo exit=$?; make install 2>&1 | tail -1`
 Expected: `exit=0`; app reinstalls. Manual: toggle on in Settings, full-screen capture → icons gone, wallpaper present.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Sources/ClicheKit Sources/Cliche README.md
