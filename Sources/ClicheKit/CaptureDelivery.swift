@@ -18,15 +18,27 @@ public enum CaptureDelivery {
         }
     }
 
-    /// Returns the Desktop file URL, or nil if encoding/writing failed.
+    /// Returns the written file URL, or nil if encoding/writing failed.
+    /// `directory`/`pattern` default to the Desktop with the standard name.
     @discardableResult
     public static func deliver(
         _ image: CGImage,
         format: AppSettings.ImageFormat = .png,
-        copyToClipboard: Bool = true
+        copyToClipboard: Bool = true,
+        directory: URL? = nil,
+        pattern: String = CaptureNaming.defaultPattern
     ) -> URL? {
         guard let data = encode(image, as: format) else { return nil }
-        let url = CaptureService.outputURL(fileExtension: format.fileExtension)
+        let url: URL
+        if let directory {
+            try? FileManager.default.createDirectory(
+                at: directory, withIntermediateDirectories: true)
+            url = CaptureNaming.outputURL(
+                directory: directory, pattern: pattern,
+                fileExtension: format.fileExtension)
+        } else {
+            url = CaptureService.outputURL(fileExtension: format.fileExtension)
+        }
         do {
             try data.write(to: url)
         } catch {

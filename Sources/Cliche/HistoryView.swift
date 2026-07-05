@@ -32,6 +32,7 @@ struct HistoryView: View {
     let onCaptureText: () -> Void
     let onAllInOne: () -> Void
     let onMultiWindow: () -> Void
+    let onRunPreset: (CapturePreset) -> Void
     let onPickColor: () -> Void
     let onRepeatRegion: () -> Void
     let onRuler: () -> Void
@@ -50,6 +51,7 @@ struct HistoryView: View {
     @State private var selectedIndex = 0
     @State private var showingHelp = false
     @State private var showingSettings = false
+    @State private var showingNewPreset = false
     @State private var editingItem: ClipItem?
     @State private var editText = ""
     @State private var hostWindow: NSWindow?
@@ -429,12 +431,47 @@ struct HistoryView: View {
                                "Record region to MP4 (optional GIF)", action: onRecord)
                 labeledCapture("macwindow.on.rectangle", "multi",
                                "Capture several windows together", action: onMultiWindow)
+                presetsMenu
                 Spacer()
             }
         }
         .padding(.horizontal, 8)
         .padding(.top, 8)
         .padding(.bottom, 4)
+        .sheet(isPresented: $showingNewPreset) {
+            NewPresetSheet(settings: settings) { showingNewPreset = false }
+        }
+    }
+
+    /// One-click capture profiles: mode + format + destination + naming.
+    private var presetsMenu: some View {
+        VStack(spacing: 1) {
+            Menu {
+                ForEach(settings.capturePresets) { preset in
+                    Button(preset.name) { onRunPreset(preset) }
+                }
+                if !settings.capturePresets.isEmpty { Divider() }
+                Button("New Preset…") { showingNewPreset = true }
+                if !settings.capturePresets.isEmpty {
+                    Menu("Delete") {
+                        ForEach(settings.capturePresets) { preset in
+                            Button(preset.name, role: .destructive) {
+                                settings.capturePresets.removeAll { $0.id == preset.id }
+                            }
+                        }
+                    }
+                }
+            } label: {
+                Image(systemName: "slider.horizontal.2.square")
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .frame(width: 34, height: 26)
+            .help("Capture presets — one click runs mode + format + destination")
+            Text("presets")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(Color.ink)
+        }
     }
 
     private func labeledCapture(

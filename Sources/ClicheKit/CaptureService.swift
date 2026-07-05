@@ -1,6 +1,6 @@
 import AppKit
 
-public enum CaptureMode {
+public enum CaptureMode: String, Codable, Equatable {
     case region
     case window
     case fullScreen
@@ -20,9 +20,10 @@ public final class CaptureService {
         copyToClipboard: Bool = true,
         showCursor: Bool = false,
         windowShadow: Bool = false,
+        outputURL explicitURL: URL? = nil,
         onSaved: ((URL) -> Void)? = nil
     ) {
-        let outputURL = Self.outputURL(fileExtension: format.fileExtension)
+        let outputURL = explicitURL ?? Self.outputURL(fileExtension: format.fileExtension)
         var arguments: [String]
         switch mode {
         case .region: arguments = ["-i"]
@@ -55,10 +56,9 @@ public final class CaptureService {
     }
 
     public static func outputURL(fileExtension: String = "png") -> URL {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd 'at' HH.mm.ss"
         let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
-        return desktop.appendingPathComponent(
-            "Cliché \(formatter.string(from: Date())).\(fileExtension)")
+        return CaptureNaming.outputURL(
+            directory: desktop, pattern: CaptureNaming.defaultPattern,
+            fileExtension: fileExtension)
     }
 }

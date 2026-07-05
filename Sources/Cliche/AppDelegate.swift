@@ -223,6 +223,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onCaptureText: { [weak self] in self?.captureText() },
             onAllInOne: { [weak self] in self?.startAllInOne() },
             onMultiWindow: { [weak self] in self?.startMultiWindowCapture() },
+            onRunPreset: { [weak self] preset in self?.runPreset(preset) },
             onPickColor: { [weak self] in self?.pickColor() },
             onRepeatRegion: { [weak self] in
                 self?.closeAllPopovers()
@@ -308,9 +309,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// One-click capture with a preset's bundled mode/format/destination.
+    func runPreset(_ preset: CapturePreset) {
+        closeAllPopovers()
+        let screen = Self.screenUnderMouse()
+        switch preset.mode {
+        case .fullScreen:
+            captureWithEngine(screen: screen, rect: nil,
+                              cliFallback: .fullScreen, preset: preset)
+        case .region:
+            startRegionCapture(on: screen, preset: preset)
+        case .window:
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                self?.captureWithCLI(.window, preset: preset)
+            }
+        }
+    }
+
     /// Region capture: freeze the display first, select on the frozen frame,
     /// then crop the selection out of it — instant and exactly what was seen.
-    private func startRegionCapture(on screen: NSScreen) {
+    private func startRegionCapture(on screen: NSScreen, preset: CapturePreset? = nil) {
         guard let displayID = screen.displayID else {
             captureWithCLI(.region)
             return
@@ -326,12 +344,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     guard let self, let pixelRect else { return }
                     self.settings.lastRegion = (pixelRect, displayID)
                     if let cropped = frozen.cropping(to: pixelRect) {
-                        self.deliver(cropped)
+                        self.deliver(cropped, preset: preset)
                     }
                 }
             } catch {
                 NSLog("Cliche: freeze capture failed (\(error)); using CLI")
-                self.captureWithCLI(.region)
+                self.captureWithCLI(.region, preset: preset)
             }
         }
     }
@@ -425,9 +443,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func captureWithEngine(screen: NSScreen, rect: CGRect?, cliFallback: CaptureMode) {
+    private func captureWithEngine(
+        screen: NSScreen, rect: CGRect?, cliFallback: CaptureMode,
+        preset: CapturePreset? = nil
+    ) {
         guard let displayID = screen.displayID else {
-            captureWithCLI(cliFallback)
+            captureWithCLI(cliFallback, preset: preset)
             return
         }
         let scale = screen.backingScaleFactor
@@ -437,21 +458,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     displayID: displayID, sourceRect: rect, scale: scale,
                     showsCursor: settings.showCursor,
                     hideDesktopIcons: settings.hideDesktopIcons)
-                self.deliver(image)
+                self.deliver(image, preset: preset)
             } catch {
                 NSLog("Cliche: ScreenCaptureKit failed (\(error)); using screencapture CLI")
-                self.captureWithCLI(cliFallback)
+                self.captureWithCLI(cliFallback, preset: preset)
             }
         }
     }
 
-    private func captureWithCLI(_ mode: CaptureMode) {
+    private func captureWithCLI(_ mode: CaptureMode, preset: CapturePreset? = nil) {
+        let format = preset?.format ?? settings.captureFormat
+        var explicitURL: URL?
+        if let preset {
+            try? FileManager.default.createDirectory(
+                at: preset.destinationURL, withIntermediateDirectories: true)
+            explicitURL = CaptureNaming.outputURL(
+                directory: preset.destinationURL,
+                pattern: preset.filenamePattern,
+                fileExtension: format.fileExtension)
+        }
         captureService.capture(
             mode,
-            format: settings.captureFormat,
-            copyToClipboard: settings.copyCapturesToClipboard,
+            format: format,
+            copyToClipboard: preset?.copyToClipboard ?? settings.copyCapturesToClipboard,
             showCursor: settings.showCursor,
-            windowShadow: settings.windowShadow
+            windowShadow: settings.windowShadow,
+            outputURL: explicitURL
         ) { [weak self] url in
             self?.capturesStore.add(path: url.path)
             let image = NSImage(contentsOf: url)?
@@ -461,12 +493,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// Common post-capture step: file + clipboard already handled; index it,
-    /// scan for QR codes, and show the Quick Access Overlay.
-    private func deliver(_ image: CGImage) {
+    /// scan for QR codes, and show the Quick Access Overlay. A preset
+    /// overrides format, clipboard behavior, destination, and naming.
+    private func deliver(_ image: CGImage, preset: CapturePreset? = nil) {
         guard let url = CaptureDelivery.deliver(
             image,
-            format: settings.captureFormat,
-            copyToClipboard: settings.copyCapturesToClipboard)
+            format: preset?.format ?? settings.captureFormat,
+            copyToClipboard: preset?.copyToClipboard ?? settings.copyCapturesToClipboard,
+            directory: preset.map(\.destinationURL),
+            pattern: preset?.filenamePattern ?? CaptureNaming.defaultPattern)
         else { return }
         capturesStore.add(path: url.path)
         showOverlay(for: url, image: image)

@@ -1086,6 +1086,46 @@ do {
         "horizontal combine keeps image order left-to-right")
 }
 
+// capturePresets
+do {
+    // Token expansion.
+    let date = Date(timeIntervalSince1970: 1_751_700_000)  // fixed instant
+    let df = DateFormatter(); df.dateFormat = "yyyy-MM-dd"
+    let tf = DateFormatter(); tf.dateFormat = "HH.mm.ss"
+    let name = CaptureNaming.filename(
+        pattern: "Shot %DATE% %TIME%", fileExtension: "png", date: date)
+    expect(name == "Shot \(df.string(from: date)) \(tf.string(from: date)).png",
+        "filename pattern expands %DATE% and %TIME%")
+    expect(CaptureNaming.filename(pattern: "plain", fileExtension: "jpg") == "plain.jpg",
+        "pattern without tokens passes through")
+    let defaultName = CaptureNaming.filename(
+        pattern: CaptureNaming.defaultPattern, fileExtension: "png", date: date)
+    expect(defaultName == "Cliché \(df.string(from: date)) at \(tf.string(from: date)).png",
+        "default pattern matches the historical naming")
+
+    // Preset codable + persistence.
+    let preset = CapturePreset(
+        name: "Docs shots", mode: .window, format: .jpeg,
+        copyToClipboard: false, destinationPath: "~/Pictures/Shots",
+        filenamePattern: "doc-%TIME%")
+    let data = try! JSONEncoder().encode(preset)
+    let decoded = try! JSONDecoder().decode(CapturePreset.self, from: data)
+    expect(decoded == preset, "CapturePreset round-trips through JSON")
+    expect(preset.destinationURL.path.hasSuffix("/Pictures/Shots"),
+        "destination expands the tilde")
+    expect(CapturePreset(name: "x", mode: .region).destinationURL.path
+        .hasSuffix("/Desktop"), "nil destination falls back to Desktop")
+
+    let suite = "ClichePresetTest-\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    let settings = AppSettings(defaults: defaults)
+    expect(settings.capturePresets.isEmpty, "capture presets default empty")
+    settings.capturePresets = [preset]
+    expect(AppSettings(defaults: defaults).capturePresets == [preset],
+        "capture presets persist")
+    defaults.removePersistentDomain(forName: suite)
+}
+
 // desktopClutter
 do {
     let iconLayer = Int(CGWindowLevelForKey(.desktopIconWindow))

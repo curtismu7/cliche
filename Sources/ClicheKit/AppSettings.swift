@@ -4,7 +4,7 @@ import Observation
 /// User-configurable capture behavior, persisted in UserDefaults.
 @Observable
 public final class AppSettings {
-    public enum ImageFormat: String, CaseIterable {
+    public enum ImageFormat: String, CaseIterable, Codable {
         case png
         case jpeg
 
@@ -84,6 +84,11 @@ public final class AppSettings {
         didSet { Self.encode(beautifyPresets, to: defaults, key: "beautifyPresets") }
     }
 
+    /// User-saved capture presets (mode + format + destination + naming).
+    public var capturePresets: [CapturePreset] {
+        didSet { Self.encode(capturePresets, to: defaults, key: "capturePresets") }
+    }
+
     private let defaults: UserDefaults
     /// Same store, exposed for the hotkeys extension.
     var hotkeysDefaults: UserDefaults { defaults }
@@ -123,6 +128,9 @@ public final class AppSettings {
         self.beautifyPresets = Self.decode(
             [NamedBeautifyConfig].self, from: defaults,
             key: "beautifyPresets", default: [])
+        self.capturePresets = Self.decode(
+            [CapturePreset].self, from: defaults,
+            key: "capturePresets", default: [])
     }
 
     // MARK: Last capture region (for repeat-area capture)
