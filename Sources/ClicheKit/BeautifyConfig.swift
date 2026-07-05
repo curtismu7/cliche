@@ -75,6 +75,25 @@ public enum CanvasSize: Codable, Equatable, Hashable {
     ]
 }
 
+/// Presentation chrome drawn around the screenshot. All procedural —
+/// no image assets; bezels are generic, not device replicas.
+public enum FrameStyle: String, Codable, CaseIterable, Equatable {
+    case none, browserLight, browserDark, macWindow, phone, tablet
+
+    public var label: String {
+        switch self {
+        case .none: return "None"
+        case .browserLight: return "Browser · Light"
+        case .browserDark: return "Browser · Dark"
+        case .macWindow: return "Mac Window"
+        case .phone: return "Phone"
+        case .tablet: return "Tablet"
+        }
+    }
+
+    public var isBrowser: Bool { self == .browserLight || self == .browserDark }
+}
+
 public struct BeautifyConfig: Codable, Equatable {
     public var background: Gradient
     public var padding: Double        // fraction of min dimension
@@ -83,17 +102,39 @@ public struct BeautifyConfig: Codable, Equatable {
     public var shadow: Shadow
     public var canvas: CanvasSize
     public var autoBalance: Bool
+    public var frame: FrameStyle
+    public var frameURL: String       // shown in the browser URL pill
 
     public init(background: Gradient, padding: Double, inset: InsetFrame?,
                 cornerRadius: Double, shadow: Shadow, canvas: CanvasSize,
-                autoBalance: Bool) {
+                autoBalance: Bool, frame: FrameStyle = .none, frameURL: String = "") {
         self.background = background; self.padding = padding; self.inset = inset
         self.cornerRadius = cornerRadius; self.shadow = shadow
         self.canvas = canvas; self.autoBalance = autoBalance
+        self.frame = frame; self.frameURL = frameURL
     }
 
-    /// No background → renderer returns the image untouched.
-    public var isIdentity: Bool { background.isEmpty }
+    private enum CodingKeys: String, CodingKey {
+        case background, padding, inset, cornerRadius, shadow, canvas,
+             autoBalance, frame, frameURL
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        background = try c.decode(Gradient.self, forKey: .background)
+        padding = try c.decode(Double.self, forKey: .padding)
+        inset = try c.decodeIfPresent(InsetFrame.self, forKey: .inset)
+        cornerRadius = try c.decode(Double.self, forKey: .cornerRadius)
+        shadow = try c.decode(Shadow.self, forKey: .shadow)
+        canvas = try c.decode(CanvasSize.self, forKey: .canvas)
+        autoBalance = try c.decode(Bool.self, forKey: .autoBalance)
+        // Added after 0.1.3 — older persisted configs lack these keys.
+        frame = try c.decodeIfPresent(FrameStyle.self, forKey: .frame) ?? .none
+        frameURL = try c.decodeIfPresent(String.self, forKey: .frameURL) ?? ""
+    }
+
+    /// Nothing to composite → renderer returns the image untouched.
+    public var isIdentity: Bool { background.isEmpty && frame == .none }
 
     public static let identity = BeautifyConfig(
         background: Gradient(stops: [], angleDegrees: 135),

@@ -737,6 +737,43 @@ do {
     defaults.removePersistentDomain(forName: suite)
 }
 
+// frameStyleModel
+do {
+    let labels = FrameStyle.allCases.map(\.label)
+    expect(FrameStyle.allCases.count == 6
+        && Set(labels).count == labels.count && labels.allSatisfy { !$0.isEmpty },
+        "six frame styles with unique labels")
+    expect(FrameStyle.browserLight.isBrowser && FrameStyle.browserDark.isBrowser
+        && !FrameStyle.macWindow.isBrowser && !FrameStyle.none.isBrowser,
+        "isBrowser true exactly for browser styles")
+
+    // Round-trip with frame fields.
+    var cfg = BeautifyConfig.gradient(RGBAColor(1, 0, 0), RGBAColor(0, 0, 1))
+    cfg.frame = .browserDark
+    cfg.frameURL = "example.com"
+    let data = try! JSONEncoder().encode(cfg)
+    let decoded = try! JSONDecoder().decode(BeautifyConfig.self, from: data)
+    expect(decoded == cfg && decoded.frame == .browserDark
+        && decoded.frameURL == "example.com",
+        "BeautifyConfig round-trips frame fields")
+
+    // Legacy JSON without frame keys still decodes.
+    var legacyDict = try! JSONSerialization.jsonObject(
+        with: JSONEncoder().encode(BeautifyConfig.identity)) as! [String: Any]
+    legacyDict.removeValue(forKey: "frame")
+    legacyDict.removeValue(forKey: "frameURL")
+    let legacyData = try! JSONSerialization.data(withJSONObject: legacyDict)
+    let legacy = try? JSONDecoder().decode(BeautifyConfig.self, from: legacyData)
+    expect(legacy?.frame == FrameStyle.none && legacy?.frameURL == "",
+        "legacy config JSON without frame keys decodes with defaults")
+
+    // Frame-only config is not identity.
+    var frameOnly = BeautifyConfig.identity
+    frameOnly.frame = .phone
+    expect(!frameOnly.isIdentity && BeautifyConfig.identity.isIdentity,
+        "frame-only config is not identity; plain identity still is")
+}
+
 // allInOneModeTable
 do {
     expect(AllInOneMode.allCases == [.region, .window, .fullScreen, .ocr],
