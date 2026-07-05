@@ -64,8 +64,31 @@ struct HistoryView: View {
         availableTabs.contains(tab) ? tab : availableTabs[0]
     }
 
+    private var headerTitle: String {
+        switch layout {
+        case .full: return "Cliché"
+        case .clipboardOnly: return "Cliché — Clipboard"
+        case .captureOnly: return "Cliché — Capture"
+        }
+    }
+
+    /// Red brand bar pinned at the very top of every panel; also keeps real
+    /// content clear of the popover's arrow region.
+    private var headerBar: some View {
+        HStack {
+            Text(headerTitle)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color(red: 0.78, green: 0.16, blue: 0.15))
+    }
+
     var body: some View {
         VStack(spacing: 0) {
+            headerBar
             if layout != .clipboardOnly {
                 captureBar
             }
@@ -92,7 +115,7 @@ struct HistoryView: View {
             Divider()
             footer
         }
-        .frame(width: 340, height: layout == .captureOnly ? 380 : 460)
+        .frame(width: 340, height: layout == .captureOnly ? 410 : 490)
         .background(shortcutButtons)
         .sheet(isPresented: $showingHelp) { HelpView() }
         .sheet(isPresented: $showingSettings) {
@@ -231,24 +254,44 @@ struct HistoryView: View {
     // MARK: Chrome
 
     private var captureBar: some View {
-        HStack(spacing: 4) {
-            CaptureButton(symbol: "rectangle.dashed") { onCapture(.region) }
-                .help("Capture region  ⌃⌥⌘4")
-            CaptureButton(symbol: "arrow.counterclockwise.square", action: onRepeatRegion)
-                .help("Repeat last region  ⌃⌥⌘R")
-            CaptureButton(symbol: "macwindow") { onCapture(.window) }
-                .help("Capture window  ⌃⌥⌘5")
-            CaptureButton(symbol: "display") { onCapture(.fullScreen) }
-                .help("Capture full screen")
-            CaptureButton(symbol: "text.viewfinder", action: onCaptureText)
-                .help("Copy text from screen (OCR)  ⌃⌥⌘6")
-            CaptureButton(symbol: "eyedropper", action: onPickColor)
-                .help("Pick a color — hex + contrast checker")
-            Spacer()
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                VStack(spacing: 1) {
+                    CaptureButton(symbol: "rectangle.dashed") { onCapture(.region) }
+                        .help("Capture region  ⌃⌥⌘4")
+                    Text("⌃⌥⌘4").font(.system(size: 8)).foregroundStyle(.tertiary)
+                }
+                VStack(spacing: 1) {
+                    CaptureButton(symbol: "arrow.counterclockwise.square", action: onRepeatRegion)
+                        .help("Repeat last region  ⌃⌥⌘R")
+                    Text("⌃⌥⌘R").font(.system(size: 8)).foregroundStyle(.tertiary)
+                }
+                VStack(spacing: 1) {
+                    CaptureButton(symbol: "macwindow") { onCapture(.window) }
+                        .help("Capture window  ⌃⌥⌘5")
+                    Text("⌃⌥⌘5").font(.system(size: 8)).foregroundStyle(.tertiary)
+                }
+                VStack(spacing: 1) {
+                    CaptureButton(symbol: "display") { onCapture(.fullScreen) }
+                        .help("Capture full screen")
+                    Text("screen").font(.system(size: 8)).foregroundStyle(.tertiary)
+                }
+                VStack(spacing: 1) {
+                    CaptureButton(symbol: "text.viewfinder", action: onCaptureText)
+                        .help("Copy text from screen (OCR)  ⌃⌥⌘6")
+                    Text("⌃⌥⌘6").font(.system(size: 8)).foregroundStyle(.tertiary)
+                }
+                VStack(spacing: 1) {
+                    CaptureButton(symbol: "eyedropper", action: onPickColor)
+                        .help("Pick a color — hex + contrast checker")
+                    Text("color").font(.system(size: 8)).foregroundStyle(.tertiary)
+                }
+                Spacer()
+            }
         }
         .padding(.horizontal, 8)
-        .padding(.top, 10)
-        .padding(.bottom, 6)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
     }
 
     private var footerCount: String {
