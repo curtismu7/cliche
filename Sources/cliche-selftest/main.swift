@@ -880,6 +880,23 @@ do {
     defaults.removePersistentDomain(forName: suite)
 }
 
+// urlCommandParsing
+do {
+    func cmd(_ s: String) -> URLCommand? { URL(string: s).flatMap(URLCommand.parse) }
+    expect(cmd("cliche://capture") == .captureRegion, "capture defaults to region")
+    expect(cmd("cliche://capture?mode=region") == .captureRegion, "mode=region")
+    expect(cmd("cliche://capture?mode=window") == .captureWindow, "mode=window")
+    expect(cmd("cliche://capture?mode=fullscreen") == .captureFullScreen, "mode=fullscreen")
+    expect(cmd("cliche://capture?mode=allinone") == .allInOne, "mode=allinone")
+    expect(cmd("cliche://ocr") == .ocr && cmd("cliche://repeat") == .repeatRegion
+        && cmd("cliche://panel") == .panel, "ocr/repeat/panel hosts parse")
+    expect(cmd("CLICHE://CAPTURE?mode=Window") == .captureWindow,
+        "scheme/host/mode are case-insensitive")
+    expect(cmd("https://capture") == nil && cmd("cliche://nope") == nil
+        && cmd("cliche://capture?mode=nope") == nil,
+        "wrong scheme, unknown host, unknown mode → nil")
+}
+
 // ocrFromCGImage
 do {
     let width = 700, height = 100
