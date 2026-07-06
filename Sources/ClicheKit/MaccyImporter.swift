@@ -1,74 +1,59 @@
 import AppKit
-import ClicheKit
 import SQLite3
 
 /// Reads Maccy's Core Data SQLite store and converts each history item to a
 /// `ClipItem`, writing text into `history.json` and images into the images
 /// directory alongside the existing history.
-public enum MaccyImporter {
-    public struct Result {
-        public var importedTexts = 0
-        public var importedImages = 0
-        public var skipped = 0
-    }
+public struct MaccyImporter: ClipboardImporter {
+    public let name = "Maccy"
+
+    public var isAvailable: Bool { Self.defaultDatabaseURL != nil }
 
     /// Default Maccy storage path (sandboxed container).
     public static var defaultDatabaseURL: URL? {
-        let home = NSHomeDirectory()
-        let path = "\(home)/Library/Containers/org.p0deje.Maccy/Data/Library/Application Support/Maccy/Storage.sqlite"
+        let path = "\(NSHomeDirectory())/Library/Containers/org.p0deje.Maccy/Data/Library/Application Support/Maccy/Storage.sqlite"
         let url = URL(fileURLWithPath: path)
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
-    /// Imports every Maccy item into `store`. Idempotent: items already
-    /// present (by content hash) are skipped.
     @MainActor
-    public static func importAll(into store: HistoryStore) throws -> Result {
-        guard let dbURL = defaultDatabaseURL else {
+    public func importAll(into store: HistoryStore) throws -> ImportResult {
+        guard let dbURL = Self.defaultDatabaseURL else {
             throw NSError(domain: "MaccyImporter", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "Maccy storage not found."])
         }
         let db = try Connection(url: dbURL)
         let rows = try db.fetchItems()
-        var result = Result()
+        var result = ImportResult()
         for row in rows {
-            let wasImported = importRow(row, into: store)
-            if wasImported {
-                switch row.kind {
-                case .text: result.importedTexts += 1
-                case .image: result.importedImages += 1
-                case .none: break
+            switch row.kind {
+            case .text(let text):
+                if !text.isEmpty,
+                   !store.items.contains(where: { $0.dedupeKey == "t:\(text)" }) {
+                    store.addText(text)
+                    result.importedTexts += 1
+                } else {
+                    result.skipped += 1
                 }
-            } else {
+            case .image(let data):
+                let sha = HistoryStore.sha256(data)
+                if !store.items.contains(where: { $0.dedupeKey == "i:\(sha)" }) {
+                    store.addImage(data)
+                    result.importedImages += 1
+                } else {
+                    result.skipped += 1
+                }
+            case .none:
                 result.skipped += 1
             }
         }
         return result
     }
-
-    private static func importRow(_ row: Row, into store: HistoryStore) -> Bool {
-        switch row.kind {
-        case .text(let text):
-            guard !text.isEmpty,
-                  !store.items.contains(where: { $0.dedupeKey == "t:\(text)" })
-            else { return false }
-            store.addText(text)
-            return true
-        case .image(let data):
-            let sha = HistoryStore.sha256(data)
-            guard !store.items.contains(where: { $0.dedupeKey == "i:\(sha)" })
-            else { return false }
-            store.addImage(data)
-            return true
-        case .none:
-            return false
-        }
-    }
 }
 
 /// Minimal SQLite reader — avoids linking a C library. Reads only what the
-/// importer needs: history rows with their preferred pasteboard type.
-private final class Connection {
+/// importers need: rows and columns from a single database file.
+final class Connection {
     private let db: OpaquePointer
 
     init(url: URL) throws {
@@ -76,50 +61,36 @@ private final class Connection {
         let code = sqlite3_open(url.path, &handle)
         guard code == SQLITE_OK, let db = handle else {
             sqlite3_close(handle)
-            throw NSError(domain: "MaccyImporter", code: 2,
-                          userInfo: [NSLocalizedDescriptionKey: "Could not open Maccy database."])
+            throw NSError(domain: "ImporterConnection", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "Could not open database."])
         }
         self.db = db
     }
 
     deinit { sqlite3_close(db) }
 
-    func fetchItems() throws -> [Row] {
-        let sql = """
-        SELECT i.Z_PK, i.ZLASTCOPIEDAT, i.ZTITLE, c.ZTYPE, c.ZVALUE
-        FROM ZHISTORYITEM i
-        LEFT JOIN ZHISTORYITEMCONTENT c ON c.ZITEM = i.Z_PK
-        ORDER BY i.ZLASTCOPIEDAT DESC
-        """
+    /// Runs a SELECT and maps each row via `mapper`. Returns the array of
+    /// mapped values in row order.
+    func query<T>(_ sql: String, _ mapper: (OpaquePointer?) -> T) throws -> [T] {
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
-            throw NSError(domain: "MaccyImporter", code: 3,
-                          userInfo: [NSLocalizedDescriptionKey: "Could not read Maccy history."])
+            throw NSError(domain: "ImporterConnection", code: 3,
+                          userInfo: [NSLocalizedDescriptionKey: "Could not prepare query."])
         }
         defer { sqlite3_finalize(stmt) }
-
-        var byItem: [Int64: Row] = [:]
+        var out: [T] = []
         while sqlite3_step(stmt) == SQLITE_ROW {
-            let pk = sqlite3_column_int64(stmt, 0)
-            let timestamp = sqlite3_column_double(stmt, 1)
-            let title = columnString(stmt, 2)
-            let type = columnString(stmt, 3)
-            let value = columnBlob(stmt, 4)
-
-            if byItem[pk] == nil {
-                byItem[pk] = Row(pk: pk, timestamp: timestamp, title: title, kind: .none)
-            }
-            byItem[pk]?.consider(type: type, value: value)
+            out.append(mapper(stmt))
         }
-        return byItem.values.sorted { $0.timestamp > $1.timestamp }
+        return out
     }
 
-    private func columnString(_ stmt: OpaquePointer?, _ index: Int32) -> String? {
+    static func columnString(_ stmt: OpaquePointer?, _ index: Int32) -> String? {
         guard let cstr = sqlite3_column_text(stmt, index) else { return nil }
         return String(cString: cstr)
     }
 
-    private func columnBlob(_ stmt: OpaquePointer?, _ index: Int32) -> Data {
+    static func columnBlob(_ stmt: OpaquePointer?, _ index: Int32) -> Data {
         let bytes = sqlite3_column_blob(stmt, index)
         let length = Int(sqlite3_column_bytes(stmt, index))
         guard let bytes, length > 0 else { return Data() }
@@ -127,7 +98,7 @@ private final class Connection {
     }
 }
 
-private struct Row {
+struct MaccyRow {
     let pk: Int64
     let timestamp: Double
     let title: String?
@@ -162,5 +133,33 @@ private struct Row {
         default:
             break
         }
+    }
+}
+
+/// Internal: Connection extension that walks Maccy's two-table layout and
+/// merges each item's content rows into one `MaccyRow` with the best kind.
+extension Connection {
+    func fetchItems() throws -> [MaccyRow] {
+        let sql = """
+        SELECT i.Z_PK, i.ZLASTCOPIEDAT, i.ZTITLE, c.ZTYPE, c.ZVALUE
+        FROM ZHISTORYITEM i
+        LEFT JOIN ZHISTORYITEMCONTENT c ON c.ZITEM = i.Z_PK
+        ORDER BY i.ZLASTCOPIEDAT DESC
+        """
+        var byItem: [Int64: MaccyRow] = [:]
+        _ = try query(sql) { stmt in
+            let pk = sqlite3_column_int64(stmt, 0)
+            let timestamp = sqlite3_column_double(stmt, 1)
+            let title = Self.columnString(stmt, 2)
+            let type = Self.columnString(stmt, 3)
+            let value = Self.columnBlob(stmt, 4)
+
+            if byItem[pk] == nil {
+                byItem[pk] = MaccyRow(pk: pk, timestamp: timestamp, title: title, kind: .none)
+            }
+            byItem[pk]?.consider(type: type, value: value)
+            return Void()
+        }
+        return byItem.values.sorted { $0.timestamp > $1.timestamp }
     }
 }
