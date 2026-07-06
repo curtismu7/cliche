@@ -31,7 +31,12 @@ echo "✅ Released: https://github.com/curtismu7/cliche/releases/tag/$TAG"
 
 # Keep the Homebrew tap current: bump version + sha256, commit, push.
 TAP_DIR="$HOME/Development/homebrew-cliche"
+TAP_REPO="https://github.com/curtismu7/homebrew-cliche.git"
 CASK="$TAP_DIR/Casks/cliche.rb"
+if [ ! -d "$TAP_DIR/.git" ]; then
+    echo "Cloning Homebrew tap…"
+    git clone "$TAP_REPO" "$TAP_DIR"
+fi
 if [ -f "$CASK" ]; then
     SHA256="$(shasum -a 256 "build/Cliche-$VERSION.zip" | cut -d' ' -f1)"
     sed -i '' \
@@ -43,5 +48,5 @@ if [ -f "$CASK" ]; then
     git -C "$TAP_DIR" push
     echo "🍺 Homebrew tap updated to $VERSION"
 else
-    echo "⚠️  Homebrew tap not found at $TAP_DIR — cask NOT updated."
+    echo "⚠️  Homebrew cask not found at $CASK — tap NOT updated."
 fi
