@@ -29,7 +29,8 @@ public struct ImportResult {
 /// is installed to import from.
 public enum ClipboardImporters {
     public static var all: [ClipboardImporter] {
-        [MaccyImporter(), PasteImporter(), ClipyImporter()]
+        [MaccyImporter(), PasteImporter(), ClipyImporter(),
+         CopyClipImporter(), CopyClipImporter(isCopyClip2: true)]
     }
 
     public static var available: [ClipboardImporter] {

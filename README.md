@@ -84,7 +84,7 @@ If you have two copies (`~/Applications/Cliche.app` and `/Applications/Cliche.ap
 - **Privacy built in** — anything copied from password managers (concealed/transient pasteboard types) is never recorded, with a user-editable ignore list.
 - **⌥1** — floating clipboard list at your cursor (Maccy-style).
 - **⌃⌥⌘C** — same floating list (alternate shortcut; customizable in Settings).
-- **Import history from Maccy, Paste, or Clipy** — open Settings → General and click *Import from …* to migrate your existing clipboard history. Duplicates are skipped; nothing is changed in the source app. The button only appears for apps whose storage Cliché detects on your Mac.
+- **Import history from Maccy, Paste, Clipy, CopyClip, or CopyClip 2** — open Settings → General and click *Import from …* to migrate your existing clipboard history. Duplicates are skipped; nothing is changed in the source app. The button only appears for apps whose storage Cliché detects on your Mac.
 
 ### 📷 Screen capture
 
