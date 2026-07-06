@@ -554,11 +554,13 @@ do {
     // touching the filesystem beyond existence checks. This guards the
     // protocol shape that SettingsView iterates over.
     let all = ClipboardImporters.all
-    expect(all.count == 3, "three importers ship: Maccy, Paste, Clipy")
+    expect(all.count == 5, "five importers ship: Maccy, Paste, Clipy, CopyClip, CopyClip 2")
     expect(all.contains(where: { $0.name == "Maccy" })
         && all.contains(where: { $0.name == "Paste" })
-        && all.contains(where: { $0.name == "Clipy" }),
-        "importer names are Maccy, Paste, Clipy")
+        && all.contains(where: { $0.name == "Clipy" })
+        && all.contains(where: { $0.name == "CopyClip" })
+        && all.contains(where: { $0.name == "CopyClip 2" }),
+        "importer names are Maccy, Paste, Clipy, CopyClip, CopyClip 2")
     for importer in all {
         expect(!importer.name.isEmpty, "importer has a name")
         // isAvailable must not crash either way.
