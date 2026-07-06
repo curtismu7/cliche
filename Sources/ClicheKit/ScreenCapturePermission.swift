@@ -6,6 +6,9 @@ import CoreGraphics
 /// so keep one install at ~/Applications/Cliche.app and re-toggle after updates.
 public enum ScreenCapturePermission {
     private static var didShowHelpThisSession = false
+    /// CGRequestScreenCaptureAccess() reopens System Settings on repeat calls when
+    /// permission is stale — only invoke it once per app session.
+    private static var didRequestAccessThisSession = false
 
     /// Where `make install` and the zip installer put the app.
     public static var standardInstallPath: String {
@@ -58,24 +61,18 @@ public enum ScreenCapturePermission {
     }
 
     /// Returns true only when capture can proceed. When permission is missing,
-    /// calls CGRequestScreenCaptureAccess() to trigger the macOS system prompt
-    /// (this is what adds Cliché to the Screen Recording list). On macOS 15+
-    /// the prompt requires a relaunch to take effect.
+    /// requests access at most once per session, then shows a one-time help alert.
     @MainActor
     public static func ensureGranted(appName: String = "Cliché") -> Bool {
         if isGranted { return true }
 
-        // Trigger the system prompt. This is the only API that makes macOS
-        // show the "Allow Cliché to record your screen?" dialog and add the
-        // app to the Screen Recording list. Returns false if already denied
-        // or if the user dismisses the prompt.
-        _ = CGRequestScreenCaptureAccess()
-
-        // Re-check after the prompt. On macOS 15 the permission doesn't take
-        // effect until the app is relaunched, so this may still be false —
-        // in that case we show the help alert guiding the user to toggle
-        // manually and restart.
-        if isGranted { return true }
+        // Ask macOS once — repeated CGRequestScreenCaptureAccess() calls reopen
+        // System Settings when permission is denied or stale (the settings loop).
+        if !didRequestAccessThisSession {
+            didRequestAccessThisSession = true
+            _ = CGRequestScreenCaptureAccess()
+            if isGranted { return true }
+        }
 
         guard !didShowHelpThisSession else { return false }
         didShowHelpThisSession = true
