@@ -17,7 +17,7 @@ public final class HistoryStore {
         directory.appendingPathComponent("history.json")
     }
 
-    public init(directory: URL, maxTexts: Int = 150, maxImages: Int = 50) {
+    public init(directory: URL, maxTexts: Int = 500, maxImages: Int = 200) {
         self.directory = directory
         self.maxTexts = maxTexts
         self.maxImages = maxImages
