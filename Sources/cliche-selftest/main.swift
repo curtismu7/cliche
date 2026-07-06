@@ -599,6 +599,29 @@ copyClip2LiveImport: do {
     try? FileManager.default.removeItem(at: tmp)
 }
 
+// maccyLiveImport — runs the real Maccy importer against the database on
+// this machine and prints a summary, into a throwaway HistoryStore in the
+// system temp dir so the user's real history isn't polluted.
+maccyLiveImport: do {
+    let importer = MaccyImporter()
+    expect(importer.isAvailable || !importer.isAvailable,
+        "Maccy isAvailable does not crash")
+    guard importer.isAvailable else {
+        print("maccyLiveImport: SKIPPED (Maccy not detected)")
+        break maccyLiveImport
+    }
+    let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("cliche-maccy-test-\(UUID().uuidString)", isDirectory: true)
+    try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+    // Bypass the per-kind caps so the assertion below is exact.
+    let store = HistoryStore(directory: tmp, maxTexts: 10_000, maxImages: 10_000)
+    let result = try MainActor.assumeIsolated { try importer.importAll(into: store) }
+    expect(store.items.count == result.importedTexts + result.importedImages,
+        "imported items match store count (\(store.items.count) vs \(result.importedTexts)+\(result.importedImages))")
+    print("maccyLiveImport: \(result.summary) store now has \(store.items.count) items")
+    try? FileManager.default.removeItem(at: tmp)
+}
+
 // hotkeyCombos
 do {
     let suite = "cliche-selftest-\(UUID().uuidString)"

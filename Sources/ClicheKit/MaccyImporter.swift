@@ -7,6 +7,8 @@ import SQLite3
 public struct MaccyImporter: ClipboardImporter {
     public let name = "Maccy"
 
+    public init() {}
+
     public var isAvailable: Bool { Self.defaultDatabaseURL != nil }
 
     /// Default Maccy storage path (sandboxed container).
