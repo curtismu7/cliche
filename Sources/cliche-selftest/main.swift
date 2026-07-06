@@ -548,6 +548,32 @@ do {
         "importer defaultDatabaseURL returns Optional without crashing")
 }
 
+// clipboardImportersProtocol
+do {
+    // Each importer reports a stable name and an availability flag without
+    // touching the filesystem beyond existence checks. This guards the
+    // protocol shape that SettingsView iterates over.
+    let all = ClipboardImporters.all
+    expect(all.count == 3, "three importers ship: Maccy, Paste, Clipy")
+    expect(all.contains(where: { $0.name == "Maccy" })
+        && all.contains(where: { $0.name == "Paste" })
+        && all.contains(where: { $0.name == "Clipy" }),
+        "importer names are Maccy, Paste, Clipy")
+    for importer in all {
+        expect(!importer.name.isEmpty, "importer has a name")
+        // isAvailable must not crash either way.
+        _ = importer.isAvailable
+    }
+}
+
+// pasteImporterDetectsDatabase
+do {
+    // Same non-throwing existence check for Paste.app's SQLite store.
+    let url = PasteImporter.defaultDatabaseURL
+    expect(url == nil || url != nil,
+        "Paste importer defaultDatabaseURL returns Optional without crashing")
+}
+
 // hotkeyCombos
 do {
     let suite = "cliche-selftest-\(UUID().uuidString)"

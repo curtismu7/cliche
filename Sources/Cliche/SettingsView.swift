@@ -8,7 +8,7 @@ struct SettingsView: View {
     var historyStore: HistoryStore? = nil
 
     @State private var launchAtLogin = LoginItem.isEnabled
-    @State private var maccyImport: String?
+    @State private var importMessage: String?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -89,49 +89,56 @@ struct SettingsView: View {
                     Text("Ignore rules block apps (e.g. password managers) from ever entering clipboard history.")
                         .font(.system(size: 12))
                         .foregroundStyle(Color.ink)
-                    if MaccyImporter.defaultDatabaseURL != nil {
-                        Button("Import from Maccy…") {
-                            importMaccy()
+                    let availableImporters = ClipboardImporters.available
+                    if availableImporters.isEmpty {
+                        Text("No supported clipboard manager found to import from (Maccy, Paste, or Clipy).")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.ink)
+                    } else {
+                        Text("Import history from:")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.ink)
+                        ForEach(availableImporters.indices, id: \.self) { index in
+                            let importer = availableImporters[index]
+                            Button("Import from \(importer.name)…") {
+                                runImporter(importer)
+                            }
                         }
-                        if let maccyImport = maccyImport {
-                            Text(maccyImport)
+                        if let importMessage {
+                            Text(importMessage)
                                 .font(.system(size: 12))
                                 .foregroundStyle(Color.ink)
                         }
-                    } else {
-                        Text("No Maccy install found to import from.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.ink)
                     }
                 }
             }
             .formStyle(.grouped)
         }
-        .frame(width: 360, height: 760)
+        .frame(width: 360, height: 820)
         .background(Color.white)
         .environment(\.colorScheme, .light)
     }
 
     @MainActor
-    private func importMaccy() {
+    private func runImporter(_ importer: ClipboardImporter) {
         guard let historyStore else {
-            maccyImport = "History store not available."
+            importMessage = "History store not available."
             return
         }
         let alert = NSAlert()
-        alert.messageText = "Import from Maccy?"
+        alert.messageText = "Import from \(importer.name)?"
         alert.informativeText = """
-        Cliché will copy your Maccy clipboard history into Cliché. \
-        Duplicates are skipped. This does not change Maccy.
+        Cliché will copy your \(importer.name) clipboard history into Cliché. \
+        Duplicates are skipped. This does not change \(importer.name).
         """
         alert.addButton(withTitle: "Import")
         alert.addButton(withTitle: "Cancel")
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         do {
-            let result = try MaccyImporter.importAll(into: historyStore)
-            maccyImport = "Imported \(result.importedTexts) text + \(result.importedImages) image items (\(result.skipped) skipped)."
+            let result = try importer.importAll(into: historyStore)
+            importMessage = result.summary
         } catch {
-            maccyImport = "Import failed: \(error.localizedDescription)"
+            importMessage = "Import failed: \(error.localizedDescription)"
         }
     }
 }
