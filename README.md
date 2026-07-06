@@ -17,10 +17,12 @@ Pin and search everything you copy · capture, mark up, redact, record, and meas
 
 ## What's new
 
-- **Import clipboard history from Maccy, Paste, Clipy, CopyClip, and CopyClip 2** — Settings → General → *Import from …*. Pinned items in the source app arrive pinned in Cliché; duplicates are skipped; nothing is changed in the source app. The button only appears for apps whose storage Cliché detects on your Mac.
-- **Import completion modal** — after each import, a summary modal reports how many text, image, and pinned items were imported (and how many were skipped as duplicates).
-- **Draggable Settings sheet** — grab anywhere on the Settings background to move it around your screen.
-- **Pinned items persist across restarts** and never count against history limits.
+- **NEW: Import clipboard history from Maccy, Paste, Clipy, CopyClip, and CopyClip 2** — Settings → General → *Import from …*. Pinned items in the source app arrive pinned in Cliché; duplicates are skipped; nothing is changed in the source app. The button only appears for apps whose storage Cliché detects on your Mac.
+- **NEW: Import completion modal** — after each import, a summary modal reports how many text, image, and pinned items were imported (and how many were skipped as duplicates).
+- **NEW: Draggable Settings sheet** — grab anywhere on the Settings background to move it around your screen.
+- **NEW: Raised default history limits to 500 text / 200 images** (was 150/50) so imported history isn't silently evicted. Configurable in Settings → History Limits with options up to 2000 text / 1000 images.
+- **NEW: Screen Recording permission prompt fix** — Cliché now triggers the macOS system prompt on first capture instead of silently failing. If you had trouble getting Cliché to appear in the Screen Recording list, rebuild from source or grab the latest release.
+- Pinned items persist across restarts and never count against history limits.
 
 ---
 
@@ -51,6 +53,8 @@ make install    # builds, installs to ~/Applications/Cliche.app, launches
 **Where is the app?** Zip and `make install` → **`~/Applications/Cliche.app`**. Homebrew → `/Applications/Cliche.app`. Only one — duplicates break Screen Recording permission.
 
 **Permissions** (macOS asks once each): *Screen Recording* on your first screenshot, and *Accessibility* only if you use direct paste. Everything else works with no permissions at all.
+
+**Cliché not in the Screen Recording list?** Press `⌃⌥⌘4` to trigger a capture — Cliché will prompt macOS to show the "Allow Cliché to record your screen?" dialog. Approve it, then **quit and reopen Cliché** (the permission only takes effect after a restart).
 
 **Screen Recording keeps opening Settings even though Cliché is toggled ON?** macOS grants permission **per app path and per build signature**. Keep **one** copy at **`~/Applications/Cliche.app`**, run `Scripts/fix-screen-recording.sh`, toggle Cliché **off → on** in System Settings → Privacy & Security → **Screen & System Audio Recording**, then **quit + reopen twice**.
 
@@ -83,7 +87,7 @@ If you have two copies (`~/Applications/Cliche.app` and `/Applications/Cliche.ap
 
 ### 📋 Clipboard history
 
-- Remembers your last **150 text snippets and 50 images** (both configurable in Settings) from anywhere on your Mac; history survives restarts.
+- Remembers your last **500 text snippets and 200 images** (both configurable in Settings, up to 2000/1000) from anywhere on your Mac; history survives restarts.
 - **Fuzzy search** — the panel opens with search focused; `hw` finds "hello world".
 - **Keyboard-first** — `↑↓` select, `↩` copies, `⌘1–9` grab the first nine, `⌘⌫` deletes, `⌥P` pins, `⌥U` unpins.
 - **Paste directly into the app you were using** — `⌥↩` or ⌥-click types the item where your cursor was.
@@ -93,7 +97,7 @@ If you have two copies (`~/Applications/Cliche.app` and `/Applications/Cliche.ap
 - **Privacy built in** — anything copied from password managers (concealed/transient pasteboard types) is never recorded, with a user-editable ignore list.
 - **⌥1** — floating clipboard list at your cursor (Maccy-style).
 - **⌃⌥⌘C** — same floating list (alternate shortcut; customizable in Settings).
-- **Import history from Maccy, Paste, Clipy, CopyClip, or CopyClip 2** — open Settings → General and click *Import from …* to migrate your existing clipboard history. **Pinned items in the source app arrive pinned in Cliché.** Duplicates are skipped; nothing is changed in the source app. A completion modal reports the counts. The button only appears for apps whose storage Cliché detects on your Mac.
+- **Import history from Maccy, Paste, Clipy, CopyClip, or CopyClip 2** — open Settings → General and click *Import from …* to migrate your existing clipboard history. **Pinned items in the source app arrive pinned in Cliché.** Duplicates are skipped; nothing is changed in the source app. A completion modal reports the counts. The button only appears for apps whose storage Cliché detects on your Mac. With the raised 500/200 default limits, your full history imports without silent eviction.
 
 ### 📷 Screen capture
 
