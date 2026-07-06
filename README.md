@@ -17,6 +17,7 @@ Pin and search everything you copy · capture, mark up, redact, record, and meas
 
 ## What's new
 
+- **NEW: Maccy-style paste into field** — **Return** or click pastes into the app you were using (e.g. a username field on a webpage). **⌥Return** / **⌥-click** copies only. First paste prompts for Accessibility permission.
 - **NEW: Import clipboard history from Maccy, Paste, Clipy, CopyClip, and CopyClip 2** — Settings → General → *Import from …*. Pinned items in the source app arrive pinned in Cliché; duplicates are skipped; nothing is changed in the source app. The button only appears for apps whose storage Cliché detects on your Mac.
 - **NEW: Import completion modal** — after each import, a summary modal reports how many text, image, and pinned items were imported (and how many were skipped as duplicates).
 - **NEW: Draggable Settings sheet** — grab anywhere on the Settings background to move it around your screen.
@@ -92,8 +93,8 @@ If you have an old copy at `~/Applications/Cliche.app`, delete it, then run `bre
 
 - Remembers your last **500 text snippets and 200 images** (both configurable in Settings, up to 2000/1000) from anywhere on your Mac; history survives restarts.
 - **Fuzzy search** — the panel opens with search focused; `hw` finds "hello world".
-- **Keyboard-first** — `↑↓` select, `↩` copies, `⌘1–9` grab the first nine, `⌘⌫` deletes, `⌥P` pins, `⌥U` unpins.
-- **Paste directly into the app you were using** — `⌥↩` or ⌥-click types the item where your cursor was.
+- **Keyboard-first** — `↑↓` select, `↩` pastes into the previous app, `⌥↩` copies, `⌘1–9` quick paste, `⌘⌫` deletes, `⌥P` pins, `⌥U` unpins.
+- **Paste directly into the app you were using** — **↩** or click an item to paste into the focused field (username box, search bar, etc.); **⌥↩** or **⌥-click** copies only. Requires Accessibility permission once (macOS prompts on first paste).
 - **Pin** anything to keep it forever — pins live in their own section at the top, above a "Recent" separator, with an **Unpin All** button; pinned items never count against history limits. Plus **edit text clips in place** and **preview** long text or images in a floating window with copy/pin/edit corners.
 - **Images in a horizontal strip**, previewable, pinnable, annotatable.
 - **Snippets** — reusable templates with `%DATE%`, `%TIME%`, `%CLIPBOARD%` variables.

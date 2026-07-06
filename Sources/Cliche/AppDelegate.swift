@@ -342,8 +342,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             PasteService.requestTrust()
             return
         }
-        previousApp?.activate()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+        previousApp?.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             PasteService.synthesizePaste()
         }
     }

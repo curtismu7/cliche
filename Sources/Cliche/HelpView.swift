@@ -39,7 +39,7 @@ struct HelpView: View {
                         ("⌘⌫", "Delete selection"),
                         ("⌥P", "Pin selection to the top"),
                         ("⌥U", "Unpin selection (⌘P toggles either way)"),
-                        ("hover", "Row buttons: paste ↵, edit ✏️ (text), float (image), pin, delete"),
+                        ("hover", "Row buttons: paste ↵ (Maccy-style), edit ✏️ (text), float (image), pin, delete"),
                     ])
                     section("Captures Tab", rows: [
                         ("click thumbnail overlay", "After a capture: click to annotate, or drag it into another app"),

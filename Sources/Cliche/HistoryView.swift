@@ -236,14 +236,14 @@ struct HistoryView: View {
                 itemList
                     .frame(maxHeight: .infinity)
             }
-            Text("↩ copy · ⌥↩ paste into app · ⌘1–9 quick copy · ⌘⌫ delete · ⌥P pin · ⌥U unpin")
+            Text("↩ paste into app · ⌥↩ copy only · ⌘1–9 quick paste · ⌘⌫ delete · ⌥P pin · ⌥U unpin")
                 .font(.system(size: 12))
                 .foregroundStyle(Color.ink)
                 .padding(.vertical, 4)
         }
     }
 
-    /// Horizontal row of image clips: click copies, ⌥-click pastes; hover
+    /// Horizontal row of image clips: click pastes, ⌥-click copies; hover
     /// buttons preview, pin, and delete.
     private var imageStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -274,14 +274,14 @@ struct HistoryView: View {
                 .focused($searchFocused)
                 .onSubmit {
                     guard textItems.indices.contains(selectedIndex) else { return }
-                    onCopy(textItems[selectedIndex])
+                    onPaste(textItems[selectedIndex])
                 }
                 .onKeyPress(.return) {
-                    // ⌥Return pastes into the previous app; plain Return
-                    // falls through to onSubmit (copy).
+                    // Plain Return pastes into the previous app (Maccy-style);
+                    // ⌥Return copies to the clipboard only.
                     guard NSEvent.modifierFlags.contains(.option) else { return .ignored }
                     guard textItems.indices.contains(selectedIndex) else { return .handled }
-                    onPaste(textItems[selectedIndex])
+                    onCopy(textItems[selectedIndex])
                     return .handled
                 }
                 .onKeyPress(.downArrow) {
@@ -534,15 +534,14 @@ struct HistoryView: View {
         .padding(8)
     }
 
-    /// Invisible buttons carrying the panel's key equivalents:
-    /// ⌘1–⌘9 copy the nth visible item, ⌘⌫ deletes and ⌘P pins the selection.
+    /// ⌘1–⌘9 paste the nth visible item, ⌘⌫ deletes and ⌘P pins the selection.
     private var shortcutButtons: some View {
         Group {
             ForEach(1...9, id: \.self) { number in
                 Button("") {
                     let index = number - 1
                     guard textItems.indices.contains(index) else { return }
-                    onCopy(textItems[index])
+                    onPaste(textItems[index])
                 }
                 .keyboardShortcut(KeyEquivalent(Character("\(number)")), modifiers: .command)
             }
@@ -606,7 +605,7 @@ private struct ItemRow: View {
                 RowButton(symbol: "eye", help: "Preview", action: onPreview)
                 RowButton(
                     symbol: "arrow.turn.down.left",
-                    help: "Paste into previous app (⌥Return)",
+                    help: "Paste into previous app (↩)",
                     action: onPaste)
                 RowButton(symbol: "pencil", help: "Edit text", action: onEdit)
                 RowButton(
@@ -637,11 +636,11 @@ private struct ItemRow: View {
         )
         .contentShape(Rectangle())
         .onTapGesture {
-            // ⌥-click pastes into the previous app; plain click copies.
+            // Plain click pastes into the focused field (Maccy-style); ⌥-click copies only.
             if NSEvent.modifierFlags.contains(.option) {
-                onPaste()
-            } else {
                 onCopy()
+            } else {
+                onPaste()
             }
         }
         .onHover { isHovering = $0 }
@@ -713,13 +712,13 @@ private struct ImageStripCell: View {
         .contentShape(Rectangle())
         .onTapGesture {
             if NSEvent.modifierFlags.contains(.option) {
-                onPaste()
-            } else {
                 onCopy()
+            } else {
+                onPaste()
             }
         }
         .onHover { isHovering = $0 }
-        .help("Click to copy · ⌥-click to paste")
+        .help("Click to paste · ⌥-click to copy")
     }
 }
 private struct RowButton: View {
@@ -750,7 +749,7 @@ private struct SnippetsList: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Click to copy · ⌥-click to paste · %DATE% %TIME% %CLIPBOARD%")
+                Text("Click to paste · ⌥-click to copy · %DATE% %TIME% %CLIPBOARD%")
                     .font(.system(size: 12))
                     .foregroundStyle(Color.ink)
                 Spacer()
@@ -841,9 +840,9 @@ private struct SnippetRow: View {
         .contentShape(Rectangle())
         .onTapGesture {
             if NSEvent.modifierFlags.contains(.option) {
-                onPaste()
-            } else {
                 onCopy()
+            } else {
+                onPaste()
             }
         }
         .onHover { isHovering = $0 }
