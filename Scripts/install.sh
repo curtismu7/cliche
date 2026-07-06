@@ -1,6 +1,7 @@
 #!/bin/bash
 # Cliché installer — shipped inside the distribution zip as
 # "Install Cliché.command" so recipients can just double-click it.
+# Recommended install: brew tap curtismu7/cliche && brew install --cask cliche
 set -euo pipefail
 cd "$(dirname "$0")"
 

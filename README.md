@@ -6,7 +6,7 @@
 
 <p align="center"><b>The free, open-source Mac menu bar app that combines clipboard history (like Maccy) with screen capture and annotation (like CleanShot X).</b><br>
 Pin and search everything you copy · capture, mark up, redact, record, and measure anything on screen.<br>
-100% local and private — no accounts, no network, no telemetry. Grab the zip from <a href="https://github.com/curtismu7/cliche/releases/latest">Releases</a>, or build from source.</p>
+100% local and private — no accounts, no network, no telemetry. Install with Homebrew (recommended) to **`/Applications/Cliche.app`**, or grab the zip from <a href="https://github.com/curtismu7/cliche/releases/latest">Releases</a>.</p>
 
 <p align="center">
   <img src="Assets/hero.png" width="640" alt="A Cliché panel mock on a gradient backdrop — rendered by Cliché's own beautify pipeline">
@@ -26,14 +26,9 @@ Pin and search everything you copy · capture, mark up, redact, record, and meas
 
 ---
 
-## Install
+## Install (recommended)
 
-**Option 1 — download the app** (no developer tools needed). Grab either file from the [latest release](https://github.com/curtismu7/cliche/releases/latest):
-
-- **`Cliche-x.x.x.zip`** — unzip and double-click **`Install Cliché.command`**; installs to **`/Applications/Cliche.app`** (macOS may ask for your password), clears the Gatekeeper flag, and offers launch-at-login. **Recommended.**
-- **`Cliche-x.x.x.dmg`** — drag to Applications. Same destination as the zip installer.
-
-**Option 2 — Homebrew**:
+Install and update Cliché with Homebrew. It always lands at **`/Applications/Cliche.app`** — the only path you should use. One copy only; duplicates break Screen Recording permission.
 
 ```sh
 brew tap curtismu7/cliche
@@ -42,15 +37,23 @@ brew install --cask cliche
 
 (Homebrew asks you to `brew trust curtismu7/cliche` once — standard for third-party taps.)
 
-**Option 3 — build from source** (macOS 14+, Xcode Command Line Tools):
+**Update after a new release:**
+
+```sh
+brew update && brew upgrade --cask cliche
+```
+
+After upgrading, macOS may ask you to **re-approve Screen Recording** once (ad-hoc signature changes each release). Press **⌘⇧6**, toggle Cliché **ON** in System Settings if needed, then **quit + reopen**.
+
+**Alternative — zip or DMG** (no Homebrew): [latest release](https://github.com/curtismu7/cliche/releases/latest) → unzip **`Install Cliché.command`** or drag from the DMG to Applications. Same destination: **`/Applications/Cliche.app`**. Do not also install via Homebrew.
+
+**Developers — build from source** (macOS 14+, Xcode Command Line Tools):
 
 ```sh
 git clone https://github.com/curtismu7/cliche.git
 cd cliche
-make install    # builds, installs to /Applications/Cliche.app, launches
+make install    # dev build → /Applications/Cliche.app; prefer brew install for daily use
 ```
-
-**Where is the app?** Every install path above puts Cliché in **`/Applications/Cliche.app`** — open it from Launchpad or Spotlight like any other Mac app. Keep **one copy only**; duplicates break Screen Recording permission.
 
 **Permissions** (macOS asks once each): *Screen Recording* on your first screenshot, and *Accessibility* only if you use direct paste. Everything else works with no permissions at all.
 
@@ -71,7 +74,7 @@ On a **MacBook with a notch**, the black camera housing at the top center eats m
 3. Check the **»** overflow at the far right — macOS hides extras there when space is tight.
 4. **System Settings → Displays** — try **Default** scaling instead of "More Space" (more space shrinks the bar and hides more icons).
 
-If you have an old copy at `~/Applications/Cliche.app`, delete it and reinstall from the [latest release](https://github.com/curtismu7/cliche/releases/latest).
+If you have an old copy at `~/Applications/Cliche.app`, delete it, then run `brew reinstall --cask cliche`.
 
 ## Getting started
 
@@ -150,11 +153,16 @@ Example: `open "cliche://capture?mode=region"`
 
 ## Signing
 
-Cliché is ad-hoc signed — there's no Apple Developer certificate behind it, which is why Gatekeeper asks for a right-click → Open on first launch. The installer clears the quarantine flag for you. Build from source and there's no prompt at all.
+Cliché is ad-hoc signed — there's no Apple Developer certificate behind it, which is why Gatekeeper may ask for a right-click → Open on first launch. Homebrew clears quarantine on install. **Each release gets a new signature**, so you may need to re-approve Screen Recording once after `brew upgrade --cask cliche`.
 
 ## Uninstall
 
-Quit Cliché from the panel, then delete `/Applications/Cliche.app` and `~/Library/Application Support/Cliche/`, and remove it from System Settings → Login Items if enabled.
+```sh
+brew uninstall --cask cliche
+rm -rf ~/Library/Application\ Support/Cliche/
+```
+
+Remove Cliché from System Settings → Login Items if you enabled launch at login.
 
 ## Development
 

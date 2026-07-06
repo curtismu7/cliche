@@ -18,8 +18,8 @@ tccutil reset ScreenCapture org.coachcurtis.cliche 2>/dev/null || true
 APP="/Applications/Cliche.app"
 if [ ! -d "$APP" ]; then
     echo "❌ $APP not found."
-    echo "   Install with: make install   (from source)"
-    echo "   Or unzip the release and run Install Cliché.command"
+    echo "   Install with: brew install --cask cliche"
+    echo "   (after: brew tap curtismu7/cliche)"
     exit 1
 fi
 
@@ -39,5 +39,5 @@ When Cliché opens:
   • Quit Cliché completely, then open it again once (required after toggling).
   • Try ⌘⇧6 to capture.
 
-If you rebuild from source, run this script again — each build gets a new signature.
+If you upgrade with Homebrew, run this script again after each release — each build gets a new signature.
 EOF

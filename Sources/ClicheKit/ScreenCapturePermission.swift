@@ -100,7 +100,7 @@ public enum ScreenCapturePermission {
         4. Open only \(standardInstallPath).
         5. Trigger a capture (⌘⇧6) — macOS will prompt. Approve, quit, reopen.
 
-        Rebuilding the app changes its signature — toggle permission again after updates.
+        Rebuilding or upgrading Cliché changes its signature — toggle Screen Recording again after `brew upgrade --cask cliche`.
         """
         let duplicates = duplicateInstallPaths(excluding: appPath)
         if !duplicates.isEmpty {
