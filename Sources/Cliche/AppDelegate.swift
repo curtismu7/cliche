@@ -105,7 +105,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             hotkeys.register(
                 keyCode: Int(combo.keyCode), modifiers: combo.carbonModifiers
             ) { [weak self] in
-                self?.perform(action)
+                // Carbon delivers hotkeys off the main thread; UI must run on main.
+                DispatchQueue.main.async {
+                    self?.perform(action)
+                }
             }
         }
     }
