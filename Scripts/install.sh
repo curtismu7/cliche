@@ -12,33 +12,40 @@ if [ ! -d "Cliche.app" ]; then
     exit 1
 fi
 
-DEST="$HOME/Applications"
-mkdir -p "$DEST"
+DEST="/Applications/Cliche.app"
+SOURCE="$(pwd)/Cliche.app"
 
 # Quit any running copy before replacing it.
 pkill -f 'Cliche.app/Contents/MacOS/Cliche' 2>/dev/null || true
 sleep 1
 
-rm -rf "$DEST/Cliche.app"
-ditto "Cliche.app" "$DEST/Cliche.app"
+# Remove old personal-folder installs so Screen Recording permission
+# isn't split across two paths.
+rm -rf "$HOME/Applications/Cliche.app"
+rm -rf "$DEST"
+
+if ! ditto "Cliche.app" "$DEST" 2>/dev/null; then
+    echo "   macOS needs your password to install into Applications…"
+    osascript -e "do shell script \"rm -rf '$DEST' && ditto '$SOURCE' '$DEST'\" with administrator privileges"
+fi
 
 # The app is signed ad hoc (no Apple Developer certificate), so macOS
 # quarantines it after download. Clear that so it can launch.
-xattr -dr com.apple.quarantine "$DEST/Cliche.app" 2>/dev/null || true
+xattr -dr com.apple.quarantine "$DEST" 2>/dev/null || true
 
 read -r -p "Launch Cliché automatically at login? [y/N] " REPLY || REPLY=""
 if [[ "$REPLY" =~ ^[Yy] ]]; then
-    osascript -e "tell application \"System Events\" to if not (exists login item \"Cliche\") then make login item at end with properties {path:\"$DEST/Cliche.app\", hidden:false}" >/dev/null 2>&1 \
+    osascript -e "tell application \"System Events\" to if not (exists login item \"Cliche\") then make login item at end with properties {path:\"$DEST\", hidden:false}" >/dev/null 2>&1 \
         && echo "   Added to Login Items." \
         || echo "   Could not add login item (you can do it in System Settings → Login Items)."
 fi
 
-open "$DEST/Cliche.app"
+open "$DEST"
 
 cat <<'EOF'
 
-✅ Cliché is installed (~/Applications/Cliche.app) and running —
-   look for its icons in the menu bar.
+✅ Cliché is installed (/Applications/Cliche.app) and running —
+   look for its icons in the menu bar (or use ⌥1 / ⌥2).
 
 First-run permissions (macOS asks once each):
   • Screen Recording — prompted at your first screenshot

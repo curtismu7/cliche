@@ -9,6 +9,7 @@ struct SettingsView: View {
 
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var importMessage: String?
+    @State private var screenRecordingGranted = ScreenCapturePermission.isGranted
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -76,6 +77,31 @@ struct SettingsView: View {
                         : "Two icons: 📋 opens clipboard history & snippets, 📷 opens capture tools & screenshots.")
                         .font(.system(size: 12))
                         .foregroundStyle(Color.ink)
+                }
+                Section("Permissions") {
+                    HStack {
+                        Text("Screen Recording")
+                        Spacer()
+                        if screenRecordingGranted {
+                            Label("Enabled", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        } else {
+                            Button("Enable…") {
+                                Task { @MainActor in
+                                    ScreenCapturePermission.registerWithSystemIfNeeded()
+                                    screenRecordingGranted = ScreenCapturePermission.isGranted
+                                    if !screenRecordingGranted {
+                                        ScreenCapturePermission.openSettings()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if !screenRecordingGranted {
+                        Text("Required for screenshots and recording. If Cliché is missing from the list, click Enable — macOS will prompt or open Settings. Toggle Cliché ON, then quit and reopen the app.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.ink)
+                    }
                 }
                 Section("General") {
                     Toggle("Launch at login", isOn: $launchAtLogin)

@@ -83,6 +83,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         registerHotkeys()
         ScreenCapturePermission.warnAboutDuplicateInstallsIfNeeded()
+        // Register with TCC at launch so Cliché appears in Screen Recording
+        // before the user tries a capture hotkey.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            Task { @MainActor in
+                ScreenCapturePermission.registerWithSystemIfNeeded()
+            }
+        }
         NotificationCenter.default.addObserver(
             forName: AppSettings.hotkeysChanged, object: nil, queue: .main
         ) { [weak self] _ in

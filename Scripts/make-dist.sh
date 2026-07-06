@@ -34,7 +34,7 @@ history, screenshots, and settings live in
 ~/Library/Application Support/Cliche/.
 
 To uninstall: quit Cliché from the panel, delete
-~/Applications/Cliche.app and the folder above, and remove it from
+/Applications/Cliche.app and the folder above, and remove it from
 System Settings → Login Items if you enabled that.
 EOF
 

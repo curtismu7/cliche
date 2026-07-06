@@ -7,15 +7,15 @@ echo "── Reset Cliché Screen Recording permission ──"
 pkill -f 'Cliche.app/Contents/MacOS/Cliche' 2>/dev/null || true
 sleep 1
 
-if [ -d "/Applications/Cliche.app" ]; then
-    echo "Removing duplicate: /Applications/Cliche.app (Homebrew or old install)"
-    rm -rf "/Applications/Cliche.app"
+if [ -d "$HOME/Applications/Cliche.app" ]; then
+    echo "Removing duplicate: ~/Applications/Cliche.app (old install location)"
+    rm -rf "$HOME/Applications/Cliche.app"
 fi
 
 echo "Resetting TCC entry for org.coachcurtis.cliche…"
 tccutil reset ScreenCapture org.coachcurtis.cliche 2>/dev/null || true
 
-APP="$HOME/Applications/Cliche.app"
+APP="/Applications/Cliche.app"
 if [ ! -d "$APP" ]; then
     echo "❌ $APP not found."
     echo "   Install with: make install   (from source)"

@@ -30,10 +30,10 @@ Pin and search everything you copy · capture, mark up, redact, record, and meas
 
 **Option 1 — download the app** (no developer tools needed). Grab either file from the [latest release](https://github.com/curtismu7/cliche/releases/latest):
 
-- **`Cliche-x.x.x.zip`** — unzip and double-click **`Install Cliché.command`**; installs to **`~/Applications/Cliche.app`** (your personal Applications folder — no admin password), clears the Gatekeeper flag, and offers launch-at-login. **Recommended.**
-- **`Cliche-x.x.x.dmg`** — drag to Applications (system folder). Same app; zip installer is simpler if you don't want `/Applications`.
+- **`Cliche-x.x.x.zip`** — unzip and double-click **`Install Cliché.command`**; installs to **`/Applications/Cliche.app`** (macOS may ask for your password), clears the Gatekeeper flag, and offers launch-at-login. **Recommended.**
+- **`Cliche-x.x.x.dmg`** — drag to Applications. Same destination as the zip installer.
 
-**Option 2 — Homebrew** (installs to `/Applications/Cliche.app` — pick **either** Homebrew **or** zip/`make install`, not both):
+**Option 2 — Homebrew**:
 
 ```sh
 brew tap curtismu7/cliche
@@ -47,16 +47,16 @@ brew install --cask cliche
 ```sh
 git clone https://github.com/curtismu7/cliche.git
 cd cliche
-make install    # builds, installs to ~/Applications/Cliche.app, launches
+make install    # builds, installs to /Applications/Cliche.app, launches
 ```
 
-**Where is the app?** Zip and `make install` → **`~/Applications/Cliche.app`**. Homebrew → `/Applications/Cliche.app`. Only one — duplicates break Screen Recording permission.
+**Where is the app?** Every install path above puts Cliché in **`/Applications/Cliche.app`** — open it from Launchpad or Spotlight like any other Mac app. Keep **one copy only**; duplicates break Screen Recording permission.
 
 **Permissions** (macOS asks once each): *Screen Recording* on your first screenshot, and *Accessibility* only if you use direct paste. Everything else works with no permissions at all.
 
 **Cliché not in the Screen Recording list?** Press `⌃⌥⌘4` to trigger a capture — Cliché will prompt macOS to show the "Allow Cliché to record your screen?" dialog. Approve it, then **quit and reopen Cliché** (the permission only takes effect after a restart).
 
-**Screen Recording keeps opening Settings even though Cliché is toggled ON?** macOS grants permission **per app path and per build signature**. Keep **one** copy at **`~/Applications/Cliche.app`**, run `Scripts/fix-screen-recording.sh`, toggle Cliché **off → on** in System Settings → Privacy & Security → **Screen & System Audio Recording**, then **quit + reopen twice**.
+**Screen Recording keeps opening Settings even though Cliché is toggled ON?** macOS grants permission **per app path and per build signature**. Keep **one** copy at **`/Applications/Cliche.app`**, run `Scripts/fix-screen-recording.sh`, toggle Cliché **off → on** in System Settings → Privacy & Security → **Screen & System Audio Recording**, then **quit + reopen twice**.
 
 ## Menu bar icon
 
@@ -71,7 +71,7 @@ On a **MacBook with a notch**, the black camera housing at the top center eats m
 3. Check the **»** overflow at the far right — macOS hides extras there when space is tight.
 4. **System Settings → Displays** — try **Default** scaling instead of "More Space" (more space shrinks the bar and hides more icons).
 
-If you have two copies (`~/Applications/Cliche.app` and `/Applications/Cliche.app`), delete one and reinstall from the [latest release](https://github.com/curtismu7/cliche/releases/latest).
+If you have an old copy at `~/Applications/Cliche.app`, delete it and reinstall from the [latest release](https://github.com/curtismu7/cliche/releases/latest).
 
 ## Getting started
 
@@ -154,7 +154,7 @@ Cliché is ad-hoc signed — there's no Apple Developer certificate behind it, w
 
 ## Uninstall
 
-Quit Cliché from the panel, then delete `~/Applications/Cliche.app` and `~/Library/Application Support/Cliche/`, and remove it from System Settings → Login Items if enabled.
+Quit Cliché from the panel, then delete `/Applications/Cliche.app` and `~/Library/Application Support/Cliche/`, and remove it from System Settings → Login Items if enabled.
 
 ## Development
 

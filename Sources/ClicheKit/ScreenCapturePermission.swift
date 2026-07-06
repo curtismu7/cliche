@@ -3,7 +3,7 @@ import CoreGraphics
 
 /// Screen Recording permission checks. macOS ties permission to each app
 /// path + code signature — ad-hoc dev builds change signature every compile,
-/// so keep one install at ~/Applications/Cliche.app and re-toggle after updates.
+/// so keep one install at /Applications/Cliche.app and re-toggle after updates.
 public enum ScreenCapturePermission {
     private static var didShowHelpThisSession = false
     /// CGRequestScreenCaptureAccess() reopens System Settings on repeat calls when
@@ -12,7 +12,7 @@ public enum ScreenCapturePermission {
 
     /// Where `make install` and the zip installer put the app.
     public static var standardInstallPath: String {
-        NSHomeDirectory() + "/Applications/Cliche.app"
+        "/Applications/Cliche.app"
     }
 
     public static var isGranted: Bool {
@@ -29,9 +29,10 @@ public enum ScreenCapturePermission {
     /// Other install locations that cause permission confusion if both exist.
     public static func duplicateInstallPaths(excluding current: String? = nil) -> [String] {
         let currentPath = current ?? Bundle.main.bundlePath
+        let homeCopy = NSHomeDirectory() + "/Applications/Cliche.app"
         return [
-            "/Applications/Cliche.app",
             standardInstallPath,
+            homeCopy,
         ].filter { $0 != currentPath && FileManager.default.fileExists(atPath: $0) }
     }
 
@@ -60,19 +61,24 @@ public enum ScreenCapturePermission {
         alert.runModal()
     }
 
+    /// Ask macOS to add Cliché to the Screen Recording list. Safe to call at
+    /// launch — runs at most once per session and does not open Settings.
+    @MainActor
+    @discardableResult
+    public static func registerWithSystemIfNeeded() -> Bool {
+        if isGranted { return true }
+        requestAccessOnce()
+        return isGranted
+    }
+
     /// Returns true only when capture can proceed. When permission is missing,
     /// requests access at most once per session, then shows a one-time help alert.
     @MainActor
     public static func ensureGranted(appName: String = "Cliché") -> Bool {
         if isGranted { return true }
 
-        // Ask macOS once — repeated CGRequestScreenCaptureAccess() calls reopen
-        // System Settings when permission is denied or stale (the settings loop).
-        if !didRequestAccessThisSession {
-            didRequestAccessThisSession = true
-            _ = CGRequestScreenCaptureAccess()
-            if isGranted { return true }
-        }
+        requestAccessOnce()
+        if isGranted { return true }
 
         guard !didShowHelpThisSession else { return false }
         didShowHelpThisSession = true
@@ -111,5 +117,12 @@ public enum ScreenCapturePermission {
             openSettings()
         }
         return false
+    }
+
+    /// Triggers the one-time macOS registration dialog when needed.
+    private static func requestAccessOnce() {
+        guard !didRequestAccessThisSession else { return }
+        didRequestAccessThisSession = true
+        _ = CGRequestScreenCaptureAccess()
     }
 }
