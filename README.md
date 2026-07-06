@@ -15,6 +15,15 @@ Pin and search everything you copy · capture, mark up, redact, record, and meas
 
 ---
 
+## What's new
+
+- **Import clipboard history from Maccy, Paste, Clipy, CopyClip, and CopyClip 2** — Settings → General → *Import from …*. Pinned items in the source app arrive pinned in Cliché; duplicates are skipped; nothing is changed in the source app. The button only appears for apps whose storage Cliché detects on your Mac.
+- **Import completion modal** — after each import, a summary modal reports how many text, image, and pinned items were imported (and how many were skipped as duplicates).
+- **Draggable Settings sheet** — grab anywhere on the Settings background to move it around your screen.
+- **Pinned items persist across restarts** and never count against history limits.
+
+---
+
 ## Install
 
 **Option 1 — download the app** (no developer tools needed). Grab either file from the [latest release](https://github.com/curtismu7/cliche/releases/latest):
@@ -84,7 +93,7 @@ If you have two copies (`~/Applications/Cliche.app` and `/Applications/Cliche.ap
 - **Privacy built in** — anything copied from password managers (concealed/transient pasteboard types) is never recorded, with a user-editable ignore list.
 - **⌥1** — floating clipboard list at your cursor (Maccy-style).
 - **⌃⌥⌘C** — same floating list (alternate shortcut; customizable in Settings).
-- **Import history from Maccy, Paste, Clipy, CopyClip, or CopyClip 2** — open Settings → General and click *Import from …* to migrate your existing clipboard history. Duplicates are skipped; nothing is changed in the source app. The button only appears for apps whose storage Cliché detects on your Mac.
+- **Import history from Maccy, Paste, Clipy, CopyClip, or CopyClip 2** — open Settings → General and click *Import from …* to migrate your existing clipboard history. **Pinned items in the source app arrive pinned in Cliché.** Duplicates are skipped; nothing is changed in the source app. A completion modal reports the counts. The button only appears for apps whose storage Cliché detects on your Mac.
 
 ### 📷 Screen capture
 
