@@ -74,6 +74,15 @@ public final class AppSettings {
         }
     }
 
+    /// When off, panels open via hotkeys only (⌥1 / ⌥2) — useful when icons
+    /// are hidden under the notch or you prefer a clean menu bar.
+    public var showMenuBarIcons: Bool {
+        didSet {
+            defaults.set(showMenuBarIcons, forKey: "showMenuBarIcons")
+            NotificationCenter.default.post(name: Self.menuBarStyleChanged, object: nil)
+        }
+    }
+
     /// Last beautify config used in the editor; the editor opens with this.
     public var lastBeautifyConfig: BeautifyConfig {
         didSet { Self.encode(lastBeautifyConfig, to: defaults, key: "lastBeautifyConfig") }
@@ -120,6 +129,8 @@ public final class AppSettings {
             defaults.object(forKey: "hideDesktopIcons") as? Bool ?? false
         self.menuBarStyle = defaults.string(forKey: "menuBarStyle")
             .flatMap(MenuBarStyle.init(rawValue:)) ?? .split
+        self.showMenuBarIcons =
+            defaults.object(forKey: "showMenuBarIcons") as? Bool ?? true
         self.maxTextEntries = defaults.object(forKey: "maxTextEntries") as? Int ?? 500
         self.maxImageEntries = defaults.object(forKey: "maxImageEntries") as? Int ?? 200
         self.lastBeautifyConfig = Self.decode(

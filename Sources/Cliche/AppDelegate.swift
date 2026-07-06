@@ -162,6 +162,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         clipboardItem = nil
         captureItem = nil
 
+        guard settings.showMenuBarIcons else { return }
+
         // Explicit contentSize matching each HistoryView frame — without it
         // NSPopover under-allocates and clips the top of the SwiftUI content.
         switch settings.menuBarStyle {
@@ -198,25 +200,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.button?.imagePosition = .imageOnly
         item.button?.action = action
         item.button?.target = self
+        if #available(macOS 13.0, *) {
+            item.isVisible = true
+        }
         return item
     }
 
     /// Status bar icons must be template images at ~18pt or they render invisible.
-    private static func menuBarImage(symbol: String, description: String) -> NSImage? {
-        let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .medium)
-        if let image = NSImage(systemSymbolName: symbol, accessibilityDescription: description)?
-            .withSymbolConfiguration(config) {
+    private static func menuBarImage(symbol: String, description: String) -> NSImage {
+        let config = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        if let base = NSImage(systemSymbolName: symbol, accessibilityDescription: description) {
+            let image = base.withSymbolConfiguration(config) ?? base
             image.isTemplate = true
             image.size = NSSize(width: 18, height: 18)
             return image
         }
-        if let url = Bundle.main.url(forResource: "MenuBarIcon", withExtension: "png"),
-           let image = NSImage(contentsOf: url) {
-            image.isTemplate = true
-            image.size = NSSize(width: 18, height: 18)
-            return image
-        }
-        return nil
+        if let bundled = bundledMenuBarIcon() { return bundled }
+        return emptyMenuBarIcon()
+    }
+
+    /// Bundled PNG — reliable on every macOS version and menu bar theme.
+    private static func bundledMenuBarIcon() -> NSImage? {
+        guard let url = Bundle.main.url(forResource: "MenuBarIcon", withExtension: "png"),
+              let image = NSImage(contentsOf: url) else { return nil }
+        image.size = NSSize(width: 18, height: 18)
+        image.isTemplate = true
+        return image
+    }
+
+    private static func emptyMenuBarIcon() -> NSImage {
+        let image = NSImage(size: NSSize(width: 18, height: 18))
+        image.isTemplate = true
+        return image
     }
 
     private func makeHistoryView(layout: PanelLayout) -> HistoryView {

@@ -430,9 +430,10 @@ do {
     settings.captureFormat = .jpeg
     settings.copyCapturesToClipboard = false
     settings.menuBarStyle = .split
+    settings.showMenuBarIcons = false
     let reloaded = AppSettings(defaults: defaults)
     expect(reloaded.captureFormat == .jpeg && !reloaded.copyCapturesToClipboard
-        && reloaded.menuBarStyle == .split,
+        && reloaded.menuBarStyle == .split && !reloaded.showMenuBarIcons,
         "settings persist across reload")
     defaults.removePersistentDomain(forName: suite)
 }

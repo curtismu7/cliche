@@ -68,15 +68,23 @@ struct SettingsView: View {
                         .foregroundStyle(Color.ink)
                 }
                 Section("Menu Bar") {
-                    Picker("Icons", selection: $settings.menuBarStyle) {
+                    Toggle("Show menu bar icons", isOn: $settings.showMenuBarIcons)
+                    Picker("Icon layout", selection: $settings.menuBarStyle) {
                         Text("One combined icon").tag(AppSettings.MenuBarStyle.combined)
                         Text("Split: clipboard + capture").tag(AppSettings.MenuBarStyle.split)
                     }
-                    Text(settings.menuBarStyle == .combined
-                        ? "One icon opens everything."
-                        : "Two icons: 📋 opens clipboard history & snippets, 📷 opens capture tools & screenshots.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.ink)
+                    .disabled(!settings.showMenuBarIcons)
+                    if settings.showMenuBarIcons {
+                        Text(settings.menuBarStyle == .combined
+                            ? "One icon opens everything. If you don't see it, check the ◂ overflow at the left of the menu bar (notched MacBooks) or drag Cliché left in the bar."
+                            : "Two icons: clipboard history and capture tools. Hidden under the notch? Use ⌥1 and ⌥2 instead.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.ink)
+                    } else {
+                        Text("Icons hidden — use ⌥1 for clipboard history and ⌥2 for capture. Open Settings from the panel's gear icon.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.ink)
+                    }
                 }
                 Section("Permissions") {
                     HStack {
