@@ -7,17 +7,19 @@ echo "── Reset Cliché Screen Recording permission ──"
 pkill -f 'Cliche.app/Contents/MacOS/Cliche' 2>/dev/null || true
 sleep 1
 
-if [ -d "$HOME/Applications/Cliche.app" ]; then
-    echo "Removing duplicate: ~/Applications/Cliche.app"
-    rm -rf "$HOME/Applications/Cliche.app"
+if [ -d "/Applications/Cliche.app" ]; then
+    echo "Removing duplicate: /Applications/Cliche.app (Homebrew or old install)"
+    rm -rf "/Applications/Cliche.app"
 fi
 
 echo "Resetting TCC entry for org.coachcurtis.cliche…"
 tccutil reset ScreenCapture org.coachcurtis.cliche 2>/dev/null || true
 
-APP="/Applications/Cliche.app"
+APP="$HOME/Applications/Cliche.app"
 if [ ! -d "$APP" ]; then
-    echo "❌ $APP not found. Install with: brew install --cask cliche"
+    echo "❌ $APP not found."
+    echo "   Install with: make install   (from source)"
+    echo "   Or unzip the release and run Install Cliché.command"
     exit 1
 fi
 
@@ -33,9 +35,9 @@ open "$APP"
 cat <<'EOF'
 
 When Cliché opens:
-  • macOS may ask to allow Screen Recording — click Allow / Open System Settings → turn ON.
+  • Turn Cliché ON in Screen & System Audio Recording.
   • Quit Cliché completely, then open it again once (required after toggling).
   • Try ⌃⌥⌘4 to capture.
 
-If you rebuild Cliché from source, repeat this script — each build gets a new signature.
+If you rebuild from source, run this script again — each build gets a new signature.
 EOF

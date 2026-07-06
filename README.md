@@ -19,10 +19,10 @@ Pin and search everything you copy · capture, mark up, redact, record, and meas
 
 **Option 1 — download the app** (no developer tools needed). Grab either file from the [latest release](https://github.com/curtismu7/cliche/releases/latest):
 
-- **`Cliche-x.x.x.dmg`** — open it and drag Cliché to Applications. On first launch, right-click the app → **Open** → **Open** (needed once because Cliché isn't notarized — see [Signing](#signing)).
-- **`Cliche-x.x.x.zip`** — unzip and double-click **`Install Cliché.command`**; it installs, clears the Gatekeeper flag for you, and offers launch-at-login. If macOS balks at the installer itself, right-click it → **Open**.
+- **`Cliche-x.x.x.zip`** — unzip and double-click **`Install Cliché.command`**; installs to **`~/Applications/Cliche.app`** (your personal Applications folder — no admin password), clears the Gatekeeper flag, and offers launch-at-login. **Recommended.**
+- **`Cliche-x.x.x.dmg`** — drag to Applications (system folder). Same app; zip installer is simpler if you don't want `/Applications`.
 
-**Option 2 — Homebrew:**
+**Option 2 — Homebrew** (installs to `/Applications/Cliche.app` — pick **either** Homebrew **or** zip/`make install`, not both):
 
 ```sh
 brew tap curtismu7/cliche
@@ -36,12 +36,14 @@ brew install --cask cliche
 ```sh
 git clone https://github.com/curtismu7/cliche.git
 cd cliche
-make install    # builds, installs to /Applications, launches
+make install    # builds, installs to ~/Applications/Cliche.app, launches
 ```
+
+**Where is the app?** Zip and `make install` → **`~/Applications/Cliche.app`**. Homebrew → `/Applications/Cliche.app`. Only one — duplicates break Screen Recording permission.
 
 **Permissions** (macOS asks once each): *Screen Recording* on your first screenshot, and *Accessibility* only if you use direct paste. Everything else works with no permissions at all.
 
-**Screen Recording keeps opening Settings even though Cliché is toggled ON?** macOS grants permission **per app copy and per build signature** — rebuilding from source changes the signature, so an old ON toggle no longer applies. Keep **one** install at `/Applications/Cliche.app`, run `Scripts/fix-screen-recording.sh`, then toggle Cliché **off → on** in System Settings → Privacy & Security → **Screen & System Audio Recording**, and **quit + reopen Cliché twice**.
+**Screen Recording keeps opening Settings even though Cliché is toggled ON?** macOS grants permission **per app path and per build signature**. Keep **one** copy at **`~/Applications/Cliche.app`**, run `Scripts/fix-screen-recording.sh`, toggle Cliché **off → on** in System Settings → Privacy & Security → **Screen & System Audio Recording**, then **quit + reopen twice**.
 
 ## Menu bar icon
 
@@ -56,7 +58,7 @@ On a **MacBook with a notch**, the black camera housing at the top center eats m
 3. Check the **»** overflow at the far right — macOS hides extras there when space is tight.
 4. **System Settings → Displays** — try **Default** scaling instead of "More Space" (more space shrinks the bar and hides more icons).
 
-If you installed an old copy, quit every running instance (`/Applications/Cliche.app` and `~/Applications/Cliche.app`) and reinstall from the [latest release](https://github.com/curtismu7/cliche/releases/latest).
+If you have two copies (`~/Applications/Cliche.app` and `/Applications/Cliche.app`), delete one and reinstall from the [latest release](https://github.com/curtismu7/cliche/releases/latest).
 
 ## Getting started
 
@@ -138,7 +140,7 @@ Cliché is ad-hoc signed — there's no Apple Developer certificate behind it, w
 
 ## Uninstall
 
-Quit Cliché from the panel, then delete `/Applications/Cliche.app` and `~/Library/Application Support/Cliche/`, and remove it from System Settings → Login Items if enabled.
+Quit Cliché from the panel, then delete `~/Applications/Cliche.app` and `~/Library/Application Support/Cliche/`, and remove it from System Settings → Login Items if enabled.
 
 ## Development
 

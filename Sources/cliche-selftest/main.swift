@@ -533,7 +533,7 @@ do {
 
 // screenCapturePermission
 do {
-    let excluded = "/Applications/Cliche.app"
+    let excluded = NSHomeDirectory() + "/Applications/Cliche.app"
     let paths = ScreenCapturePermission.duplicateInstallPaths(excluding: excluded)
     expect(!paths.contains(excluded), "duplicate scan skips the running copy")
 }

@@ -3,9 +3,14 @@ import CoreGraphics
 
 /// Screen Recording permission checks. macOS ties permission to each app
 /// path + code signature — ad-hoc dev builds change signature every compile,
-/// so use one install at /Applications/Cliche.app and re-toggle after updates.
+/// so keep one install at ~/Applications/Cliche.app and re-toggle after updates.
 public enum ScreenCapturePermission {
     private static var didShowHelpThisSession = false
+
+    /// Where `make install` and the zip installer put the app.
+    public static var standardInstallPath: String {
+        NSHomeDirectory() + "/Applications/Cliche.app"
+    }
 
     public static var isGranted: Bool {
         CGPreflightScreenCaptureAccess()
@@ -18,12 +23,12 @@ public enum ScreenCapturePermission {
         NSWorkspace.shared.open(url)
     }
 
-    /// Other common install locations besides the running copy.
+    /// Other install locations that cause permission confusion if both exist.
     public static func duplicateInstallPaths(excluding current: String? = nil) -> [String] {
         let currentPath = current ?? Bundle.main.bundlePath
         return [
             "/Applications/Cliche.app",
-            NSHomeDirectory() + "/Applications/Cliche.app",
+            standardInstallPath,
         ].filter { $0 != currentPath && FileManager.default.fileExists(atPath: $0) }
     }
 
@@ -45,7 +50,7 @@ public enum ScreenCapturePermission {
         \(duplicates.joined(separator: "\n"))
 
         Screen Recording permission applies to one path only. Delete the extra \
-        copy and use /Applications/Cliche.app, then reset permission:
+        copy and keep \(standardInstallPath), then reset permission:
         tccutil reset ScreenCapture org.coachcurtis.cliche
         """
         alert.addButton(withTitle: "OK")
@@ -70,7 +75,7 @@ public enum ScreenCapturePermission {
         2. System Settings → Privacy & Security → Screen & System Audio Recording.
         3. Turn OFF every Cliché entry, then run in Terminal:
            tccutil reset ScreenCapture org.coachcurtis.cliche
-        4. Open only /Applications/Cliche.app.
+        4. Open only \(standardInstallPath).
         5. Turn Cliché ON, quit, and reopen once.
 
         Rebuilding the app changes its signature — toggle permission again after updates.
