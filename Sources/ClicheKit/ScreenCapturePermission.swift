@@ -57,11 +57,26 @@ public enum ScreenCapturePermission {
         alert.runModal()
     }
 
-    /// Returns true only when capture can proceed. Never auto-opens Settings —
-    /// that caused a loop when permission was stale or granted to another copy.
+    /// Returns true only when capture can proceed. When permission is missing,
+    /// calls CGRequestScreenCaptureAccess() to trigger the macOS system prompt
+    /// (this is what adds Cliché to the Screen Recording list). On macOS 15+
+    /// the prompt requires a relaunch to take effect.
     @MainActor
     public static func ensureGranted(appName: String = "Cliché") -> Bool {
         if isGranted { return true }
+
+        // Trigger the system prompt. This is the only API that makes macOS
+        // show the "Allow Cliché to record your screen?" dialog and add the
+        // app to the Screen Recording list. Returns false if already denied
+        // or if the user dismisses the prompt.
+        _ = CGRequestScreenCaptureAccess()
+
+        // Re-check after the prompt. On macOS 15 the permission doesn't take
+        // effect until the app is relaunched, so this may still be false —
+        // in that case we show the help alert guiding the user to toggle
+        // manually and restart.
+        if isGranted { return true }
+
         guard !didShowHelpThisSession else { return false }
         didShowHelpThisSession = true
 
@@ -71,12 +86,16 @@ public enum ScreenCapturePermission {
 
         \(appPath)
 
+        If macOS just prompted you, approve it and **quit + reopen Cliché** —
+        the permission only takes effect after a restart.
+
+        If no prompt appeared:
         1. Quit every copy of Cliché.
         2. System Settings → Privacy & Security → Screen & System Audio Recording.
         3. Turn OFF every Cliché entry, then run in Terminal:
            tccutil reset ScreenCapture org.coachcurtis.cliche
         4. Open only \(standardInstallPath).
-        5. Turn Cliché ON, quit, and reopen once.
+        5. Trigger a capture (⌃⌥⌘4) — macOS will prompt. Approve, quit, reopen.
 
         Rebuilding the app changes its signature — toggle permission again after updates.
         """
