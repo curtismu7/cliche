@@ -105,6 +105,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func perform(_ action: HotkeyAction) {
         switch action {
         case .togglePanel: togglePopover()
+        case .toggleCapturePanel: toggleCapturePanel()
         case .captureRegion: capture(.region)
         case .captureWindow: capture(.window)
         case .captureText: captureText()
@@ -280,6 +281,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             capturePopover.performClose(nil)
         } else if let button = captureItem?.button {
             capturePopover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
+    }
+
+    /// ⌥2 — capture panel in split mode; full panel in combined mode.
+    private func toggleCapturePanel() {
+        if settings.menuBarStyle == .split {
+            toggleCapturePopover()
+        } else {
+            togglePopover()
         }
     }
 

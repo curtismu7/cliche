@@ -119,7 +119,7 @@ public final class AppSettings {
         self.hideDesktopIcons =
             defaults.object(forKey: "hideDesktopIcons") as? Bool ?? false
         self.menuBarStyle = defaults.string(forKey: "menuBarStyle")
-            .flatMap(MenuBarStyle.init(rawValue:)) ?? .combined
+            .flatMap(MenuBarStyle.init(rawValue:)) ?? .split
         self.maxTextEntries = defaults.object(forKey: "maxTextEntries") as? Int ?? 150
         self.maxImageEntries = defaults.object(forKey: "maxImageEntries") as? Int ?? 50
         self.lastBeautifyConfig = Self.decode(

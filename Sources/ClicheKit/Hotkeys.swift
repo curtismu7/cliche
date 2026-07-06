@@ -4,6 +4,7 @@ import Carbon.HIToolbox
 /// The user-remappable global actions.
 public enum HotkeyAction: String, CaseIterable, Codable {
     case togglePanel
+    case toggleCapturePanel
     case captureRegion
     case captureWindow
     case captureText
@@ -14,6 +15,7 @@ public enum HotkeyAction: String, CaseIterable, Codable {
     public var label: String {
         switch self {
         case .togglePanel: return "Open clipboard panel"
+        case .toggleCapturePanel: return "Open capture panel"
         case .captureRegion: return "Capture region"
         case .captureWindow: return "Capture window"
         case .captureText: return "Copy text from screen (OCR)"
@@ -61,9 +63,12 @@ extension AppSettings {
 
     public static let defaultHotkeys: [HotkeyAction: HotkeyCombo] = {
         let base = UInt32(controlKey) | UInt32(optionKey) | UInt32(cmdKey)
+        let option = UInt32(optionKey)
         return [
             .togglePanel: HotkeyCombo(
-                keyCode: UInt32(kVK_ANSI_C), carbonModifiers: base, display: "⌃⌥⌘C"),
+                keyCode: UInt32(kVK_ANSI_1), carbonModifiers: option, display: "⌥1"),
+            .toggleCapturePanel: HotkeyCombo(
+                keyCode: UInt32(kVK_ANSI_2), carbonModifiers: option, display: "⌥2"),
             .captureRegion: HotkeyCombo(
                 keyCode: UInt32(kVK_ANSI_4), carbonModifiers: base, display: "⌃⌥⌘4"),
             .captureWindow: HotkeyCombo(
@@ -73,8 +78,7 @@ extension AppSettings {
             .repeatRegion: HotkeyCombo(
                 keyCode: UInt32(kVK_ANSI_R), carbonModifiers: base, display: "⌃⌥⌘R"),
             .floatingList: HotkeyCombo(
-                keyCode: UInt32(kVK_ANSI_1), carbonModifiers: UInt32(optionKey),
-                display: "⌥1"),
+                keyCode: UInt32(kVK_ANSI_C), carbonModifiers: base, display: "⌃⌥⌘C"),
             .allInOne: HotkeyCombo(
                 keyCode: UInt32(kVK_ANSI_3), carbonModifiers: base, display: "⌃⌥⌘3"),
         ]

@@ -537,9 +537,10 @@ do {
     let defaults = UserDefaults(suiteName: suite)!
     let settings = AppSettings(defaults: defaults)
     expect(settings.combo(for: .captureRegion).display == "⌃⌥⌘4"
-        && settings.combo(for: .togglePanel).display == "⌃⌥⌘C"
-        && settings.combo(for: .floatingList).display == "⌥1",
-        "hotkeys default to ⌃⌥⌘ set + ⌥1 floating list")
+        && settings.combo(for: .togglePanel).display == "⌥1"
+        && settings.combo(for: .toggleCapturePanel).display == "⌥2"
+        && settings.combo(for: .floatingList).display == "⌃⌥⌘C",
+        "hotkeys default to ⌥1/⌥2 panels + ⌃⌥⌘ set")
 
     let custom = HotkeyCombo(
         keyCode: 40,  // kVK_ANSI_K
