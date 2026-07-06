@@ -134,10 +134,19 @@ struct SettingsView: View {
         alert.addButton(withTitle: "Import")
         alert.addButton(withTitle: "Cancel")
         guard alert.runModal() == .alertFirstButtonReturn else { return }
+        // Temporarily raise caps so imported items aren't evicted as they arrive,
+        // then apply the user's configured limits (which may trim overflow).
+        historyStore.setLimits(maxTexts: 5000, maxImages: 2000)
         do {
             let result = try importer.importAll(into: historyStore)
+            historyStore.setLimits(
+                maxTexts: settings.maxTextEntries,
+                maxImages: settings.maxImageEntries)
             importMessage = result.summary
         } catch {
+            historyStore.setLimits(
+                maxTexts: settings.maxTextEntries,
+                maxImages: settings.maxImageEntries)
             importMessage = "Import failed: \(error.localizedDescription)"
         }
     }
