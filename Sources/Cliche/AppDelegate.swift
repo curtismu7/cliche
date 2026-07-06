@@ -329,6 +329,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Gate ScreenCaptureKit paths so macOS doesn't loop opening Settings
+    /// when permission was granted to a different copy of the app.
+    @MainActor
+    private func guardScreenCaptureAccess() -> Bool {
+        ScreenCapturePermission.ensureGranted()
+    }
+
     private func performCapture(_ mode: CaptureMode, on screen: NSScreen) {
         switch mode {
         case .fullScreen:
@@ -369,6 +376,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         let scale = screen.backingScaleFactor
         Task { @MainActor in
+            guard guardScreenCaptureAccess() else { return }
             do {
                 let frozen = try await ScreenshotEngine.captureImage(
                     displayID: displayID, scale: scale,
@@ -398,6 +406,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         let scale = screen.backingScaleFactor
         Task { @MainActor in
+            guard guardScreenCaptureAccess() else { return }
             do {
                 let frozen = try await ScreenshotEngine.captureImage(
                     displayID: displayID, scale: scale,
@@ -463,6 +472,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let screen = NSScreen.screens.first { $0.displayID == last.displayID }
             ?? Self.screenUnderMouse()
         Task { @MainActor in
+            guard guardScreenCaptureAccess() else { return }
             do {
                 let frozen = try await ScreenshotEngine.captureImage(
                     displayID: last.displayID, scale: screen.backingScaleFactor,
@@ -487,6 +497,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         let scale = screen.backingScaleFactor
         Task { @MainActor in
+            guard guardScreenCaptureAccess() else { return }
             do {
                 let image = try await ScreenshotEngine.captureImage(
                     displayID: displayID, sourceRect: rect, scale: scale,
@@ -576,6 +587,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let screen = Self.screenUnderMouse()
         guard let displayID = screen.displayID else { return }
         Task { @MainActor in
+            guard guardScreenCaptureAccess() else { return }
             if let frozen = try? await ScreenshotEngine.captureImage(
                 displayID: displayID, scale: screen.backingScaleFactor) {
                 RulerOverlay.begin(frozen: frozen, on: screen)
@@ -592,6 +604,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let displayID = screen.displayID else { return }
         let scale = screen.backingScaleFactor
         Task { @MainActor in
+            guard guardScreenCaptureAccess() else { return }
             guard let frozen = try? await ScreenshotEngine.captureImage(
                 displayID: displayID, scale: scale) else {
                 InfoHUD.show("Scrolling capture needs the Screen Recording permission")
@@ -621,6 +634,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let displayID = screen.displayID else { return }
         let scale = screen.backingScaleFactor
         Task { @MainActor in
+            guard guardScreenCaptureAccess() else { return }
             guard let frozen = try? await ScreenshotEngine.captureImage(
                 displayID: displayID, scale: scale) else {
                 InfoHUD.show("Recording needs the Screen Recording permission")

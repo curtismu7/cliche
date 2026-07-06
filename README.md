@@ -41,6 +41,8 @@ make install    # builds, installs to ~/Applications, launches
 
 **Permissions** (macOS asks once each): *Screen Recording* on your first screenshot, and *Accessibility* only if you use direct paste. Everything else works with no permissions at all.
 
+**Screen Recording keeps opening Settings even though Cliché is toggled ON?** macOS grants permission **per app copy** — Homebrew (`/Applications/Cliche.app`), manual install (`~/Applications/Cliche.app`), and each rebuild count separately. Keep **one** copy, quit all running instances, turn **off** every Cliché entry in System Settings → Privacy & Security → **Screen & System Audio Recording**, reopen Cliché, turn it **on** again, then **quit and reopen once more**.
+
 ## Menu bar icon
 
 Cliché lives in the **top-right menu bar** — by default **two icons**: 📋 clipboard and 📷 capture (Settings → Icons can merge them into one combined scissors icon). There is no Dock icon.

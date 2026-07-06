@@ -531,6 +531,13 @@ do {
     defaults.removePersistentDomain(forName: suite)
 }
 
+// screenCapturePermission
+do {
+    let excluded = "/Applications/Cliche.app"
+    let paths = ScreenCapturePermission.duplicateInstallPaths(excluding: excluded)
+    expect(!paths.contains(excluded), "duplicate scan skips the running copy")
+}
+
 // hotkeyCombos
 do {
     let suite = "cliche-selftest-\(UUID().uuidString)"
