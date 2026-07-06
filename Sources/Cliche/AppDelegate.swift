@@ -293,14 +293,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// ⌥2 — capture panel from the menu bar icon.
+    /// ⌥2 — capture panel from the menu bar; falls back to cursor if the icon
+    /// is hidden (notched MacBooks).
     private func toggleCapturePanel() {
         FloatingListWindow.close()
         if settings.menuBarStyle == .split {
-            toggleCapturePopover()
+            if capturePopover.isShown {
+                capturePopover.performClose(nil)
+                return
+            }
+            if let button = captureItem?.button, button.window != nil {
+                capturePopover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            } else {
+                showCapturePanelAtCursor()
+            }
         } else {
-            togglePopover()
+            if popover.isShown {
+                popover.performClose(nil)
+                return
+            }
+            if let button = clipboardItem?.button, button.window != nil {
+                previousApp = NSWorkspace.shared.frontmostApplication
+                popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+                popover.contentViewController?.view.window?.makeKey()
+            } else {
+                showCapturePanelAtCursor()
+            }
         }
+    }
+
+    /// Floating capture panel when the menu bar icon is unavailable.
+    private func showCapturePanelAtCursor() {
+        closeAllPopovers()
+        previousApp = NSWorkspace.shared.frontmostApplication
+        FloatingListWindow.show(content: makeHistoryView(layout: .captureOnly))
     }
 
     // MARK: Paste

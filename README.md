@@ -62,7 +62,7 @@ make install    # builds, installs to /Applications/Cliche.app, launches
 
 Cliché lives in the **top-right menu bar** — by default **two icons**: 📋 clipboard and 📷 capture (Settings → Icons can merge them into one combined scissors icon). There is no Dock icon.
 
-**Can't see it?** The app may still be running. Use **`⌥1`** for the clipboard list at your cursor, or **`⌥2`** for capture — both work without clicking the icon.
+**Can't see it?** The app may still be running. Use **`⌥1`** for the clipboard list at your cursor. **`⌥2`** opens capture from the menu bar icon (or at your cursor if the icon is hidden under the notch).
 
 On a **MacBook with a notch**, the black camera housing at the top center eats menu bar space. When you have many icons, extras get pushed **under the notch** and disappear. Fixes:
 
@@ -122,7 +122,7 @@ If you have an old copy at `~/Applications/Cliche.app`, delete it and reinstall 
 | Shortcut | Action |
 | --- | --- |
 | `⌥1` | Open clipboard list at cursor |
-| `⌥2` | Open the capture panel |
+| `⌥2` | Open the capture panel (menu bar; cursor fallback if icon hidden) |
 | `⌃⌥⌘C` | Open clipboard list at cursor (alternate) |
 | `⌃⌥⌘4` | Capture a region |
 | `⌃⌥⌘R` | Repeat the last region |
