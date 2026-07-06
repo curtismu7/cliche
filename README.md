@@ -36,7 +36,7 @@ brew install --cask cliche
 ```sh
 git clone https://github.com/curtismu7/cliche.git
 cd cliche
-make install    # builds, installs to ~/Applications, launches
+make install    # builds, installs to /Applications, launches
 ```
 
 **Permissions** (macOS asks once each): *Screen Recording* on your first screenshot, and *Accessibility* only if you use direct paste. Everything else works with no permissions at all.
@@ -138,7 +138,7 @@ Cliché is ad-hoc signed — there's no Apple Developer certificate behind it, w
 
 ## Uninstall
 
-Quit Cliché from the panel, then delete `~/Applications/Cliche.app` and `~/Library/Application Support/Cliche/`, and remove it from System Settings → Login Items if enabled.
+Quit Cliché from the panel, then delete `/Applications/Cliche.app` and `~/Library/Application Support/Cliche/`, and remove it from System Settings → Login Items if enabled.
 
 ## Development
 

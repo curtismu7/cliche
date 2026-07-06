@@ -82,7 +82,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         registerHotkeys()
-        ScreenCapturePermission.prepareAtLaunch()
+        ScreenCapturePermission.warnAboutDuplicateInstallsIfNeeded()
         NotificationCenter.default.addObserver(
             forName: AppSettings.hotkeysChanged, object: nil, queue: .main
         ) { [weak self] _ in

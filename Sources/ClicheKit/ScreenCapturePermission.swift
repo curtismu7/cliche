@@ -3,28 +3,12 @@ import CoreGraphics
 
 /// Screen Recording permission checks. macOS ties permission to each app
 /// path + code signature — ad-hoc dev builds change signature every compile,
-/// so Homebrew users should stick to one install path and re-toggle after
-/// updates.
+/// so use one install at /Applications/Cliche.app and re-toggle after updates.
 public enum ScreenCapturePermission {
-    private static var didRequestAccessThisSession = false
     private static var didShowHelpThisSession = false
 
     public static var isGranted: Bool {
         CGPreflightScreenCaptureAccess()
-    }
-
-    /// Call once at launch so macOS registers Cliché in the Screen Recording
-    /// list. Preflight alone never adds the app — that causes a Settings loop.
-    public static func prepareAtLaunch() {
-        guard !isGranted else { return }
-        requestAccessIfNeeded()
-    }
-
-    @discardableResult
-    private static func requestAccessIfNeeded() -> Bool {
-        guard !didRequestAccessThisSession else { return isGranted }
-        didRequestAccessThisSession = true
-        return CGRequestScreenCaptureAccess()
     }
 
     /// Opens the Screen & System Audio Recording pane in System Settings.
@@ -43,34 +27,57 @@ public enum ScreenCapturePermission {
         ].filter { $0 != currentPath && FileManager.default.fileExists(atPath: $0) }
     }
 
-    /// Returns true only when capture can proceed.
+    /// Warn once at launch when a second copy exists — the usual cause of a
+    /// Screen Recording loop (permission granted to the wrong path).
+    @MainActor
+    public static func warnAboutDuplicateInstallsIfNeeded() {
+        let appPath = Bundle.main.bundlePath
+        let duplicates = duplicateInstallPaths(excluding: appPath)
+        guard !duplicates.isEmpty else { return }
+
+        let alert = NSAlert()
+        alert.messageText = "Multiple Cliché installs detected"
+        alert.informativeText = """
+        You're running:
+        \(appPath)
+
+        Another copy also exists:
+        \(duplicates.joined(separator: "\n"))
+
+        Screen Recording permission applies to one path only. Delete the extra \
+        copy and use /Applications/Cliche.app, then reset permission:
+        tccutil reset ScreenCapture org.coachcurtis.cliche
+        """
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    /// Returns true only when capture can proceed. Never auto-opens Settings —
+    /// that caused a loop when permission was stale or granted to another copy.
     @MainActor
     public static func ensureGranted(appName: String = "Cliché") -> Bool {
         if isGranted { return true }
-        if requestAccessIfNeeded(), isGranted { return true }
-
         guard !didShowHelpThisSession else { return false }
         didShowHelpThisSession = true
 
         let appPath = Bundle.main.bundlePath
         var detail = """
-        Cliché still does not have Screen Recording for this copy:
+        Cliché needs Screen Recording for this exact copy:
 
         \(appPath)
 
-        1. Quit Cliché completely.
+        1. Quit every copy of Cliché.
         2. System Settings → Privacy & Security → Screen & System Audio Recording.
-        3. Remove every "Cliché" entry (toggle off, or run in Terminal:
-           tccutil reset ScreenCapture org.coachcurtis.cliche)
-        4. Open /Applications/Cliche.app again.
-        5. Turn Cliché ON in that pane, then quit and reopen once more.
+        3. Turn OFF every Cliché entry, then run in Terminal:
+           tccutil reset ScreenCapture org.coachcurtis.cliche
+        4. Open only /Applications/Cliche.app.
+        5. Turn Cliché ON, quit, and reopen once.
 
-        After updating/rebuilding the app, you must toggle permission again \
-        because unsigned builds get a new identity each time.
+        Rebuilding the app changes its signature — toggle permission again after updates.
         """
         let duplicates = duplicateInstallPaths(excluding: appPath)
         if !duplicates.isEmpty {
-            detail += "\n\nRemove extra copies:\n"
+            detail += "\n\nDelete extra copies:\n"
             detail += duplicates.map { "• \($0)" }.joined(separator: "\n")
         }
 
