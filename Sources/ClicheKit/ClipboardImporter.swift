@@ -19,9 +19,14 @@ public struct ImportResult {
     public var importedTexts = 0
     public var importedImages = 0
     public var skipped = 0
+    public var pinnedImports = 0
 
     public var summary: String {
-        "Imported \(importedTexts) text + \(importedImages) image items (\(skipped) skipped)."
+        var parts = ["\(importedTexts) text", "\(importedImages) image"]
+        if pinnedImports > 0 { parts.append("\(pinnedImports) pinned") }
+        var s = "Imported " + parts.joined(separator: " + ") + " items"
+        if skipped > 0 { s += " (\(skipped) skipped)" }
+        return s + "."
     }
 }
 

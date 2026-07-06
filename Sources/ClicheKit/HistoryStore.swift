@@ -37,16 +37,16 @@ public final class HistoryStore {
         save()
     }
 
-    public func addText(_ text: String) {
+    public func addText(_ text: String, pinned: Bool = false) {
         guard !text.isEmpty else { return }
-        insert(ClipItem(id: UUID(), date: Date(), kind: .text(text)))
+        insert(ClipItem(id: UUID(), date: Date(), kind: .text(text), pinned: pinned))
     }
 
-    public func addImage(_ pngData: Data) {
+    public func addImage(_ pngData: Data, pinned: Bool = false) {
         let sha = Self.sha256(pngData)
         if let existing = items.first(where: { $0.dedupeKey == "i:\(sha)" }) {
             // Same image already in history: move to front, reuse its file.
-            insert(ClipItem(id: UUID(), date: Date(), kind: existing.kind))
+            insert(ClipItem(id: UUID(), date: Date(), kind: existing.kind, pinned: pinned))
             return
         }
         let fileName = UUID().uuidString + ".png"
@@ -55,7 +55,8 @@ public final class HistoryStore {
         } catch {
             return
         }
-        insert(ClipItem(id: UUID(), date: Date(), kind: .image(fileName: fileName, sha256: sha)))
+        insert(ClipItem(id: UUID(), date: Date(),
+                        kind: .image(fileName: fileName, sha256: sha), pinned: pinned))
     }
 
     /// On-disk URL of an image item's PNG (for opening in the editor).

@@ -63,24 +63,30 @@ public struct ClipyImporter: ClipboardImporter {
               let root = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data)
         else { return .skipped }
 
+        // Pin state lives in Clipy's Realm DB (CPYClip.isPinned), not in the
+        // archived .data file. We probe for it via KVC in case a future
+        // build embeds it; otherwise default to unpinned.
+        let pinned: Bool = (root as? NSObject)
+            .flatMap { $0.value(forKey: "isPinned") as? Bool } ?? false
+
         // Try KVC on a CPYClipData-like object.
         if let clipData = root as? NSObject,
            let types = clipData.value(forKey: "types") as? [String],
            let values = clipData.value(forKey: "values") as? [Data] {
-            return importTypesAndValues(types, values, into: store)
+            return importTypesAndValues(types, values, pinned: pinned, into: store)
         }
         // Legacy: archived NSDictionary.
         if let dict = root as? [String: Any] {
-            return importItem(dict, into: store)
+            return importItem(dict, pinned: pinned, into: store)
         }
         return .skipped
     }
 
     private func importTypesAndValues(_ types: [String], _ values: [Data],
-                                       into store: HistoryStore) -> Outcome {
+                                       pinned: Bool, into store: HistoryStore) -> Outcome {
         var best = Outcome.skipped
         for (type, value) in zip(types, values) where !value.isEmpty {
-            switch importEntry(type: type, value: value, into: store) {
+            switch importEntry(type: type, value: value, pinned: pinned, into: store) {
             case .text where best != .text: best = .text
             case .image where best == .skipped: best = .image
             default: break
@@ -89,11 +95,11 @@ public struct ClipyImporter: ClipboardImporter {
         return best
     }
 
-    private func importItem(_ item: [String: Any], into store: HistoryStore) -> Outcome {
+    private func importItem(_ item: [String: Any], pinned: Bool, into store: HistoryStore) -> Outcome {
         var best = Outcome.skipped
         for (type, value) in item {
             if let data = value as? Data, !data.isEmpty {
-                switch importEntry(type: type, value: data, into: store) {
+                switch importEntry(type: type, value: data, pinned: pinned, into: store) {
                 case .text where best != .text: best = .text
                 case .image where best == .skipped: best = .image
                 default: break
@@ -103,14 +109,14 @@ public struct ClipyImporter: ClipboardImporter {
         return best
     }
 
-    private func importEntry(type: String, value: Data, into store: HistoryStore) -> Outcome {
+    private func importEntry(type: String, value: Data, pinned: Bool, into store: HistoryStore) -> Outcome {
         switch type {
         case "public.utf8-plain-text", "public.text", "NSStringPboardType":
             guard let s = String(data: value, encoding: .utf8),
                   !s.isEmpty,
                   !store.items.contains(where: { $0.dedupeKey == "t:\(s)" })
             else { return .skipped }
-            store.addText(s)
+            store.addText(s, pinned: pinned)
             return .text
         case "public.png", "public.heic", "public.tiff", "public.jpeg",
              "NSPasteboardTypePNG", "Apple TIFF pasteboard type", "NSPasteboardTypeTIFF":
@@ -121,7 +127,7 @@ public struct ClipyImporter: ClipboardImporter {
                 let sha = HistoryStore.sha256(png)
                 guard !store.items.contains(where: { $0.dedupeKey == "i:\(sha)" })
                 else { return .skipped }
-                store.addImage(png)
+                store.addImage(png, pinned: pinned)
                 return .image
             }
             return .skipped

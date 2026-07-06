@@ -32,16 +32,18 @@ public struct MaccyImporter: ClipboardImporter {
             case .text(let text):
                 if !text.isEmpty,
                    !store.items.contains(where: { $0.dedupeKey == "t:\(text)" }) {
-                    store.addText(text)
+                    store.addText(text, pinned: row.pinned)
                     result.importedTexts += 1
+                    if row.pinned { result.pinnedImports += 1 }
                 } else {
                     result.skipped += 1
                 }
             case .image(let data):
                 let sha = HistoryStore.sha256(data)
                 if !store.items.contains(where: { $0.dedupeKey == "i:\(sha)" }) {
-                    store.addImage(data)
+                    store.addImage(data, pinned: row.pinned)
                     result.importedImages += 1
+                    if row.pinned { result.pinnedImports += 1 }
                 } else {
                     result.skipped += 1
                 }
@@ -104,6 +106,7 @@ struct MaccyRow {
     let pk: Int64
     let timestamp: Double
     let title: String?
+    let pinned: Bool
     var kind: Kind
 
     enum Kind {
@@ -142,8 +145,10 @@ struct MaccyRow {
 /// merges each item's content rows into one `MaccyRow` with the best kind.
 extension Connection {
     func fetchItems() throws -> [MaccyRow] {
+        // ZPIN is a VARCHAR: any non-null value means the item is pinned
+        // (the value is Maccy's pinboard identifier).
         let sql = """
-        SELECT i.Z_PK, i.ZLASTCOPIEDAT, i.ZTITLE, c.ZTYPE, c.ZVALUE
+        SELECT i.Z_PK, i.ZLASTCOPIEDAT, i.ZTITLE, i.ZPIN, c.ZTYPE, c.ZVALUE
         FROM ZHISTORYITEM i
         LEFT JOIN ZHISTORYITEMCONTENT c ON c.ZITEM = i.Z_PK
         ORDER BY i.ZLASTCOPIEDAT DESC
@@ -153,11 +158,14 @@ extension Connection {
             let pk = sqlite3_column_int64(stmt, 0)
             let timestamp = sqlite3_column_double(stmt, 1)
             let title = Self.columnString(stmt, 2)
-            let type = Self.columnString(stmt, 3)
-            let value = Self.columnBlob(stmt, 4)
+            let pin = Self.columnString(stmt, 3)
+            let pinned = pin != nil
+            let type = Self.columnString(stmt, 4)
+            let value = Self.columnBlob(stmt, 5)
 
             if byItem[pk] == nil {
-                byItem[pk] = MaccyRow(pk: pk, timestamp: timestamp, title: title, kind: .none)
+                byItem[pk] = MaccyRow(pk: pk, timestamp: timestamp, title: title,
+                                      pinned: pinned, kind: .none)
             }
             byItem[pk]?.consider(type: type, value: value)
             return Void()
