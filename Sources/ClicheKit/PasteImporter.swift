@@ -31,17 +31,27 @@ public struct PasteImporter: ClipboardImporter {
             "SELECT name FROM pragma_table_info('ZSNIPPET') WHERE name = 'ZCONTENT'"
         ) { _ in Void() }.count > 0
         guard hasZContent else { return result }
+        let hasZPinned = try db.query(
+            "SELECT name FROM pragma_table_info('ZSNIPPET') WHERE name = 'ZPINNED'"
+        ) { _ in Void() }.count > 0
+        let pinnedColumn = hasZPinned ? "ZPINNED" : "0"
         let blobs = try db.query(
-            "SELECT ZCONTENT FROM ZSNIPPET ORDER BY ZTIMESTAMP DESC"
+            "SELECT ZCONTENT, \(pinnedColumn) FROM ZSNIPPET ORDER BY ZTIMESTAMP DESC"
         ) { stmt in
-            Connection.columnBlob(stmt, 0)
+            (blob: Connection.columnBlob(stmt, 0),
+             pinned: sqlite3_column_int(stmt, 1) != 0)
         }
-        for blob in blobs {
-            let outcome = importBlob(blob, into: store)
+        for entry in blobs {
+            let outcome = importBlob(entry.blob, pinned: entry.pinned, into: store)
             switch outcome {
-            case .text: result.importedTexts += 1
-            case .image: result.importedImages += 1
-            case .skipped: result.skipped += 1
+            case .text:
+                result.importedTexts += 1
+                if entry.pinned { result.pinnedImports += 1 }
+            case .image:
+                result.importedImages += 1
+                if entry.pinned { result.pinnedImports += 1 }
+            case .skipped:
+                result.skipped += 1
             }
         }
         return result
@@ -50,32 +60,38 @@ public struct PasteImporter: ClipboardImporter {
     private enum Outcome { case text, image, skipped }
 
     /// Decodes a bplist and tries to import text or image content from it.
-    private func importBlob(_ blob: Data, into store: HistoryStore) -> Outcome {
+    private func importBlob(_ blob: Data, pinned dbPinned: Bool, into store: HistoryStore) -> Outcome {
         guard !blob.isEmpty,
               let plist = try? PropertyListSerialization.propertyList(
                   from: blob, options: [], format: nil) as? [String: Any]
         else { return .skipped }
+
+        // Pin state can live either in the ZSNIPPET row (dbPinned) or inside
+        // the bplist metadata (pinned/favorite). Either source wins.
+        let pinned = dbPinned
+            || (plist["pinned"] as? Bool == true)
+            || (plist["favorite"] as? Bool == true)
 
         // Paste stores an array of pasteboard item dicts under "items" or
         // a flat dict of type→value. Try both layouts.
         var best = Outcome.skipped
         if let items = plist["items"] as? [[String: Any]] {
             for item in items {
-                if let r = importItem(item, into: store), r == .text { best = .text }
-                else if let r = importItem(item, into: store), r == .image, best != .text { best = .image }
+                if let r = importItem(item, pinned: pinned, into: store), r == .text { best = .text }
+                else if let r = importItem(item, pinned: pinned, into: store), r == .image, best != .text { best = .image }
             }
-        } else if let r = importItem(plist, into: store) {
+        } else if let r = importItem(plist, pinned: pinned, into: store) {
             best = r
         }
         return best
     }
 
-    private func importItem(_ item: [String: Any], into store: HistoryStore) -> Outcome? {
+    private func importItem(_ item: [String: Any], pinned: Bool, into store: HistoryStore) -> Outcome? {
         // Text first.
         if let s = item["public.utf8-plain-text"] as? String ?? item["public.text"] as? String,
            !s.isEmpty,
            !store.items.contains(where: { $0.dedupeKey == "t:\(s)" }) {
-            store.addText(s)
+            store.addText(s, pinned: pinned)
             return .text
         }
         // Images.
@@ -84,7 +100,7 @@ public struct PasteImporter: ClipboardImporter {
             let sha = HistoryStore.sha256(pngData)
             guard !store.items.contains(where: { $0.dedupeKey == "i:\(sha)" })
             else { return .skipped }
-            store.addImage(pngData)
+            store.addImage(pngData, pinned: pinned)
             return .image
         }
         return nil

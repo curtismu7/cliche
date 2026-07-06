@@ -66,21 +66,29 @@ public struct CopyClipImporter: ClipboardImporter {
                           userInfo: [NSLocalizedDescriptionKey: "\(name) schema not recognized."])
         }
         let hasBlob = columns.contains("ZATTRIBUTEDCONTENTS")
+        let hasPinned = columns.contains("ZPINNED")
         let blobColumn = hasBlob ? "ZATTRIBUTEDCONTENTS" : "NULL"
-        let sql = "SELECT ZTYPE, ZCONTENTS, \(blobColumn) FROM ZCLIPPING ORDER BY ZDATERECORDED DESC"
+        let pinnedColumn = hasPinned ? "ZPINNED" : "0"
+        let sql = "SELECT ZTYPE, ZCONTENTS, \(blobColumn), \(pinnedColumn) FROM ZCLIPPING ORDER BY ZDATERECORDED DESC"
         let rows = try db.query(sql) { stmt in
             CopyClipRow(
                 type: Connection.columnString(stmt, 0),
                 contents: Connection.columnString(stmt, 1) ?? "",
-                blob: hasBlob ? Connection.columnBlob(stmt, 2) : Data())
+                blob: hasBlob ? Connection.columnBlob(stmt, 2) : Data(),
+                pinned: sqlite3_column_int(stmt, 3) != 0)
         }
         var result = ImportResult()
         for row in rows {
             let outcome = importRow(row, into: store)
             switch outcome {
-            case .text: result.importedTexts += 1
-            case .image: result.importedImages += 1
-            case .skipped: result.skipped += 1
+            case .text:
+                result.importedTexts += 1
+                if row.pinned { result.pinnedImports += 1 }
+            case .image:
+                result.importedImages += 1
+                if row.pinned { result.pinnedImports += 1 }
+            case .skipped:
+                result.skipped += 1
             }
         }
         return result
@@ -97,7 +105,7 @@ public struct CopyClipImporter: ClipboardImporter {
             guard !row.contents.isEmpty,
                   !store.items.contains(where: { $0.dedupeKey == "t:\(row.contents)" })
             else { return .skipped }
-            store.addText(row.contents)
+            store.addText(row.contents, pinned: row.pinned)
             return .text
         case "public.png", "public.heic", "public.tiff", "public.jpeg",
              "NSPasteboardTypePNG", "Apple TIFF pasteboard type", "NSPasteboardTypeTIFF":
@@ -105,7 +113,7 @@ public struct CopyClipImporter: ClipboardImporter {
                 let sha = HistoryStore.sha256(png)
                 guard !store.items.contains(where: { $0.dedupeKey == "i:\(sha)" })
                 else { return .skipped }
-                store.addImage(png)
+                store.addImage(png, pinned: row.pinned)
                 return .image
             }
             return .skipped
@@ -114,7 +122,7 @@ public struct CopyClipImporter: ClipboardImporter {
             // text — treat a non-empty ZCONTENTS as a text clip in that case.
             if !row.contents.isEmpty,
                !store.items.contains(where: { $0.dedupeKey == "t:\(row.contents)" }) {
-                store.addText(row.contents)
+                store.addText(row.contents, pinned: row.pinned)
                 return .text
             }
             return .skipped
@@ -142,4 +150,5 @@ private struct CopyClipRow {
     let type: String?
     let contents: String
     let blob: Data
+    let pinned: Bool
 }
