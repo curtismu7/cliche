@@ -12,6 +12,7 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp .build/release/Cliche "$APP/Contents/MacOS/Cliche"
 cp Assets/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+cp Assets/MenuBarIcon.png "$APP/Contents/Resources/MenuBarIcon.png"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

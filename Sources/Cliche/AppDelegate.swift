@@ -189,11 +189,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         symbol: String, description: String, action: Selector
     ) -> NSStatusItem {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(
-            systemSymbolName: symbol, accessibilityDescription: description)
+        item.button?.image = Self.menuBarImage(symbol: symbol, description: description)
+        item.button?.imagePosition = .imageOnly
         item.button?.action = action
         item.button?.target = self
         return item
+    }
+
+    /// Status bar icons must be template images at ~18pt or they render invisible.
+    private static func menuBarImage(symbol: String, description: String) -> NSImage? {
+        let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .medium)
+        if let image = NSImage(systemSymbolName: symbol, accessibilityDescription: description)?
+            .withSymbolConfiguration(config) {
+            image.isTemplate = true
+            image.size = NSSize(width: 18, height: 18)
+            return image
+        }
+        if let url = Bundle.main.url(forResource: "MenuBarIcon", withExtension: "png"),
+           let image = NSImage(contentsOf: url) {
+            image.isTemplate = true
+            image.size = NSSize(width: 18, height: 18)
+            return image
+        }
+        return nil
     }
 
     private func makeHistoryView(layout: PanelLayout) -> HistoryView {
