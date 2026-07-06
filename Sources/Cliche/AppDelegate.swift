@@ -293,15 +293,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// ⌥2 — capture panel at the cursor (same as clipboard list on ⌥1).
+    /// ⌥2 — capture panel from the menu bar icon.
     private func toggleCapturePanel() {
-        if FloatingListWindow.isVisible {
-            FloatingListWindow.close()
-            return
+        FloatingListWindow.close()
+        if settings.menuBarStyle == .split {
+            toggleCapturePopover()
+        } else {
+            togglePopover()
         }
-        closeAllPopovers()
-        previousApp = NSWorkspace.shared.frontmostApplication
-        FloatingListWindow.show(content: makeHistoryView(layout: .captureOnly))
     }
 
     // MARK: Paste
