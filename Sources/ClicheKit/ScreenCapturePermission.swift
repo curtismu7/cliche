@@ -2,14 +2,29 @@ import AppKit
 import CoreGraphics
 
 /// Screen Recording permission checks. macOS ties permission to each app
-/// path + signature — duplicate installs (Homebrew vs ~/Applications vs
-/// make install) are the usual reason Settings looks enabled but capture
-/// still fails.
+/// path + code signature — ad-hoc dev builds change signature every compile,
+/// so Homebrew users should stick to one install path and re-toggle after
+/// updates.
 public enum ScreenCapturePermission {
+    private static var didRequestAccessThisSession = false
     private static var didShowHelpThisSession = false
 
     public static var isGranted: Bool {
         CGPreflightScreenCaptureAccess()
+    }
+
+    /// Call once at launch so macOS registers Cliché in the Screen Recording
+    /// list. Preflight alone never adds the app — that causes a Settings loop.
+    public static func prepareAtLaunch() {
+        guard !isGranted else { return }
+        requestAccessIfNeeded()
+    }
+
+    @discardableResult
+    private static func requestAccessIfNeeded() -> Bool {
+        guard !didRequestAccessThisSession else { return isGranted }
+        didRequestAccessThisSession = true
+        return CGRequestScreenCaptureAccess()
     }
 
     /// Opens the Screen & System Audio Recording pane in System Settings.
@@ -28,37 +43,43 @@ public enum ScreenCapturePermission {
         ].filter { $0 != currentPath && FileManager.default.fileExists(atPath: $0) }
     }
 
-    /// Shows setup help once per launch when permission is missing. Returns
-    /// true only when capture can proceed.
+    /// Returns true only when capture can proceed.
     @MainActor
     public static func ensureGranted(appName: String = "Cliché") -> Bool {
-        guard !isGranted else { return true }
+        if isGranted { return true }
+        if requestAccessIfNeeded(), isGranted { return true }
+
         guard !didShowHelpThisSession else { return false }
         didShowHelpThisSession = true
 
         let appPath = Bundle.main.bundlePath
         var detail = """
-        macOS has not granted Screen Recording to this copy of \(appName):
+        Cliché still does not have Screen Recording for this copy:
 
         \(appPath)
 
-        1. Quit every copy of Cliché.
-        2. System Settings → Screen & System Audio Recording — turn OFF all "Cliché" entries.
-        3. Reopen Cliché from the path above only.
-        4. Turn Cliché ON in that same settings pane, then quit and reopen once more.
+        1. Quit Cliché completely.
+        2. System Settings → Privacy & Security → Screen & System Audio Recording.
+        3. Remove every "Cliché" entry (toggle off, or run in Terminal:
+           tccutil reset ScreenCapture org.coachcurtis.cliche)
+        4. Open /Applications/Cliche.app again.
+        5. Turn Cliché ON in that pane, then quit and reopen once more.
+
+        After updating/rebuilding the app, you must toggle permission again \
+        because unsigned builds get a new identity each time.
         """
         let duplicates = duplicateInstallPaths(excluding: appPath)
         if !duplicates.isEmpty {
-            detail += "\n\nRemove extra copies so only one remains:\n"
+            detail += "\n\nRemove extra copies:\n"
             detail += duplicates.map { "• \($0)" }.joined(separator: "\n")
         }
 
         let alert = NSAlert()
         alert.messageText = "Screen Recording permission needed"
         alert.informativeText = detail
+        alert.addButton(withTitle: "OK")
         alert.addButton(withTitle: "Open Settings")
-        alert.addButton(withTitle: "Not Now")
-        if alert.runModal() == .alertFirstButtonReturn {
+        if alert.runModal() == .alertSecondButtonReturn {
             openSettings()
         }
         return false

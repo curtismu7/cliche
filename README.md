@@ -41,7 +41,7 @@ make install    # builds, installs to ~/Applications, launches
 
 **Permissions** (macOS asks once each): *Screen Recording* on your first screenshot, and *Accessibility* only if you use direct paste. Everything else works with no permissions at all.
 
-**Screen Recording keeps opening Settings even though Cliché is toggled ON?** macOS grants permission **per app copy** — Homebrew (`/Applications/Cliche.app`), manual install (`~/Applications/Cliche.app`), and each rebuild count separately. Keep **one** copy, quit all running instances, turn **off** every Cliché entry in System Settings → Privacy & Security → **Screen & System Audio Recording**, reopen Cliché, turn it **on** again, then **quit and reopen once more**.
+**Screen Recording keeps opening Settings even though Cliché is toggled ON?** macOS grants permission **per app copy and per build signature** — rebuilding from source changes the signature, so an old ON toggle no longer applies. Keep **one** install at `/Applications/Cliche.app`, run `Scripts/fix-screen-recording.sh`, then toggle Cliché **off → on** in System Settings → Privacy & Security → **Screen & System Audio Recording**, and **quit + reopen Cliché twice**.
 
 ## Menu bar icon
 

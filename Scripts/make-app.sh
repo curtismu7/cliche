@@ -40,6 +40,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <true/>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>Cliché captures regions of your screen for screenshots, scrolling capture, and screen recording.</string>
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
@@ -55,8 +57,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 
-# Ad-hoc signature so macOS treats the bundle as a stable identity for the
-# Screen Recording permission.
+# Ad-hoc signature — Screen Recording permission is tied to this hash, so
+# each rebuild requires re-toggling permission in System Settings.
 codesign --force --sign - "$APP"
 
 echo "Built $APP"
