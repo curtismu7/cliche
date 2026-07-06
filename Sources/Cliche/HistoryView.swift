@@ -174,7 +174,9 @@ struct HistoryView: View {
             Divider()
             switch effectiveTab {
             case .clipboard: clipboardTab
-            case .captures: CapturesGrid(store: capturesStore)
+            case .captures: CapturesGrid(
+                store: capturesStore,
+                regionHotkey: settings.combo(for: .captureRegion).display)
             case .snippets:
                 SnippetsList(
                     store: snippetsStore,
@@ -891,6 +893,7 @@ private struct SnippetEditor: View {
 
 private struct CapturesGrid: View {
     let store: CapturesStore
+    let regionHotkey: String
 
     @State private var showingCombine = false
 
@@ -910,7 +913,7 @@ private struct CapturesGrid: View {
                     .foregroundStyle(Color.ink)
                 Text("Screenshots you take appear here")
                     .foregroundStyle(Color.ink)
-                Text("\(settings.combo(for: .captureRegion).display) for a region, or use the buttons above")
+                Text("\(regionHotkey) for a region, or use the buttons above")
                     .font(.system(size: 12))
                     .foregroundStyle(Color.ink)
                 Spacer()
