@@ -576,6 +576,29 @@ do {
         "Paste importer defaultDatabaseURL returns Optional without crashing")
 }
 
+// copyClip2LiveImport — runs the real CopyClip 2 importer against the
+// database on this machine and prints a summary. Only exercises
+// availability + a dry run (it imports into a throwaway HistoryStore in
+// the system temp dir so the user's real history isn't polluted).
+copyClip2LiveImport: do {
+    let importer = CopyClipImporter(isCopyClip2: true)
+    expect(importer.isAvailable || !importer.isAvailable,
+        "CopyClip 2 isAvailable does not crash")
+    guard importer.isAvailable else {
+        print("copyClip2LiveImport: SKIPPED (CopyClip 2 not detected)")
+        break copyClip2LiveImport
+    }
+    let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("cliche-copyclip2-test-\(UUID().uuidString)", isDirectory: true)
+    try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+    let store = HistoryStore(directory: tmp)
+    let result = try MainActor.assumeIsolated { try importer.importAll(into: store) }
+    expect(store.items.count == result.importedTexts + result.importedImages,
+        "imported items match store count (\(store.items.count) vs \(result.importedTexts)+\(result.importedImages))")
+    print("copyClip2LiveImport: \(result.summary) store now has \(store.items.count) items")
+    try? FileManager.default.removeItem(at: tmp)
+}
+
 // hotkeyCombos
 do {
     let suite = "cliche-selftest-\(UUID().uuidString)"
