@@ -5,8 +5,10 @@ import SwiftUI
 struct SettingsView: View {
     @Bindable var settings: AppSettings
     let ignoreRulesURL: URL
+    var historyStore: HistoryStore? = nil
 
     @State private var launchAtLogin = LoginItem.isEnabled
+    @State private var maccyImport: String?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -87,13 +89,50 @@ struct SettingsView: View {
                     Text("Ignore rules block apps (e.g. password managers) from ever entering clipboard history.")
                         .font(.system(size: 12))
                         .foregroundStyle(Color.ink)
+                    if MaccyImporter.defaultDatabaseURL != nil {
+                        Button("Import from Maccy…") {
+                            importMaccy()
+                        }
+                        if let maccyImport = maccyImport {
+                            Text(maccyImport)
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color.ink)
+                        }
+                    } else {
+                        Text("No Maccy install found to import from.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.ink)
+                    }
                 }
             }
             .formStyle(.grouped)
         }
-        .frame(width: 360, height: 700)
+        .frame(width: 360, height: 760)
         .background(Color.white)
         .environment(\.colorScheme, .light)
+    }
+
+    @MainActor
+    private func importMaccy() {
+        guard let historyStore else {
+            maccyImport = "History store not available."
+            return
+        }
+        let alert = NSAlert()
+        alert.messageText = "Import from Maccy?"
+        alert.informativeText = """
+        Cliché will copy your Maccy clipboard history into Cliché. \
+        Duplicates are skipped. This does not change Maccy.
+        """
+        alert.addButton(withTitle: "Import")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        do {
+            let result = try MaccyImporter.importAll(into: historyStore)
+            maccyImport = "Imported \(result.importedTexts) text + \(result.importedImages) image items (\(result.skipped) skipped)."
+        } catch {
+            maccyImport = "Import failed: \(error.localizedDescription)"
+        }
     }
 }
 

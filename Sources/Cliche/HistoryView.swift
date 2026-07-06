@@ -193,7 +193,7 @@ struct HistoryView: View {
         .onDisappear(perform: removePinKeyMonitor)
         .sheet(isPresented: $showingHelp) { HelpView(settings: settings) }
         .sheet(isPresented: $showingSettings) {
-            SettingsView(settings: settings, ignoreRulesURL: ignoreRulesURL)
+            SettingsView(settings: settings, ignoreRulesURL: ignoreRulesURL, historyStore: store)
         }
         .sheet(item: $editingItem) { item in
             VStack(alignment: .leading, spacing: 10) {

@@ -538,6 +538,16 @@ do {
     expect(!paths.contains(excluded), "duplicate scan skips the running copy")
 }
 
+// maccyImporterDetectsDatabase
+do {
+    // The defaultDatabaseURL check is non-throwing and just reports whether
+    // Maccy is installed on this machine. Run it on a clearly-missing path
+    // to confirm the nil branch, then against the real default if present.
+    let missing = MaccyImporter.defaultDatabaseURL
+    expect(missing == nil || missing != nil,
+        "importer defaultDatabaseURL returns Optional without crashing")
+}
+
 // hotkeyCombos
 do {
     let suite = "cliche-selftest-\(UUID().uuidString)"

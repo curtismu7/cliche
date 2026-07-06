@@ -7,7 +7,8 @@ let package = Package(
     targets: [
         .target(
             name: "ClicheKit",
-            swiftSettings: [.swiftLanguageMode(.v5)]
+            swiftSettings: [.swiftLanguageMode(.v5)],
+            linkerSettings: [.linkedLibrary("sqlite3")]
         ),
         .executableTarget(
             name: "Cliche",
