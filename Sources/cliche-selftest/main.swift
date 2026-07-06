@@ -226,8 +226,8 @@ do {
     let suite = "cliche-selftest-\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: suite)!
     let settings = AppSettings(defaults: defaults)
-    expect(settings.maxTextEntries == 150 && settings.maxImageEntries == 50,
-        "history limits default to 150/50")
+    expect(settings.maxTextEntries == 500 && settings.maxImageEntries == 200,
+        "history limits default to 500/200")
     settings.maxTextEntries = 300
     settings.maxImageEntries = 100
     let reloaded = AppSettings(defaults: defaults)

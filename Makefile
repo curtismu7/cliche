@@ -12,14 +12,16 @@ app:
 run: app
 	open build/Cliche.app
 
-# Rebuild, replace ~/Applications/Cliche.app, and relaunch it.
+# Rebuild, replace /Applications/Cliche.app, and relaunch it.
+INSTALL_PATH := /Applications/Cliche.app
+
 install: app
 	-pkill -f 'Cliche.app/Contents/MacOS/Cliche'
 	sleep 1
-	mkdir -p $(HOME)/Applications
-	rm -rf /Applications/Cliche.app
-	ditto build/Cliche.app $(HOME)/Applications/Cliche.app
-	open $(HOME)/Applications/Cliche.app
+	rm -rf $(HOME)/Applications/Cliche.app
+	rm -rf $(INSTALL_PATH)
+	ditto build/Cliche.app $(INSTALL_PATH) || sudo ditto build/Cliche.app $(INSTALL_PATH)
+	open $(INSTALL_PATH)
 
 # Shareable zip for other Macs (app + installer + readme).
 dist:

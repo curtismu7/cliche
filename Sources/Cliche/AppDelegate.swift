@@ -265,6 +265,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func closeAllPopovers() {
         popover.performClose(nil)
         capturePopover.performClose(nil)
+        FloatingListWindow.close()
     }
 
     @objc private func togglePopover() {
@@ -285,13 +286,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// ⌥2 — capture panel in split mode; full panel in combined mode.
+    /// ⌥2 — capture panel at the cursor (same as clipboard list on ⌥1).
     private func toggleCapturePanel() {
-        if settings.menuBarStyle == .split {
-            toggleCapturePopover()
-        } else {
-            togglePopover()
+        if FloatingListWindow.isVisible {
+            FloatingListWindow.close()
+            return
         }
+        closeAllPopovers()
+        previousApp = NSWorkspace.shared.frontmostApplication
+        FloatingListWindow.show(content: makeHistoryView(layout: .captureOnly))
     }
 
     // MARK: Paste
