@@ -232,6 +232,7 @@ struct HistoryView: View {
                 emptyState
             } else {
                 itemList
+                    .frame(maxHeight: .infinity)
             }
             Text("↩ copy · ⌥↩ paste into app · ⌘1–9 quick copy · ⌘⌫ delete · ⌥P pin · ⌥U unpin")
                 .font(.system(size: 12))
