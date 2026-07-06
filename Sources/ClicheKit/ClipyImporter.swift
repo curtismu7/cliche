@@ -9,6 +9,8 @@ import Foundation
 public struct ClipyImporter: ClipboardImporter {
     public let name = "Clipy"
 
+    public init() {}
+
     public var isAvailable: Bool { !Self.dataFiles.isEmpty }
 
     private static var supportDirectory: URL {

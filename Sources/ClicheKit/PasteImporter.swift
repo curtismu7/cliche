@@ -8,6 +8,8 @@ import SQLite3
 public struct PasteImporter: ClipboardImporter {
     public let name = "Paste"
 
+    public init() {}
+
     public var isAvailable: Bool { Self.defaultDatabaseURL != nil }
 
     public static var defaultDatabaseURL: URL? {
