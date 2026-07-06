@@ -49,10 +49,10 @@ struct SettingsView: View {
                 }
                 Section("History Limits") {
                     Picker("Text entries", selection: $settings.maxTextEntries) {
-                        ForEach([50, 100, 150, 300, 500], id: \.self) { Text("\($0)").tag($0) }
+                        ForEach([100, 250, 500, 1000, 2000], id: \.self) { Text("\($0)").tag($0) }
                     }
                     Picker("Images", selection: $settings.maxImageEntries) {
-                        ForEach([20, 50, 100, 200], id: \.self) { Text("\($0)").tag($0) }
+                        ForEach([50, 100, 200, 500, 1000], id: \.self) { Text("\($0)").tag($0) }
                     }
                     Text("Oldest unpinned items are dropped when a limit is reached; pinned items never count. The panel shows everything — scroll or search.")
                         .font(.system(size: 12))
