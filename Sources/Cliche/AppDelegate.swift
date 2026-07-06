@@ -105,7 +105,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func perform(_ action: HotkeyAction) {
         switch action {
-        case .togglePanel: togglePopover()
+        case .togglePanel: toggleFloatingList()
         case .toggleCapturePanel: toggleCapturePanel()
         case .captureRegion: capture(.region)
         case .captureWindow: capture(.window)

@@ -14,7 +14,7 @@ public enum HotkeyAction: String, CaseIterable, Codable {
 
     public var label: String {
         switch self {
-        case .togglePanel: return "Open clipboard panel"
+        case .togglePanel: return "Open clipboard list at cursor"
         case .toggleCapturePanel: return "Open capture panel"
         case .captureRegion: return "Capture region"
         case .captureWindow: return "Capture window"

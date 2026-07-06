@@ -47,7 +47,7 @@ make install    # builds, installs to ~/Applications, launches
 
 Cliché lives in the **top-right menu bar** — by default **two icons**: 📋 clipboard and 📷 capture (Settings → Icons can merge them into one combined scissors icon). There is no Dock icon.
 
-**Can't see it?** The app may still be running. Use **`⌥1`** for the clipboard panel or **`⌥2`** for capture — both work without clicking the icon.
+**Can't see it?** The app may still be running. Use **`⌥1`** for the clipboard list at your cursor, or **`⌥2`** for capture — both work without clicking the icon.
 
 On a **MacBook with a notch**, the black camera housing at the top center eats menu bar space. When you have many icons, extras get pushed **under the notch** and disappear. Fixes:
 
@@ -60,7 +60,7 @@ If you installed an old copy, quit every running instance (`/Applications/Cliche
 
 ## Getting started
 
-1. **Open the clipboard panel** — click the 📋 menu bar icon, or press **`⌥1`**.
+1. **Open the clipboard list** — press **`⌥1`** (appears at your cursor), or click the 📋 menu bar icon.
 2. **Open the capture panel** — click the 📷 menu bar icon, or press **`⌥2`**.
 3. **Capture a region** — **`⌃⌥⌘4`**. A thumbnail appears in the **bottom-left corner**; **click it** to open the annotation editor.
 4. **Re-annotate a saved capture** — **`⌥2`** → **Captures** tab → hover a screenshot → click **Annotate** (✏️).
@@ -80,8 +80,8 @@ If you installed an old copy, quit every running instance (`/Applications/Cliche
 - **Images in a horizontal strip**, previewable, pinnable, annotatable.
 - **Snippets** — reusable templates with `%DATE%`, `%TIME%`, `%CLIPBOARD%` variables.
 - **Privacy built in** — anything copied from password managers (concealed/transient pasteboard types) is never recorded, with a user-editable ignore list.
-- **⌥1 / ⌥2** — open the **clipboard** and **capture** panels (default split menu bar icons).
-- **⌃⌥⌘C** — Maccy-style floating clipboard list at your cursor from anywhere.
+- **⌥1** — floating clipboard list at your cursor (Maccy-style).
+- **⌃⌥⌘C** — same floating list (alternate shortcut; customizable in Settings).
 
 ### 📷 Screen capture
 
@@ -105,9 +105,9 @@ If you installed an old copy, quit every running instance (`/Applications/Cliche
 
 | Shortcut | Action |
 | --- | --- |
-| `⌥1` | Open the clipboard panel |
+| `⌥1` | Open clipboard list at cursor |
 | `⌥2` | Open the capture panel |
-| `⌃⌥⌘C` | Floating clipboard list at the cursor |
+| `⌃⌥⌘C` | Open clipboard list at cursor (alternate) |
 | `⌃⌥⌘4` | Capture a region |
 | `⌃⌥⌘R` | Repeat the last region |
 | `⌃⌥⌘5` | Capture a window |
