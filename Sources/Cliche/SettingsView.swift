@@ -88,11 +88,8 @@ struct SettingsView: View {
                         } else {
                             Button("Enable…") {
                                 Task { @MainActor in
-                                    ScreenCapturePermission.registerWithSystemIfNeeded()
+                                    _ = ScreenCapturePermission.requestAccessUserInitiated()
                                     screenRecordingGranted = ScreenCapturePermission.isGranted
-                                    if !screenRecordingGranted {
-                                        ScreenCapturePermission.openSettings()
-                                    }
                                 }
                             }
                         }

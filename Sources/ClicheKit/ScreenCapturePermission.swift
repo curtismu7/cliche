@@ -7,8 +7,9 @@ import CoreGraphics
 public enum ScreenCapturePermission {
     private static var didShowHelpThisSession = false
     /// CGRequestScreenCaptureAccess() reopens System Settings on repeat calls when
-    /// permission is stale — only invoke it once per app session.
+    /// permission is stale — only invoke it from explicit user actions.
     private static var didRequestAccessThisSession = false
+    private static let grantedExecutableModKey = "screenCaptureGrantedExecutableMod"
 
     /// Where `make install` and the zip installer put the app.
     public static var standardInstallPath: String {
@@ -61,24 +62,35 @@ public enum ScreenCapturePermission {
         alert.runModal()
     }
 
-    /// Ask macOS to add Cliché to the Screen Recording list. Safe to call at
-    /// launch — runs at most once per session and does not open Settings.
+    /// Checks permission only — never opens Settings or shows a system prompt.
     @MainActor
     @discardableResult
     public static func registerWithSystemIfNeeded() -> Bool {
-        if isGranted { return true }
-        requestAccessOnce()
+        if isGranted { noteGrantedExecutableIfNeeded() }
         return isGranted
     }
 
-    /// Returns true only when capture can proceed. When permission is missing,
-    /// requests access at most once per session, then shows a one-time help alert.
+    /// User clicked Enable / Show prompt — may invoke the one-time macOS dialog.
+    @MainActor
+    @discardableResult
+    public static func requestAccessUserInitiated() -> Bool {
+        if isGranted {
+            noteGrantedExecutableIfNeeded()
+            return true
+        }
+        requestAccessOnce()
+        if isGranted { noteGrantedExecutableIfNeeded() }
+        return isGranted
+    }
+
+    /// Returns true only when capture can proceed. Never auto-opens Settings;
+    /// shows a one-time help alert when permission is missing.
     @MainActor
     public static func ensureGranted(appName: String = "Cliché") -> Bool {
-        if isGranted { return true }
-
-        requestAccessOnce()
-        if isGranted { return true }
+        if isGranted {
+            noteGrantedExecutableIfNeeded()
+            return true
+        }
 
         guard !didShowHelpThisSession else { return false }
         didShowHelpThisSession = true
@@ -89,19 +101,26 @@ public enum ScreenCapturePermission {
 
         \(appPath)
 
-        If macOS just prompted you, approve it and **quit + reopen Cliché** —
-        the permission only takes effect after a restart.
+        In System Settings → Privacy & Security → Screen & System Audio Recording:
+        turn Cliché OFF, then ON again, quit Cliché completely, and reopen it.
 
-        If no prompt appeared:
-        1. Quit every copy of Cliché.
-        2. System Settings → Privacy & Security → Screen & System Audio Recording.
-        3. Turn OFF every Cliché entry, then run in Terminal:
-           tccutil reset ScreenCapture org.coachcurtis.cliche
-        4. Open only \(standardInstallPath).
-        5. Trigger a capture (⌘⇧6) — macOS will prompt. Approve, quit, reopen.
-
-        Rebuilding or upgrading Cliché changes its signature — toggle Screen Recording again after `brew upgrade --cask cliche`.
+        If Cliché is missing from the list, click "Show Permission Prompt" below.
         """
+        if executableWasRebuiltSinceLastGrant {
+            detail += """
+
+            This build's signature changed since Screen Recording was last enabled \
+            (common after `brew upgrade --cask cliche` or `make install`). \
+            Toggling OFF then ON fixes it — no need to reset TCC every time.
+            """
+        } else {
+            detail += """
+
+            If nothing works, quit Cliché and run:
+            tccutil reset ScreenCapture org.coachcurtis.cliche
+            Then open only \(standardInstallPath) and use "Show Permission Prompt".
+            """
+        }
         let duplicates = duplicateInstallPaths(excluding: appPath)
         if !duplicates.isEmpty {
             detail += "\n\nDelete extra copies:\n"
@@ -111,18 +130,41 @@ public enum ScreenCapturePermission {
         let alert = NSAlert()
         alert.messageText = "Screen Recording permission needed"
         alert.informativeText = detail
-        alert.addButton(withTitle: "OK")
         alert.addButton(withTitle: "Open Settings")
-        if alert.runModal() == .alertSecondButtonReturn {
+        alert.addButton(withTitle: "Show Permission Prompt")
+        alert.addButton(withTitle: "Not Now")
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
             openSettings()
+        } else if response == .alertSecondButtonReturn {
+            _ = requestAccessUserInitiated()
         }
         return false
     }
 
-    /// Triggers the one-time macOS registration dialog when needed.
+    /// Triggers the one-time macOS registration dialog when the user asks for it.
     private static func requestAccessOnce() {
         guard !didRequestAccessThisSession else { return }
         didRequestAccessThisSession = true
         _ = CGRequestScreenCaptureAccess()
+    }
+
+    /// Remember which executable build had permission so we can spot ad-hoc re-signs.
+    private static func noteGrantedExecutableIfNeeded() {
+        guard isGranted, let mod = executableModificationDate() else { return }
+        UserDefaults.standard.set(mod.timeIntervalSince1970, forKey: grantedExecutableModKey)
+    }
+
+    private static func executableModificationDate() -> Date? {
+        guard let url = Bundle.main.executableURL else { return nil }
+        return (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?
+            .contentModificationDate
+    }
+
+    /// True when the binary was rebuilt after permission last worked (ad-hoc signing).
+    static var executableWasRebuiltSinceLastGrant: Bool {
+        let stored = UserDefaults.standard.double(forKey: grantedExecutableModKey)
+        guard stored > 0, let current = executableModificationDate() else { return false }
+        return current.timeIntervalSince1970 > stored + 1
     }
 }
