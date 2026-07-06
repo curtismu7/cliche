@@ -432,7 +432,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// ⌃⌥⌘3 — frozen overlay with the Region/Window/Full Screen/OCR strip.
+    /// ⌘⇧3 — frozen overlay with the Region/Window/Full Screen/OCR strip.
     private func startAllInOne() {
         closeAllPopovers()
         let screen = Self.screenUnderMouse()
@@ -499,10 +499,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// ⌃⌥⌘R — recapture the exact previous region with no UI.
+    /// ⌘⇧R — recapture the exact previous region with no UI.
     private func repeatLastRegion() {
         guard let last = settings.lastRegion else {
-            InfoHUD.show("No previous region — use ⌃⌥⌘4 first")
+            InfoHUD.show("No previous region — use ⌘⇧6 first")
             return
         }
         let screen = NSScreen.screens.first { $0.displayID == last.displayID }

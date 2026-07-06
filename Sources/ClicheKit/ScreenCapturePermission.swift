@@ -98,7 +98,7 @@ public enum ScreenCapturePermission {
         3. Turn OFF every Cliché entry, then run in Terminal:
            tccutil reset ScreenCapture org.coachcurtis.cliche
         4. Open only \(standardInstallPath).
-        5. Trigger a capture (⌃⌥⌘4) — macOS will prompt. Approve, quit, reopen.
+        5. Trigger a capture (⌘⇧6) — macOS will prompt. Approve, quit, reopen.
 
         Rebuilding the app changes its signature — toggle permission again after updates.
         """

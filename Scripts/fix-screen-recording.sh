@@ -37,7 +37,7 @@ cat <<'EOF'
 When Cliché opens:
   • Turn Cliché ON in Screen & System Audio Recording.
   • Quit Cliché completely, then open it again once (required after toggling).
-  • Try ⌃⌥⌘4 to capture.
+  • Try ⌘⇧6 to capture.
 
 If you rebuild from source, run this script again — each build gets a new signature.
 EOF

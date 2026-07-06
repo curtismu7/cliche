@@ -910,7 +910,7 @@ private struct CapturesGrid: View {
                     .foregroundStyle(Color.ink)
                 Text("Screenshots you take appear here")
                     .foregroundStyle(Color.ink)
-                Text("⌃⌥⌘4 for a region, or use the buttons above")
+                Text("\(settings.combo(for: .captureRegion).display) for a region, or use the buttons above")
                     .font(.system(size: 12))
                     .foregroundStyle(Color.ink)
                 Spacer()

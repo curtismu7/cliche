@@ -62,7 +62,8 @@ extension AppSettings {
     public static let hotkeysChanged = Notification.Name("ClicheHotkeysChanged")
 
     public static let defaultHotkeys: [HotkeyAction: HotkeyCombo] = {
-        let base = UInt32(controlKey) | UInt32(optionKey) | UInt32(cmdKey)
+        let screen = UInt32(shiftKey) | UInt32(cmdKey)
+        let panel = UInt32(controlKey) | UInt32(optionKey) | UInt32(cmdKey)
         let option = UInt32(optionKey)
         return [
             .togglePanel: HotkeyCombo(
@@ -70,17 +71,17 @@ extension AppSettings {
             .toggleCapturePanel: HotkeyCombo(
                 keyCode: UInt32(kVK_ANSI_2), carbonModifiers: option, display: "⌥2"),
             .captureRegion: HotkeyCombo(
-                keyCode: UInt32(kVK_ANSI_4), carbonModifiers: base, display: "⌃⌥⌘4"),
+                keyCode: UInt32(kVK_ANSI_6), carbonModifiers: screen, display: "⌘⇧6"),
             .captureWindow: HotkeyCombo(
-                keyCode: UInt32(kVK_ANSI_5), carbonModifiers: base, display: "⌃⌥⌘5"),
+                keyCode: UInt32(kVK_ANSI_5), carbonModifiers: screen, display: "⌘⇧5"),
             .captureText: HotkeyCombo(
-                keyCode: UInt32(kVK_ANSI_6), carbonModifiers: base, display: "⌃⌥⌘6"),
+                keyCode: UInt32(kVK_ANSI_4), carbonModifiers: screen, display: "⌘⇧4"),
             .repeatRegion: HotkeyCombo(
-                keyCode: UInt32(kVK_ANSI_R), carbonModifiers: base, display: "⌃⌥⌘R"),
+                keyCode: UInt32(kVK_ANSI_R), carbonModifiers: screen, display: "⌘⇧R"),
             .floatingList: HotkeyCombo(
-                keyCode: UInt32(kVK_ANSI_C), carbonModifiers: base, display: "⌃⌥⌘C"),
+                keyCode: UInt32(kVK_ANSI_C), carbonModifiers: panel, display: "⌃⌥⌘C"),
             .allInOne: HotkeyCombo(
-                keyCode: UInt32(kVK_ANSI_3), carbonModifiers: base, display: "⌃⌥⌘3"),
+                keyCode: UInt32(kVK_ANSI_3), carbonModifiers: screen, display: "⌘⇧3"),
         ]
     }()
 

@@ -55,7 +55,7 @@ First-run permissions (macOS asks once each):
 
 Getting started:
   ⌥1  clipboard list at cursor   ⌥2  capture panel
-  ⌃⌥⌘C  clipboard list (alt)      ⌃⌥⌘4  capture a region
+  ⌃⌥⌘C  clipboard list (alt)      ⌘⇧6  capture a region
   Annotate any capture, then use the Beautify panel on the right
   to add a gradient backdrop and export at social sizes.
   The ? button in the panel lists everything; hotkeys are

@@ -627,11 +627,11 @@ do {
     let suite = "cliche-selftest-\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: suite)!
     let settings = AppSettings(defaults: defaults)
-    expect(settings.combo(for: .captureRegion).display == "⌃⌥⌘4"
+    expect(settings.combo(for: .captureRegion).display == "⌘⇧6"
         && settings.combo(for: .togglePanel).display == "⌥1"
         && settings.combo(for: .toggleCapturePanel).display == "⌥2"
         && settings.combo(for: .floatingList).display == "⌃⌥⌘C",
-        "hotkeys default to ⌥1/⌥2 panels + ⌃⌥⌘ set")
+        "hotkeys default to ⌥1/⌥2 panels + ⌘⇧ screen capture")
 
     let custom = HotkeyCombo(
         keyCode: 40,  // kVK_ANSI_K
@@ -640,12 +640,12 @@ do {
     settings.setCombo(custom, for: .captureRegion)
     let reloaded = AppSettings(defaults: defaults)
     expect(reloaded.combo(for: .captureRegion) == custom
-        && reloaded.combo(for: .captureWindow).display == "⌃⌥⌘5",
+        && reloaded.combo(for: .captureWindow).display == "⌘⇧5",
         "custom hotkey persists, others keep defaults")
     expect(reloaded.action(using: custom) == .captureRegion,
         "conflict lookup finds the owning action")
     settings.setCombo(nil, for: .captureRegion)
-    expect(AppSettings(defaults: defaults).combo(for: .captureRegion).display == "⌃⌥⌘4",
+    expect(AppSettings(defaults: defaults).combo(for: .captureRegion).display == "⌘⇧6",
         "clearing a hotkey restores the default")
     expect(HotkeyCombo.displaySymbols(for: [.control, .command]) == "⌃⌘",
         "modifier symbols render in canonical order")
@@ -961,8 +961,8 @@ do {
     let keys = combos.map { "\($0.keyCode)-\($0.carbonModifiers)" }
     expect(HotkeyAction.allCases.contains(.allInOne), "allInOne is a hotkey action")
     expect(Set(keys).count == keys.count, "no two default hotkeys collide")
-    expect(settings.combo(for: .allInOne).display == "⌃⌥⌘3",
-        "allInOne default is ⌃⌥⌘3")
+    expect(settings.combo(for: .allInOne).display == "⌘⇧3",
+        "allInOne default is ⌘⇧3")
 
     // Conflict detection covers the new case.
     let combo = settings.combo(for: .allInOne)

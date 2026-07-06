@@ -54,7 +54,7 @@ make install    # builds, installs to /Applications/Cliche.app, launches
 
 **Permissions** (macOS asks once each): *Screen Recording* on your first screenshot, and *Accessibility* only if you use direct paste. Everything else works with no permissions at all.
 
-**Cliché not in the Screen Recording list?** Press `⌃⌥⌘4` to trigger a capture — Cliché will prompt macOS to show the "Allow Cliché to record your screen?" dialog. Approve it, then **quit and reopen Cliché** (the permission only takes effect after a restart).
+**Cliché not in the Screen Recording list?** Press `⌘⇧6` to trigger a capture — Cliché will prompt macOS to show the "Allow Cliché to record your screen?" dialog. Approve it, then **quit and reopen Cliché** (the permission only takes effect after a restart).
 
 **Screen Recording keeps opening Settings even though Cliché is toggled ON?** macOS grants permission **per app path and per build signature**. Keep **one** copy at **`/Applications/Cliche.app`**, run `Scripts/fix-screen-recording.sh`, toggle Cliché **off → on** in System Settings → Privacy & Security → **Screen & System Audio Recording**, then **quit + reopen twice**.
 
@@ -77,7 +77,7 @@ If you have an old copy at `~/Applications/Cliche.app`, delete it and reinstall 
 
 1. **Open the clipboard list** — press **`⌥1`** (appears at your cursor), or click the 📋 menu bar icon.
 2. **Open the capture panel** — click the 📷 menu bar icon, or press **`⌥2`**.
-3. **Capture a region** — **`⌃⌥⌘4`**. A thumbnail appears in the **bottom-left corner**; **click it** to open the annotation editor.
+3. **Capture a region** — **`⌘⇧6`**. A thumbnail appears in the **bottom-left corner**; **click it** to open the annotation editor.
 4. **Re-annotate a saved capture** — **`⌥2`** → **Captures** tab → hover a screenshot → click **Annotate** (✏️).
 5. **Customize shortcuts** — panel footer **gear** → Hotkeys. The **?** button lists every in-panel shortcut.
 
@@ -102,7 +102,7 @@ If you have an old copy at `~/Applications/Cliche.app`, delete it and reinstall 
 ### 📷 Screen capture
 
 - **Region capture on a frozen screen** with a magnifier loupe, live pixel-size label, and Shift-to-square — plus window, full-screen, and timed (3/5/10 s) capture.
-- **All-in-one capture** — one hotkey (`⌃⌥⌘3`) opens the overlay with a mode strip: Region, Window, Full Screen, or Copy Text, switchable with keys 1–4.
+- **All-in-one capture** — one hotkey (`⌘⇧3`) opens the overlay with a mode strip: Region, Window, Full Screen, or Copy Text, switchable with keys 1–4.
 - **Hide desktop clutter** — a Settings toggle excludes desktop icons from captures and recordings; your wallpaper stays.
 - **Multi-window capture** — pick several windows and capture just those together, everything else excluded.
 - **Combine captures** — stitch screenshots side-by-side, stacked, or in a grid from the Captures tab.
@@ -124,11 +124,11 @@ If you have an old copy at `~/Applications/Cliche.app`, delete it and reinstall 
 | `⌥1` | Open clipboard list at cursor |
 | `⌥2` | Open the capture panel (menu bar; cursor fallback if icon hidden) |
 | `⌃⌥⌘C` | Open clipboard list at cursor (alternate) |
-| `⌃⌥⌘4` | Capture a region |
-| `⌃⌥⌘R` | Repeat the last region |
-| `⌃⌥⌘5` | Capture a window |
-| `⌃⌥⌘6` | Copy text from screen (OCR) |
-| `⌃⌥⌘3` | All-in-one capture (mode strip) |
+| `⌘⇧6` | Capture a region |
+| `⌘⇧R` | Repeat the last region |
+| `⌘⇧5` | Capture a window |
+| `⌘⇧4` | Copy text from screen (OCR) |
+| `⌘⇧3` | All-in-one capture (mode strip) |
 
 The **?** button in the panel lists every in-panel shortcut; the **gear** opens Settings (menu bar style, history limits, image format, timer, hotkeys, launch at login, ignore rules).
 
