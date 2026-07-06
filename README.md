@@ -41,6 +41,30 @@ make install    # builds, installs to ~/Applications, launches
 
 **Permissions** (macOS asks once each): *Screen Recording* on your first screenshot, and *Accessibility* only if you use direct paste. Everything else works with no permissions at all.
 
+## Menu bar icon
+
+Cliché lives in the **top-right menu bar** — a **scissors** icon by default (Settings → Icons can split it into separate **clipboard** and **camera** icons). There is no Dock icon.
+
+**Can't see it?** The app may still be running. Use **`⌃⌥⌘C`** to open the panel, or **`⌃⌥⌘4`** to capture — both work without clicking the icon.
+
+On a **MacBook with a notch**, the black camera housing at the top center eats menu bar space. When you have many icons, extras get pushed **under the notch** and disappear. Fixes:
+
+1. **System Settings → Control Center** — turn off menu bar modules you don't need (Sound, Bluetooth, etc.) to free space.
+2. Hold **⌘** and **drag** menu bar icons — move Cliché's icon as far **right** as you can (just left of the system cluster).
+3. Check the **»** overflow at the far right — macOS hides extras there when space is tight.
+4. **System Settings → Displays** — try **Default** scaling instead of "More Space" (more space shrinks the bar and hides more icons).
+
+If you installed an old copy, quit every running instance (`/Applications/Cliche.app` and `~/Applications/Cliche.app`) and reinstall from the [latest release](https://github.com/curtismu7/cliche/releases/latest).
+
+## Getting started
+
+1. **Open the panel** — click the menu bar icon, or press **`⌃⌥⌘C`**.
+2. **Capture a region** — **`⌃⌥⌘4`**. A thumbnail appears in the **bottom-left corner**; **click it** to open the annotation editor.
+3. **Re-annotate a saved capture** — open the panel → **Captures** tab → hover a screenshot → click **Annotate** (✏️).
+4. **Customize shortcuts** — panel footer **gear** → Hotkeys. The **?** button lists every in-panel shortcut.
+
+**Annotation editor shortcuts:** `⌘Z` undo · `⇧⌘C` copy annotated image · `↩` save (overwrites the file; layers stay editable).
+
 ## What it does
 
 ### 📋 Clipboard history
