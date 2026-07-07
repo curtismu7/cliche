@@ -83,8 +83,8 @@ struct HelpView: View {
             }
         }
         .frame(width: 380, height: 460)
-        .background(Color.white)
-        .environment(\.colorScheme, .light)
+        .background(PanelTheme.panelBackground(settings))
+        .environment(\.colorScheme, PanelTheme.swiftUIColorScheme(settings))
     }
 
     private func section(_ title: String, rows: [(String, String)]) -> some View {

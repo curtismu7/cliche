@@ -3,9 +3,8 @@ import ClicheKit
 import SwiftUI
 
 extension Color {
-    /// Readable "secondary" ink on the white panels (replaces washed-out
-    /// system .secondary/.tertiary styles).
-    static let ink = Color(white: 0.25)
+    /// Secondary label ink — adapts with the panel's forced color scheme.
+    static let ink = Color.primary.opacity(0.55)
 }
 
 enum PanelLayout {
@@ -352,12 +351,12 @@ struct HistoryView: View {
         HStack {
             Text(headerTitle)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(PanelTheme.headerTitleColor(settings))
             Spacer()
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(Color(red: 0.78, green: 0.16, blue: 0.15))
+        .background(PanelTheme.headerBackground(settings))
     }
 
     var body: some View {
@@ -394,8 +393,8 @@ struct HistoryView: View {
             footer
         }
         .frame(width: PanelMetrics.width, height: panelHeight)
-        .background(Color.white)
-        .environment(\.colorScheme, .light)
+        .background(PanelTheme.panelBackground(settings))
+        .environment(\.colorScheme, PanelTheme.swiftUIColorScheme(settings))
         .background(shortcutButtons)
         .background(WindowAccessor { hostWindow = $0 })
         .onAppear(perform: installPinKeyMonitor)
@@ -550,12 +549,12 @@ struct HistoryView: View {
 
     private var recentSeparator: some View {
         HStack(spacing: 6) {
-            Rectangle().fill(Color.black.opacity(0.15)).frame(height: 1)
+            Rectangle().fill(PanelTheme.borderColor(settings)).frame(height: 1)
             Text("Recent")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Color.ink)
                 .fixedSize()
-            Rectangle().fill(Color.black.opacity(0.15)).frame(height: 1)
+            Rectangle().fill(PanelTheme.borderColor(settings)).frame(height: 1)
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 3)

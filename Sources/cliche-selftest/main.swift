@@ -532,6 +532,25 @@ do {
     defaults.removePersistentDomain(forName: suite)
 }
 
+// panelAppearanceDefaults
+do {
+    let suite = "cliche-selftest-\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    let settings = AppSettings(defaults: defaults)
+    expect(settings.panelColorScheme == .light
+        && settings.headerBarColorHex == ColorUtil.defaultHeaderBarHex,
+        "panel appearance defaults to light mode and brand red header")
+    settings.panelColorScheme = .dark
+    settings.headerBarColorHex = "#336699"
+    let reloaded = AppSettings(defaults: defaults)
+    expect(reloaded.panelColorScheme == .dark
+        && reloaded.headerBarColorHex == "#336699",
+        "panel appearance persists")
+    expect(ColorUtil.rgb(fromHex: "#336699")?.red == 51.0 / 255.0,
+        "hex parser reads red channel")
+    defaults.removePersistentDomain(forName: suite)
+}
+
 // screenCapturePermission
 do {
     let excluded = "/Applications/Cliche.app"

@@ -1,16 +1,6 @@
 import AppKit
 
 public enum ColorUtil {
-    /// "#RRGGBB" in sRGB, e.g. "#3A7BD5".
-    public static func hexString(_ color: NSColor) -> String? {
-        guard let rgb = color.usingColorSpace(.sRGB) else { return nil }
-        return String(
-            format: "#%02X%02X%02X",
-            Int((rgb.redComponent * 255).rounded()),
-            Int((rgb.greenComponent * 255).rounded()),
-            Int((rgb.blueComponent * 255).rounded()))
-    }
-
     /// WCAG 2.0 contrast ratio, 1...21.
     public static func contrastRatio(_ a: NSColor, _ b: NSColor) -> Double? {
         func luminance(_ color: NSColor) -> Double? {
@@ -32,5 +22,32 @@ public enum ColorUtil {
         if ratio >= 4.5 { return "AA" }
         if ratio >= 3 { return "AA Large" }
         return "Fail"
+    }
+
+    public static let defaultHeaderBarHex = "#C72926"
+
+    /// "#RRGGBB" in sRGB, e.g. "#3A7BD5".
+    public static func hexString(_ color: NSColor) -> String? {
+        guard let rgb = color.usingColorSpace(.sRGB) else { return nil }
+        return hex(fromRGB: rgb.redComponent, green: rgb.greenComponent, blue: rgb.blueComponent)
+    }
+
+    /// Parses "#RRGGBB" or "RRGGBB" into 0...1 sRGB components.
+    public static func rgb(fromHex hex: String) -> (red: Double, green: Double, blue: Double)? {
+        var trimmed = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasPrefix("#") { trimmed.removeFirst() }
+        guard trimmed.count == 6, let value = UInt32(trimmed, radix: 16) else { return nil }
+        return (
+            red: Double((value >> 16) & 0xFF) / 255,
+            green: Double((value >> 8) & 0xFF) / 255,
+            blue: Double(value & 0xFF) / 255)
+    }
+
+    public static func hex(fromRGB red: Double, green: Double, blue: Double) -> String {
+        String(
+            format: "#%02X%02X%02X",
+            Int((red * 255).rounded()),
+            Int((green * 255).rounded()),
+            Int((blue * 255).rounded()))
     }
 }

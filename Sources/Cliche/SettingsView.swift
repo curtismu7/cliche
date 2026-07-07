@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var importMessage: String?
     @State private var screenRecordingGranted = ScreenCapturePermission.isGranted
+    @State private var headerBarColor = Color.red
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -64,6 +65,24 @@ struct SettingsView: View {
                         HotkeyRecorderRow(action: action, settings: settings)
                     }
                     Text("Click a shortcut, then press the new keys (needs at least one of ⌃⌥⇧⌘; Esc cancels). ⟲ restores the default.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.ink)
+                }
+                Section("Panel Appearance") {
+                    Picker("Color mode", selection: $settings.panelColorScheme) {
+                        Text("Light").tag(AppSettings.PanelColorScheme.light)
+                        Text("Dark").tag(AppSettings.PanelColorScheme.dark)
+                    }
+                    .pickerStyle(.segmented)
+                    ColorPicker("Header bar color", selection: $headerBarColor, supportsOpacity: false)
+                        .onChange(of: headerBarColor) { _, color in
+                            syncHeaderColor(from: color)
+                        }
+                    Button("Reset header color") {
+                        settings.headerBarColorHex = ColorUtil.defaultHeaderBarHex
+                        headerBarColor = Self.color(fromHex: settings.headerBarColorHex)
+                    }
+                    Text("Applies to the panel title bar. Text color adjusts automatically for contrast.")
                         .font(.system(size: 12))
                         .foregroundStyle(Color.ink)
                 }
@@ -145,9 +164,31 @@ struct SettingsView: View {
             }
             .formStyle(.grouped)
         }
-        .frame(width: 360, height: 820)
-        .background(Color.white)
-        .environment(\.colorScheme, .light)
+        .frame(width: 360, height: 900)
+        .background(PanelTheme.panelBackground(settings))
+        .environment(\.colorScheme, PanelTheme.swiftUIColorScheme(settings))
+        .onAppear {
+            headerBarColor = Self.color(fromHex: settings.headerBarColorHex)
+        }
+        .onChange(of: settings.headerBarColorHex) { _, hex in
+            headerBarColor = Self.color(fromHex: hex)
+        }
+    }
+
+    private func syncHeaderColor(from color: Color) {
+        let nsColor = NSColor(color)
+        guard let rgb = nsColor.usingColorSpace(.sRGB) else { return }
+        settings.headerBarColorHex = ColorUtil.hex(
+            fromRGB: rgb.redComponent,
+            green: rgb.greenComponent,
+            blue: rgb.blueComponent)
+    }
+
+    private static func color(fromHex hex: String) -> Color {
+        guard let rgb = ColorUtil.rgb(fromHex: hex) else {
+            return Color(red: 0.78, green: 0.16, blue: 0.15)
+        }
+        return Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
     }
 
     @MainActor

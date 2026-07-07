@@ -11,7 +11,7 @@ enum FloatingListWindow {
 
     static var isVisible: Bool { panel != nil }
 
-    static func show<Content: View>(content: Content, size: NSSize) {
+    static func show<Content: View>(content: Content, size: NSSize, appearance: NSAppearance) {
         close()
 
         let listPanel = KeyablePanel(
@@ -25,13 +25,13 @@ enum FloatingListWindow {
         listPanel.hasShadow = true
         listPanel.isReleasedWhenClosed = false
         listPanel.isMovableByWindowBackground = true
-        listPanel.appearance = NSAppearance(named: .aqua)
+        listPanel.appearance = appearance
         listPanel.contentView = NSHostingView(
             rootView: content
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.black.opacity(0.2))))
+                        .stroke(Color.primary.opacity(0.2))))
 
         // Appear at the mouse, clamped onto the screen.
         let mouse = NSEvent.mouseLocation

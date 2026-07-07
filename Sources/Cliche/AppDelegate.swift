@@ -59,14 +59,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         popover.behavior = .transient
         capturePopover.behavior = .transient
-        // White panels regardless of system dark mode.
-        popover.appearance = NSAppearance(named: .aqua)
-        capturePopover.appearance = NSAppearance(named: .aqua)
+        applyPanelAppearance()
         configureMenuBar()
         NotificationCenter.default.addObserver(
             forName: AppSettings.menuBarStyleChanged, object: nil, queue: .main
         ) { [weak self] _ in
             DispatchQueue.main.async {
+                self?.closeAllPopovers()
+                self?.configureMenuBar()
+            }
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: AppSettings.panelAppearanceChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.applyPanelAppearance()
                 self?.closeAllPopovers()
                 self?.configureMenuBar()
             }
@@ -151,7 +159,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         previousApp = NSWorkspace.shared.frontmostApplication
         let layout = PanelLayout.clipboardOnly
         let size = HistoryView.preferredPanelSize(layout: layout, items: store.items)
-        FloatingListWindow.show(content: makeHistoryView(layout: layout), size: size)
+        FloatingListWindow.show(
+            content: makeHistoryView(layout: layout),
+            size: size,
+            appearance: PanelTheme.nsAppearance(settings))
+    }
+
+    private func applyPanelAppearance() {
+        let appearance = PanelTheme.nsAppearance(settings)
+        popover.appearance = appearance
+        capturePopover.appearance = appearance
     }
 
     // MARK: Menu bar
@@ -363,7 +380,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         previousApp = NSWorkspace.shared.frontmostApplication
         let layout = PanelLayout.captureOnly
         let size = panelSize(for: layout)
-        FloatingListWindow.show(content: makeHistoryView(layout: layout), size: size)
+        FloatingListWindow.show(
+            content: makeHistoryView(layout: layout),
+            size: size,
+            appearance: PanelTheme.nsAppearance(settings))
     }
 
     // MARK: Paste

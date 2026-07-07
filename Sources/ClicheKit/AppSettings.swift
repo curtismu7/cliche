@@ -51,6 +51,27 @@ public final class AppSettings {
 
     public static let menuBarStyleChanged = Notification.Name("ClicheMenuBarStyleChanged")
     public static let historyLimitsChanged = Notification.Name("ClicheHistoryLimitsChanged")
+    public static let panelAppearanceChanged = Notification.Name("ClichePanelAppearanceChanged")
+
+    public enum PanelColorScheme: String, CaseIterable, Codable {
+        case light
+        case dark
+    }
+
+    /// Header bar color as "#RRGGBB" (default brand red).
+    public var headerBarColorHex: String {
+        didSet {
+            defaults.set(headerBarColorHex, forKey: "headerBarColorHex")
+            NotificationCenter.default.post(name: Self.panelAppearanceChanged, object: nil)
+        }
+    }
+
+    public var panelColorScheme: PanelColorScheme {
+        didSet {
+            defaults.set(panelColorScheme.rawValue, forKey: "panelColorScheme")
+            NotificationCenter.default.post(name: Self.panelAppearanceChanged, object: nil)
+        }
+    }
 
     /// History caps (pinned items never count against them).
     public var maxTextEntries: Int {
@@ -131,6 +152,10 @@ public final class AppSettings {
             .flatMap(MenuBarStyle.init(rawValue:)) ?? .split
         self.showMenuBarIcons =
             defaults.object(forKey: "showMenuBarIcons") as? Bool ?? true
+        self.headerBarColorHex = defaults.string(forKey: "headerBarColorHex")
+            ?? ColorUtil.defaultHeaderBarHex
+        self.panelColorScheme = defaults.string(forKey: "panelColorScheme")
+            .flatMap(PanelColorScheme.init(rawValue:)) ?? .light
         self.maxTextEntries = defaults.object(forKey: "maxTextEntries") as? Int ?? 500
         self.maxImageEntries = defaults.object(forKey: "maxImageEntries") as? Int ?? 200
         self.lastBeautifyConfig = Self.decode(
