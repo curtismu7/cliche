@@ -17,6 +17,10 @@ Pin and search everything you copy · capture, mark up, redact, record, and meas
 
 ## What's new
 
+- **NEW: Dynamic clipboard panel height** — the history popover grows with your items (pinned + recent) up to the screen height, then scrolls. No more getting stuck seeing only pinned clips.
+- **NEW: Show menu bar icons setting** — hide the menu bar icons on notched MacBooks while keeping hotkeys (⌥1 clipboard, ⌥2 capture). Icons render correctly on all displays.
+- **Fix: Screen Recording settings no longer auto-open on launch** — permission is requested only when you actually capture.
+- **Fix: Global hotkeys dispatch on the main thread** — ⌥1, ⌥2, and capture shortcuts are reliable again.
 - **NEW: Maccy-style paste into field** — **Return** or click pastes into the app you were using (e.g. a username field on a webpage). **⌥Return** / **⌥-click** copies only. First paste prompts for Accessibility permission.
 - **NEW: Import clipboard history from Maccy, Paste, Clipy, CopyClip, and CopyClip 2** — Settings → General → *Import from …*. Pinned items in the source app arrive pinned in Cliché; duplicates are skipped; nothing is changed in the source app. The button only appears for apps whose storage Cliché detects on your Mac.
 - **NEW: Import completion modal** — after each import, a summary modal reports how many text, image, and pinned items were imported (and how many were skipped as duplicates).
