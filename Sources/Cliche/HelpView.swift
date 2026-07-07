@@ -74,7 +74,8 @@ struct HelpView: View {
                     ])
                     section("Good to Know", rows: [
                         ("Screenshots", "Saved to the Desktop + clipboard + Captures tab (format and clipboard behavior: gear → Settings)"),
-                        ("History", "Keeps 150 texts and 50 images; pinned items are never evicted"),
+                        ("History", "Keeps 500 texts and 200 images by default (configurable in Settings); pinned items are never evicted"),
+                        ("Panel appearance", "Gear → Panel Appearance: light/dark mode and header bar color"),
                         ("Privacy", "Password-manager copies are never recorded (gear → Edit Ignore Rules…)"),
                         ("Permissions", "Screen Recording: needed for captures. Accessibility: only for direct paste"),
                     ])

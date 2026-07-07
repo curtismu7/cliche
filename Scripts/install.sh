@@ -57,8 +57,11 @@ First-run permissions (macOS asks once each):
 Getting started:
   ⌥1  clipboard list at cursor   ⌥2  capture panel
   ⌃⌥⌘C  clipboard list (alt)      ⌘⇧6  capture a region
-  Annotate any capture, then use the Beautify panel on the right
-  to add a gradient backdrop and export at social sizes.
-  The ? button in the panel lists everything; hotkeys are
-  customizable under the gear icon.
+  Gear icon → Panel Appearance (light/dark, header color), hotkeys, limits
+  The ? button in the panel lists everything.
+
+Already installed? Upgrade with Homebrew:
+  brew update && brew upgrade --cask cliche
+Or download the latest release from:
+  https://github.com/curtismu7/cliche/releases/latest
 EOF

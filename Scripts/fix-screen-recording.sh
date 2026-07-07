@@ -39,5 +39,7 @@ When Cliché opens:
   • Quit Cliché completely, then open it again once (required after toggling).
   • Try ⌘⇧6 to capture.
 
-If you upgrade with Homebrew, run this script again after each release — each build gets a new signature.
+If you upgrade with Homebrew, run this script again after each release — each build gets a new signature:
+  brew update && brew upgrade --cask cliche
+  Scripts/fix-screen-recording.sh
 EOF

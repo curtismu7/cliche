@@ -17,6 +17,7 @@ Pin and search everything you copy · capture, mark up, redact, record, and meas
 
 ## What's new
 
+- **NEW: Panel appearance settings** — Settings → **Panel Appearance**: pick **Light** or **Dark** mode and customize the **header bar color** (title text adjusts for contrast). Reset restores the default brand red.
 - **NEW: Dynamic clipboard panel height** — the history popover grows with your items (pinned + recent) up to the screen height, then scrolls. No more getting stuck seeing only pinned clips.
 - **NEW: Show menu bar icons setting** — hide the menu bar icons on notched MacBooks while keeping hotkeys (⌥1 clipboard, ⌥2 capture). Icons render correctly on all displays.
 - **Fix: Screen Recording settings no longer auto-open on launch** — permission is requested only when you actually capture.
@@ -48,7 +49,19 @@ brew install --cask cliche
 brew update && brew upgrade --cask cliche
 ```
 
-After upgrading, macOS may ask you to **re-approve Screen Recording** once (ad-hoc signature changes each release). Press **⌘⇧6**, toggle Cliché **ON** in System Settings if needed, then **quit + reopen**.
+**Upgrade on another Mac** (same steps — Homebrew or manual):
+
+```sh
+# Homebrew (recommended)
+brew update && brew upgrade --cask cliche
+
+# Or reinstall if something looks stale
+brew reinstall --cask cliche
+```
+
+Manual upgrade: download the [latest release](https://github.com/curtismu7/cliche/releases/latest), quit Cliché, replace `/Applications/Cliche.app`, then reopen. Delete `~/Applications/Cliche.app` if it exists — only one install path.
+
+After upgrading, macOS may ask you to **re-approve Screen Recording** once (ad-hoc signature changes each release). Press **⌘⇧6**, toggle Cliché **ON** in System Settings if needed, then **quit + reopen**. If Settings keeps looping, see [Screen Recording troubleshooting](#screen-recording-troubleshooting) below.
 
 **Alternative — zip or DMG** (no Homebrew): [latest release](https://github.com/curtismu7/cliche/releases/latest) → unzip **`Install Cliché.command`** or drag from the DMG to Applications. Same destination: **`/Applications/Cliche.app`**. Do not also install via Homebrew.
 
@@ -64,7 +77,20 @@ make install    # dev build → /Applications/Cliche.app; prefer brew install fo
 
 **Cliché not in the Screen Recording list?** Press `⌘⇧6` to trigger a capture — Cliché will prompt macOS to show the "Allow Cliché to record your screen?" dialog. Approve it, then **quit and reopen Cliché** (the permission only takes effect after a restart).
 
+### Screen Recording troubleshooting
+
 **Screen Recording keeps opening Settings even though Cliché is toggled ON?** macOS grants permission **per app path and per build signature**. Keep **one** copy at **`/Applications/Cliche.app`**, run `Scripts/fix-screen-recording.sh`, toggle Cliché **off → on** in System Settings → Privacy & Security → **Screen & System Audio Recording**, then **quit + reopen twice**.
+
+Quick reset from Terminal:
+
+```sh
+pkill -f 'Cliche.app/Contents/MacOS/Cliche'
+rm -rf ~/Applications/Cliche.app
+tccutil reset ScreenCapture org.coachcurtis.cliche
+open /Applications/Cliche.app
+```
+
+Then toggle Cliché **ON** in Screen & System Audio Recording, quit, and reopen once more.
 
 ## Menu bar icon
 
@@ -102,6 +128,7 @@ If you have an old copy at `~/Applications/Cliche.app`, delete it, then run `bre
 - **Pin** anything to keep it forever — pins live in their own section at the top, above a "Recent" separator, with an **Unpin All** button; pinned items never count against history limits. Plus **edit text clips in place** and **preview** long text or images in a floating window with copy/pin/edit corners.
 - **Images in a horizontal strip**, previewable, pinnable, annotatable.
 - **Snippets** — reusable templates with `%DATE%`, `%TIME%`, `%CLIPBOARD%` variables.
+- **Panel appearance** — Settings → Panel Appearance: light/dark mode and a customizable header bar color.
 - **Privacy built in** — anything copied from password managers (concealed/transient pasteboard types) is never recorded, with a user-editable ignore list.
 - **⌥1** — floating clipboard list at your cursor (Maccy-style).
 - **⌃⌥⌘C** — same floating list (alternate shortcut; customizable in Settings).
@@ -138,7 +165,7 @@ If you have an old copy at `~/Applications/Cliche.app`, delete it, then run `bre
 | `⌘⇧4` | Copy text from screen (OCR) |
 | `⌘⇧3` | All-in-one capture (mode strip) |
 
-The **?** button in the panel lists every in-panel shortcut; the **gear** opens Settings (menu bar style, history limits, image format, timer, hotkeys, launch at login, ignore rules).
+The **?** button in the panel lists every in-panel shortcut; the **gear** opens Settings (panel appearance, menu bar style, history limits, image format, timer, hotkeys, launch at login, ignore rules).
 
 ## Automation
 
@@ -174,7 +201,7 @@ Remove Cliché from System Settings → Login Items if you enabled launch at log
 - `Sources/ClicheKit` — library: history store, clipboard monitor, screenshot engine, recorder, stitcher, OCR, annotation renderer, beautify pipeline
 - `Sources/Cliche` — the menu bar app (AppKit shell + SwiftUI panels)
 - `Sources/cliche-selftest` — assertion-based tests: `make test` (Command Line Tools ship no XCTest)
-- `make install` — build + reinstall locally · `make dist` — shareable zip · `make release` — tag, push, and publish a GitHub release
+- `make install` — build + reinstall locally · `make dist` — shareable zip · `make release` — tag, push, and publish a GitHub release (also updates the [Homebrew tap](https://github.com/curtismu7/homebrew-cliche))
 - `docs/` — design spec, roadmap, and the feature research that drove the app
 
 ## License

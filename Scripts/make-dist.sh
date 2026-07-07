@@ -29,6 +29,12 @@ To install:
 
 Requires macOS 14 (Sonoma) or newer.
 
+Upgrade (already installed):
+  • Homebrew: brew update && brew upgrade --cask cliche
+  • Manual: quit Cliché, replace /Applications/Cliche.app with this copy
+  • After upgrading, you may need to re-toggle Screen Recording in
+    System Settings → Privacy & Security → Screen & System Audio Recording
+
 Everything stays on your Mac — no accounts, no network. Clipboard
 history, screenshots, and settings live in
 ~/Library/Application Support/Cliche/.
