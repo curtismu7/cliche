@@ -149,7 +149,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         closeAllPopovers()
         previousApp = NSWorkspace.shared.frontmostApplication
-        FloatingListWindow.show(content: makeHistoryView(layout: .clipboardOnly))
+        let layout = PanelLayout.clipboardOnly
+        let size = HistoryView.preferredPanelSize(layout: layout, items: store.items)
+        FloatingListWindow.show(content: makeHistoryView(layout: layout), size: size)
     }
 
     // MARK: Menu bar
@@ -164,23 +166,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         guard settings.showMenuBarIcons else { return }
 
-        // Explicit contentSize matching each HistoryView frame — without it
-        // NSPopover under-allocates and clips the top of the SwiftUI content.
+        // Explicit contentSize matching HistoryView — without it NSPopover
+        // under-allocates and clips the top of the SwiftUI content.
         switch settings.menuBarStyle {
         case .combined:
             popover.contentViewController = NSHostingController(
                 rootView: makeHistoryView(layout: .full))
-            popover.contentSize = NSSize(width: 340, height: 530)
+            popover.contentSize = panelSize(for: .full)
             clipboardItem = makeStatusItem(
                 symbol: "scissors.badge.ellipsis", description: "Cliché",
                 action: #selector(togglePopover))
         case .split:
             popover.contentViewController = NSHostingController(
                 rootView: makeHistoryView(layout: .clipboardOnly))
-            popover.contentSize = NSSize(width: 340, height: 490)
+            popover.contentSize = panelSize(for: .clipboardOnly)
             capturePopover.contentViewController = NSHostingController(
                 rootView: makeHistoryView(layout: .captureOnly))
-            capturePopover.contentSize = NSSize(width: 340, height: 455)
+            capturePopover.contentSize = panelSize(for: .captureOnly)
             // Items added later sit further left; add capture first so the
             // clipboard icon stays in the accustomed spot.
             captureItem = makeStatusItem(
@@ -280,6 +282,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
+    private func panelSize(for layout: PanelLayout, on screen: NSScreen? = nil) -> NSSize {
+        let tab: PanelMetrics.Tab = layout == .captureOnly ? .captures : .clipboard
+        return HistoryView.preferredPanelSize(
+            layout: layout,
+            tab: tab,
+            items: store.items,
+            captureCount: capturesStore.captures.count,
+            snippetCount: snippetsStore.snippets.count,
+            screen: screen)
+    }
+
+    private func refreshPopoverSize(_ popover: NSPopover, layout: PanelLayout, anchor: NSView?) {
+        let screen = anchor?.window?.screen ?? NSScreen.main
+        popover.contentSize = panelSize(for: layout, on: screen)
+    }
+
     private func closeAllPopovers() {
         popover.performClose(nil)
         capturePopover.performClose(nil)
@@ -291,6 +309,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             popover.performClose(nil)
         } else if let button = clipboardItem?.button {
             previousApp = NSWorkspace.shared.frontmostApplication
+            let layout: PanelLayout = settings.menuBarStyle == .combined ? .full : .clipboardOnly
+            refreshPopoverSize(popover, layout: layout, anchor: button)
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
         }
@@ -300,6 +320,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if capturePopover.isShown {
             capturePopover.performClose(nil)
         } else if let button = captureItem?.button {
+            refreshPopoverSize(capturePopover, layout: .captureOnly, anchor: button)
             capturePopover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
     }
@@ -314,6 +335,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
             if let button = captureItem?.button, button.window != nil {
+                refreshPopoverSize(capturePopover, layout: .captureOnly, anchor: button)
                 capturePopover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             } else {
                 showCapturePanelAtCursor()
@@ -325,6 +347,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             if let button = clipboardItem?.button, button.window != nil {
                 previousApp = NSWorkspace.shared.frontmostApplication
+                let layout: PanelLayout = settings.menuBarStyle == .combined ? .full : .clipboardOnly
+                refreshPopoverSize(popover, layout: layout, anchor: button)
                 popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
                 popover.contentViewController?.view.window?.makeKey()
             } else {
@@ -337,7 +361,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showCapturePanelAtCursor() {
         closeAllPopovers()
         previousApp = NSWorkspace.shared.frontmostApplication
-        FloatingListWindow.show(content: makeHistoryView(layout: .captureOnly))
+        let layout = PanelLayout.captureOnly
+        let size = panelSize(for: layout)
+        FloatingListWindow.show(content: makeHistoryView(layout: layout), size: size)
     }
 
     // MARK: Paste

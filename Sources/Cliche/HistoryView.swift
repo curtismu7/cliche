@@ -17,6 +17,146 @@ enum PanelLayout {
     case captureOnly
 }
 
+/// Shared sizing for the history panel — grows with content, capped to the screen.
+enum PanelMetrics {
+    static let width: CGFloat = 340
+    static let minHeight: CGFloat = 280
+    static let rowHeight: CGFloat = 32
+    static let pinnedHeaderHeight: CGFloat = 22
+    static let recentSeparatorHeight: CGFloat = 24
+    static let listPadding: CGFloat = 12
+    static let emptyListHeight: CGFloat = 120
+    static let imageStripHeight: CGFloat = 84
+    static let screenMargin: CGFloat = 16
+
+    enum Tab { case clipboard, captures, snippets }
+
+    static func maxPanelHeight(on screen: NSScreen? = nil) -> CGFloat {
+        let visible = (screen ?? NSScreen.main ?? NSScreen.screens.first)?.visibleFrame.height ?? 800
+        return visible - screenMargin
+    }
+
+    static func preferredSize(
+        layout: PanelLayout,
+        tab: Tab = .clipboard,
+        items: [ClipItem],
+        query: String = "",
+        captureCount: Int = 0,
+        snippetCount: Int = 0,
+        screen: NSScreen? = nil
+    ) -> NSSize {
+        let filtered = FuzzyMatcher.filter(items, query: query)
+        let textItems = filtered.filter { if case .text = $0.kind { return true }; return false }
+        let pinnedCount = textItems.prefix(while: \.pinned).count
+        let hasImageStrip = filtered.contains { if case .image = $0.kind { return true }; return false }
+        let tabCount = tabCount(for: layout)
+        let outerChrome = outerChromeHeight(layout: layout, tabCount: tabCount)
+        let content = tabContentHeight(
+            tab: tab,
+            textCount: textItems.count,
+            pinnedCount: pinnedCount,
+            hasImageStrip: hasImageStrip,
+            captureCount: captureCount,
+            snippetCount: snippetCount)
+        let ideal = outerChrome + content
+        let height = min(max(ideal, minHeight), maxPanelHeight(on: screen))
+        return NSSize(width: width, height: ceil(height))
+    }
+
+    static func listScrollHeight(
+        panelHeight: CGFloat,
+        layout: PanelLayout,
+        tab: Tab,
+        hasImageStrip: Bool,
+        tabCount: Int
+    ) -> CGFloat {
+        max(0, panelHeight - outerChromeHeight(layout: layout, tabCount: tabCount))
+    }
+
+    static func clipboardListMaxHeight(
+        panelHeight: CGFloat,
+        layout: PanelLayout,
+        hasImageStrip: Bool,
+        tabCount: Int
+    ) -> CGFloat {
+        var height = listScrollHeight(
+            panelHeight: panelHeight,
+            layout: layout,
+            tab: .clipboard,
+            hasImageStrip: hasImageStrip,
+            tabCount: tabCount)
+        height -= 38 + 22  // search field + keyboard hint
+        if hasImageStrip { height -= imageStripHeight + 1 }
+        return max(0, height)
+    }
+
+    static func tabCount(for layout: PanelLayout) -> Int {
+        switch layout {
+        case .full: return 3
+        case .clipboardOnly: return 2
+        case .captureOnly: return 1
+        }
+    }
+
+    private static func outerChromeHeight(layout: PanelLayout, tabCount: Int) -> CGFloat {
+        var height: CGFloat = 28  // header bar
+        if layout != .clipboardOnly {
+            height += 76  // capture toolbar
+        }
+        if tabCount > 1 {
+            height += layout == .clipboardOnly ? 44 : 36  // segmented tabs
+        }
+        height += 1 + 1 + 34  // dividers + footer
+        return height
+    }
+
+    private static func tabContentHeight(
+        tab: Tab,
+        textCount: Int,
+        pinnedCount: Int,
+        hasImageStrip: Bool,
+        captureCount: Int,
+        snippetCount: Int
+    ) -> CGFloat {
+        switch tab {
+        case .clipboard:
+            var height: CGFloat = 38 + 22  // search field + keyboard hint
+            if hasImageStrip { height += imageStripHeight + 1 }
+            height += clipboardRowsHeight(textCount: textCount, pinnedCount: pinnedCount)
+            return height
+        case .captures:
+            var height: CGFloat = 0
+            if captureCount >= 2 { height += 30 }
+            height += captureRowsHeight(count: captureCount)
+            return height
+        case .snippets:
+            var height: CGFloat = 36  // snippets header row
+            height += snippetRowsHeight(count: snippetCount)
+            return height
+        }
+    }
+
+    private static func clipboardRowsHeight(textCount: Int, pinnedCount: Int) -> CGFloat {
+        guard textCount > 0 else { return emptyListHeight }
+        var height = listPadding + CGFloat(textCount) * rowHeight
+        if pinnedCount > 0 { height += pinnedHeaderHeight }
+        if pinnedCount > 0, pinnedCount < textCount { height += recentSeparatorHeight }
+        return height
+    }
+
+    private static func captureRowsHeight(count: Int) -> CGFloat {
+        guard count > 0 else { return emptyListHeight }
+        let columns: CGFloat = 3
+        let rows = ceil(CGFloat(count) / columns)
+        return listPadding + rows * 88
+    }
+
+    private static func snippetRowsHeight(count: Int) -> CGFloat {
+        guard count > 0 else { return emptyListHeight }
+        return listPadding + CGFloat(count) * 44
+    }
+}
+
 struct HistoryView: View {
     var layout: PanelLayout = .full
     let store: HistoryStore
@@ -62,6 +202,71 @@ struct HistoryView: View {
     private var visibleItems: [ClipItem] {
         let filtered = FuzzyMatcher.filter(store.items, query: query)
         return filtered.filter(\.pinned) + filtered.filter { !$0.pinned }
+    }
+
+    private var metricsTab: PanelMetrics.Tab {
+        switch effectiveTab {
+        case .clipboard: return .clipboard
+        case .captures: return .captures
+        case .snippets: return .snippets
+        }
+    }
+
+    private var panelHeight: CGFloat {
+        preferredPanelSize(on: hostWindow?.screen).height
+    }
+
+    private var listScrollHeight: CGFloat {
+        PanelMetrics.listScrollHeight(
+            panelHeight: panelHeight,
+            layout: layout,
+            tab: metricsTab,
+            hasImageStrip: !imageItems.isEmpty,
+            tabCount: availableTabs.count)
+    }
+
+    private var clipboardListMaxHeight: CGFloat {
+        PanelMetrics.clipboardListMaxHeight(
+            panelHeight: panelHeight,
+            layout: layout,
+            hasImageStrip: !imageItems.isEmpty,
+            tabCount: availableTabs.count)
+    }
+
+    static func preferredPanelSize(
+        layout: PanelLayout,
+        tab: PanelMetrics.Tab = .clipboard,
+        items: [ClipItem],
+        query: String = "",
+        captureCount: Int = 0,
+        snippetCount: Int = 0,
+        screen: NSScreen? = nil
+    ) -> NSSize {
+        PanelMetrics.preferredSize(
+            layout: layout,
+            tab: tab,
+            items: items,
+            query: query,
+            captureCount: captureCount,
+            snippetCount: snippetCount,
+            screen: screen)
+    }
+
+    private func preferredPanelSize(on screen: NSScreen?) -> NSSize {
+        Self.preferredPanelSize(
+            layout: layout,
+            tab: metricsTab,
+            items: store.items,
+            query: query,
+            captureCount: capturesStore.captures.count,
+            snippetCount: snippetsStore.snippets.count,
+            screen: screen)
+    }
+
+    /// Keeps popovers and the floating panel sized when content or tab changes.
+    private func syncPanelSize() {
+        guard let window = hostWindow else { return }
+        window.setContentSize(preferredPanelSize(on: window.screen))
     }
 
     /// Vertical list + keyboard navigation operate on text items.
@@ -177,22 +382,27 @@ struct HistoryView: View {
             case .captures: CapturesGrid(
                 store: capturesStore,
                 regionHotkey: settings.combo(for: .captureRegion).display)
+                .frame(maxHeight: listScrollHeight)
             case .snippets:
                 SnippetsList(
                     store: snippetsStore,
                     onCopy: onCopySnippet,
                     onPaste: onPasteSnippet)
+                .frame(maxHeight: listScrollHeight)
             }
             Divider()
             footer
         }
-        .frame(width: 340, height: layout == .captureOnly ? 455 : (layout == .full ? 530 : 490))
+        .frame(width: PanelMetrics.width, height: panelHeight)
         .background(Color.white)
         .environment(\.colorScheme, .light)
         .background(shortcutButtons)
         .background(WindowAccessor { hostWindow = $0 })
         .onAppear(perform: installPinKeyMonitor)
         .onDisappear(perform: removePinKeyMonitor)
+        .onChange(of: store.items.count) { syncPanelSize() }
+        .onChange(of: query) { syncPanelSize() }
+        .onChange(of: tab) { syncPanelSize() }
         .sheet(isPresented: $showingHelp) { HelpView(settings: settings) }
         .sheet(isPresented: $showingSettings) {
             SettingsView(settings: settings, ignoreRulesURL: ignoreRulesURL, historyStore: store)
@@ -234,7 +444,7 @@ struct HistoryView: View {
                 emptyState
             } else {
                 itemList
-                    .frame(maxHeight: .infinity)
+                    .frame(maxHeight: clipboardListMaxHeight)
             }
             Text("↩ paste into app · ⌥↩ copy only · ⌘1–9 quick paste · ⌘⌫ delete · ⌥P pin · ⌥U unpin")
                 .font(.system(size: 12))

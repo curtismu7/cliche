@@ -11,10 +11,9 @@ enum FloatingListWindow {
 
     static var isVisible: Bool { panel != nil }
 
-    static func show<Content: View>(content: Content) {
+    static func show<Content: View>(content: Content, size: NSSize) {
         close()
 
-        let size = NSSize(width: 340, height: 490)
         let listPanel = KeyablePanel(
             contentRect: NSRect(origin: .zero, size: size),
             styleMask: [.borderless, .nonactivatingPanel],
