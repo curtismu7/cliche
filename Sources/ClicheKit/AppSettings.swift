@@ -104,6 +104,12 @@ public final class AppSettings {
         }
     }
 
+    /// When on, Return/click pastes into the field that was focused when the
+    /// panel opened (username, password, URL bar, etc.) via Accessibility.
+    public var pasteIntoFocusedField: Bool {
+        didSet { defaults.set(pasteIntoFocusedField, forKey: "pasteIntoFocusedField") }
+    }
+
     /// Last beautify config used in the editor; the editor opens with this.
     public var lastBeautifyConfig: BeautifyConfig {
         didSet { Self.encode(lastBeautifyConfig, to: defaults, key: "lastBeautifyConfig") }
@@ -152,6 +158,8 @@ public final class AppSettings {
             .flatMap(MenuBarStyle.init(rawValue:)) ?? .split
         self.showMenuBarIcons =
             defaults.object(forKey: "showMenuBarIcons") as? Bool ?? true
+        self.pasteIntoFocusedField =
+            defaults.object(forKey: "pasteIntoFocusedField") as? Bool ?? true
         self.headerBarColorHex = defaults.string(forKey: "headerBarColorHex")
             ?? ColorUtil.defaultHeaderBarHex
         self.panelColorScheme = defaults.string(forKey: "panelColorScheme")

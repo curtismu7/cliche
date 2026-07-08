@@ -127,6 +127,14 @@ struct SettingsView: View {
                             .foregroundStyle(Color.ink)
                     }
                 }
+                Section("Clipboard") {
+                    Toggle("Paste into focused field", isOn: $settings.pasteIntoFocusedField)
+                    Text(settings.pasteIntoFocusedField
+                        ? "Return or click fills the text field you were in when the panel opened (username, password, URL bar, etc.). Requires Accessibility permission."
+                        : "Return or click copies to the clipboard and sends ⌘V to the previous app — classic paste behavior.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.ink)
+                }
                 Section("General") {
                     Toggle("Launch at login", isOn: $launchAtLogin)
                         .onChange(of: launchAtLogin) { _, wanted in
@@ -164,7 +172,7 @@ struct SettingsView: View {
             }
             .formStyle(.grouped)
         }
-        .frame(width: 360, height: 900)
+        .frame(width: 360, height: 940)
         .background(PanelTheme.panelBackground(settings))
         .environment(\.colorScheme, PanelTheme.swiftUIColorScheme(settings))
         .onAppear {

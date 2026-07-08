@@ -396,7 +396,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         FloatingListWindow.close()
 
         if let text = NSPasteboard.general.string(forType: .string) {
-            PasteService.pasteText(text, into: previousApp)
+            PasteService.pasteText(
+                text, into: previousApp, useFocusedField: settings.pasteIntoFocusedField)
             return
         }
 
@@ -413,7 +414,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Records the frontmost app and its focused field before the panel opens.
     private func rememberPasteTarget() {
         previousApp = NSWorkspace.shared.frontmostApplication
-        PasteService.capturePasteTarget()
+        if settings.pasteIntoFocusedField {
+            PasteService.capturePasteTarget()
+        } else {
+            PasteService.clearPasteTarget()
+        }
     }
 
     private func setPasteboardString(_ text: String) {

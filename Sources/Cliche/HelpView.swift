@@ -35,6 +35,7 @@ struct HelpView: View {
                         ("↑ / ↓", "Move selection"),
                         ("↩", "Copy selection, close panel"),
                         ("⌥↩ / ⌥-click", "Paste straight into the previous app"),
+                        ("Settings", "Toggle “Paste into focused field” for HTML form fields"),
                         ("⌘1 – ⌘9", "Copy the numbered item"),
                         ("⌘⌫", "Delete selection"),
                         ("⌥P", "Pin selection to the top"),

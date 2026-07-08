@@ -559,6 +559,15 @@ do {
     expect(true, "paste target capture helpers do not crash")
 }
 
+// pasteIntoFocusedFieldDefault
+do {
+    let suite = "cliche-selftest-\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    expect(AppSettings(defaults: defaults).pasteIntoFocusedField,
+        "paste into focused field defaults to on")
+    defaults.removePersistentDomain(forName: suite)
+}
+
 // screenCapturePermission
 do {
     let excluded = "/Applications/Cliche.app"

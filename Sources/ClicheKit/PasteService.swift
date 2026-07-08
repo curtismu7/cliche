@@ -31,17 +31,21 @@ public enum PasteService {
     }
 
     /// Paste plain text into the saved target field, or synthesize ⌘V.
-    public static func pasteText(_ text: String, into app: NSRunningApplication?) {
+    public static func pasteText(
+        _ text: String,
+        into app: NSRunningApplication?,
+        useFocusedField: Bool = true
+    ) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+
         guard isTrusted else {
             requestTrust()
             return
         }
 
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
-
-        let target = savedFocusElement
+        let target = useFocusedField ? savedFocusElement : nil
         savedFocusElement = nil
 
         app?.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
