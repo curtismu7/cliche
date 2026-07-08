@@ -415,7 +415,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func rememberPasteTarget() {
         previousApp = NSWorkspace.shared.frontmostApplication
         if settings.pasteIntoFocusedField {
-            PasteService.capturePasteTarget()
+            PasteService.capturePasteTarget(from: previousApp)
         } else {
             PasteService.clearPasteTarget()
         }

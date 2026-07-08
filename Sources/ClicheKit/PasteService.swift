@@ -21,9 +21,9 @@ public enum PasteService {
         return AXIsProcessTrustedWithOptions(options)
     }
 
-    /// Remember the focused text field before the panel opens and steals focus.
-    public static func capturePasteTarget() {
-        savedFocusElement = focusedElement()
+    /// Remember the focused text field in `app` before the panel opens.
+    public static func capturePasteTarget(from app: NSRunningApplication?) {
+        savedFocusElement = focusedElement(in: app) ?? focusedElement()
     }
 
     public static func clearPasteTarget() {
@@ -40,22 +40,27 @@ public enum PasteService {
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
 
-        guard isTrusted else {
-            requestTrust()
-            return
-        }
-
         let target = useFocusedField ? savedFocusElement : nil
         savedFocusElement = nil
 
         app?.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            if let target, insertText(text, into: target) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            guard isTrusted, let target else {
+                if !isTrusted { requestTrust() }
+                synthesizePaste()
                 return
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                synthesizePaste()
+
+            focusElement(target)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                if insertText(text, into: target) {
+                    return
+                }
+                focusElement(target)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    synthesizePaste()
+                }
             }
         }
     }
@@ -74,6 +79,17 @@ public enum PasteService {
         keyUp?.post(tap: .cgAnnotatedSessionEventTap)
     }
 
+    /// Focused control in a specific app (preferred over system-wide query).
+    private static func focusedElement(in app: NSRunningApplication?) -> AXUIElement? {
+        guard let pid = app?.processIdentifier else { return nil }
+        let appElement = AXUIElementCreateApplication(pid)
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            appElement, kAXFocusedUIElementAttribute as CFString, &value
+        ) == .success, let value else { return nil }
+        return (value as! AXUIElement)
+    }
+
     private static func focusedElement() -> AXUIElement? {
         let systemWide = AXUIElementCreateSystemWide()
         var value: CFTypeRef?
@@ -83,21 +99,30 @@ public enum PasteService {
         return (value as! AXUIElement)
     }
 
-    /// Writes text into a text field via Accessibility (works for many HTML inputs).
-    private static func insertText(_ text: String, into element: AXUIElement) -> Bool {
+    /// Brings the saved field to the foreground before AX write or ⌘V.
+    @discardableResult
+    private static func focusElement(_ element: AXUIElement) -> Bool {
         _ = AXUIElementPerformAction(element, kAXRaiseAction as CFString)
-        _ = AXUIElementSetAttributeValue(
+        let focused = AXUIElementSetAttributeValue(
             element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
+        return focused == .success
+    }
 
-        if AXUIElementSetAttributeValue(
-            element, kAXValueAttribute as CFString, text as CFTypeRef
-        ) == .success {
-            return true
-        }
-        if AXUIElementSetAttributeValue(
-            element, kAXSelectedTextAttribute as CFString, text as CFTypeRef
-        ) == .success {
-            return true
+    /// Writes text into a text field via Accessibility (HTML inputs, native fields).
+    private static func insertText(_ text: String, into element: AXUIElement) -> Bool {
+        focusElement(element)
+
+        // Selected text respects cursor position; value keys replace the whole field.
+        let attributeKeys: [CFString] = [
+            kAXSelectedTextAttribute as CFString,
+            kAXValueAttribute as CFString,
+            "AXValue" as CFString,
+            "AXText" as CFString,
+        ]
+        for key in attributeKeys {
+            if AXUIElementSetAttributeValue(element, key, text as CFTypeRef) == .success {
+                return true
+            }
         }
         return false
     }

@@ -554,7 +554,7 @@ do {
 // pasteTargetCapture
 do {
     PasteService.clearPasteTarget()
-    PasteService.capturePasteTarget()
+    PasteService.capturePasteTarget(from: NSWorkspace.shared.frontmostApplication)
     PasteService.clearPasteTarget()
     expect(true, "paste target capture helpers do not crash")
 }
