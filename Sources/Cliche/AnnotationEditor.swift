@@ -194,9 +194,11 @@ struct AnnotationEditorView: View {
                 }
                 .background(Color(nsColor: .underPageBackgroundColor))
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             Divider()
             BeautifyInspector(config: $config, settings: settings)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: config) {
             if !configCameFromProject { settings.lastBeautifyConfig = config }
         }
@@ -304,68 +306,69 @@ struct AnnotationEditorView: View {
                 y: min(max(baseYFromBottom, 0), baseH))
         }
 
-        return Image(nsImage: NSImage(
-            cgImage: display,
-            size: NSSize(width: outW, height: outH)))
-            .resizable()
-            .interpolation(.high)
-            .frame(width: displayed.width, height: displayed.height)
-            .position(
-                x: origin.x + displayed.width / 2,
-                y: origin.y + displayed.height / 2)
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        let start = imagePoint(value.startLocation)
-                        let current = imagePoint(value.location)
-                        switch tool {
-                        case .arrow:
-                            draft = Annotation(kind: .arrow, start: start, end: current)
-                        case .line:
-                            draft = Annotation(kind: .line, start: start, end: current)
-                        case .rectangle:
-                            draft = Annotation(kind: .rectangle, start: start, end: current)
-                        case .ellipse:
-                            draft = Annotation(kind: .ellipse, start: start, end: current)
-                        case .highlight:
-                            draft = Annotation(kind: .highlight, start: start, end: current)
-                        case .blur:
-                            draft = Annotation(kind: .blur, start: start, end: current)
-                        case .gaussian:
-                            draft = Annotation(kind: .gaussianBlur, start: start, end: current)
-                        case .freehand:
-                            if case .freehand(var points) = draft?.kind {
-                                points.append(current)
-                                draft = Annotation(
-                                    kind: .freehand(points: points),
-                                    start: draft!.start, end: current)
-                            } else {
-                                draft = Annotation(
-                                    kind: .freehand(points: [start, current]),
-                                    start: start, end: current)
-                            }
-                        case .text, .counter:
-                            break
+        return ZStack {
+            Image(nsImage: NSImage(
+                cgImage: display,
+                size: NSSize(width: outW, height: outH)))
+                .resizable()
+                .interpolation(.high)
+                .frame(width: displayed.width, height: displayed.height)
+        }
+        .frame(width: available.width, height: available.height)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    let start = imagePoint(value.startLocation)
+                    let current = imagePoint(value.location)
+                    switch tool {
+                    case .arrow:
+                        draft = Annotation(kind: .arrow, start: start, end: current)
+                    case .line:
+                        draft = Annotation(kind: .line, start: start, end: current)
+                    case .rectangle:
+                        draft = Annotation(kind: .rectangle, start: start, end: current)
+                    case .ellipse:
+                        draft = Annotation(kind: .ellipse, start: start, end: current)
+                    case .highlight:
+                        draft = Annotation(kind: .highlight, start: start, end: current)
+                    case .blur:
+                        draft = Annotation(kind: .blur, start: start, end: current)
+                    case .gaussian:
+                        draft = Annotation(kind: .gaussianBlur, start: start, end: current)
+                    case .freehand:
+                        if case .freehand(var points) = draft?.kind {
+                            points.append(current)
+                            draft = Annotation(
+                                kind: .freehand(points: points),
+                                start: draft!.start, end: current)
+                        } else {
+                            draft = Annotation(
+                                kind: .freehand(points: [start, current]),
+                                start: start, end: current)
                         }
+                    case .text, .counter:
+                        break
                     }
-                    .onEnded { value in
-                        let point = imagePoint(value.location)
-                        switch tool {
-                        case .arrow, .line, .rectangle, .ellipse, .highlight,
-                             .blur, .gaussian, .freehand:
-                            if let finished = draft, dragIsMeaningful(finished) {
-                                annotations.append(finished)
-                            }
-                            draft = nil
-                        case .counter:
-                            annotations.append(Annotation(
-                                kind: .counter(nextCounter), start: point, end: point))
-                            nextCounter += 1
-                        case .text:
-                            textInput = ""
-                            pendingTextPoint = point
+                }
+                .onEnded { value in
+                    let point = imagePoint(value.location)
+                    switch tool {
+                    case .arrow, .line, .rectangle, .ellipse, .highlight,
+                         .blur, .gaussian, .freehand:
+                        if let finished = draft, dragIsMeaningful(finished) {
+                            annotations.append(finished)
                         }
-                    })
+                        draft = nil
+                    case .counter:
+                        annotations.append(Annotation(
+                            kind: .counter(nextCounter), start: point, end: point))
+                        nextCounter += 1
+                    case .text:
+                        textInput = ""
+                        pendingTextPoint = point
+                    }
+                })
     }
 
     /// Filters out accidental clicks: a drag counts if it moved, or if a
