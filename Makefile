@@ -16,12 +16,11 @@ run: app
 INSTALL_PATH := /Applications/Cliche.app
 
 install: app
-	-pkill -f 'Cliche.app/Contents/MacOS/Cliche'
-	sleep 1
-	rm -rf $(HOME)/Applications/Cliche.app
-	rm -rf $(INSTALL_PATH) || sudo rm -rf $(INSTALL_PATH)
+	Scripts/install-cleanup.sh
 	ditto build/Cliche.app $(INSTALL_PATH) || sudo ditto build/Cliche.app $(INSTALL_PATH)
+	xattr -dr com.apple.quarantine $(INSTALL_PATH) 2>/dev/null || true
 	open $(INSTALL_PATH)
+	Scripts/postinstall-hint.sh
 
 # Shareable zip for other Macs (app + installer + readme).
 dist:

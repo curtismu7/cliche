@@ -15,15 +15,9 @@ fi
 
 DEST="/Applications/Cliche.app"
 SOURCE="$(pwd)/Cliche.app"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Quit any running copy before replacing it.
-pkill -f 'Cliche.app/Contents/MacOS/Cliche' 2>/dev/null || true
-sleep 1
-
-# Remove old personal-folder installs so Screen Recording permission
-# isn't split across two paths.
-rm -rf "$HOME/Applications/Cliche.app"
-rm -rf "$DEST"
+"$SCRIPT_DIR/install-cleanup.sh"
 
 if ! ditto "Cliche.app" "$DEST" 2>/dev/null; then
     echo "   macOS needs your password to install into Applications…"
@@ -42,6 +36,8 @@ if [[ "$REPLY" =~ ^[Yy] ]]; then
 fi
 
 open "$DEST"
+
+"$SCRIPT_DIR/postinstall-hint.sh"
 
 cat <<'EOF'
 

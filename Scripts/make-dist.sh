@@ -12,8 +12,9 @@ rm -rf build/dist
 mkdir -p "$STAGE"
 
 ditto build/Cliche.app "$STAGE/Cliche.app"
+cp Scripts/install-cleanup.sh Scripts/postinstall-hint.sh "$STAGE/"
 cp Scripts/install.sh "$STAGE/Install Cliché.command"
-chmod +x "$STAGE/Install Cliché.command"
+chmod +x "$STAGE/Install Cliché.command" "$STAGE/install-cleanup.sh" "$STAGE/postinstall-hint.sh"
 
 cat > "$STAGE/READ ME FIRST.txt" <<'EOF'
 Cliché — clipboard history + screen capture for macOS

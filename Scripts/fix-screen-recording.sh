@@ -2,18 +2,12 @@
 # Resets Screen Recording permission for Cliché and relaunches a single copy.
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
 echo "── Reset Cliché Screen Recording permission ──"
 
-pkill -f 'Cliche.app/Contents/MacOS/Cliche' 2>/dev/null || true
-sleep 1
-
-if [ -d "$HOME/Applications/Cliche.app" ]; then
-    echo "Removing duplicate: ~/Applications/Cliche.app (old install location)"
-    rm -rf "$HOME/Applications/Cliche.app"
-fi
-
-echo "Resetting TCC entry for org.coachcurtis.cliche…"
-tccutil reset ScreenCapture org.coachcurtis.cliche 2>/dev/null || true
+"$SCRIPT_DIR/install-cleanup.sh" keep
 
 APP="/Applications/Cliche.app"
 if [ ! -d "$APP" ]; then
@@ -32,12 +26,9 @@ read -r _
 
 open "$APP"
 
-cat <<'EOF'
+"$SCRIPT_DIR/postinstall-hint.sh"
 
-When Cliché opens:
-  • Turn Cliché ON in Screen & System Audio Recording.
-  • Quit Cliché completely, then open it again once (required after toggling).
-  • Try ⌘⇧6 to capture.
+cat <<'EOF'
 
 If you upgrade with Homebrew, run this script again after each release — each build gets a new signature:
   brew update && brew upgrade --cask cliche
