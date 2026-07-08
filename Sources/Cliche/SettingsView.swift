@@ -48,6 +48,14 @@ struct SettingsView: View {
                     Toggle("Show mouse pointer", isOn: $settings.showCursor)
                     Toggle("Hide desktop icons in captures", isOn: $settings.hideDesktopIcons)
                     Toggle("Window capture keeps shadow", isOn: $settings.windowShadow)
+                    Toggle(
+                        "Disable macOS screenshot shortcuts",
+                        isOn: $settings.disableMacScreenshotShortcuts)
+                    Text(settings.disableMacScreenshotShortcuts
+                        ? "Turns off macOS ⌘⇧3, ⌘⇧4, and ⌘⇧5 so Cliché's capture hotkeys work (recommended)."
+                        : "macOS screenshot shortcuts are left as-is. If ⌘⇧3 does nothing in Cliché, turn this on.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.ink)
                 }
                 Section("History Limits") {
                     Picker("Text entries", selection: $settings.maxTextEntries) {
@@ -303,6 +311,12 @@ private struct HotkeyRecorderRow: View {
                 display: HotkeyCombo.displaySymbols(for: flags) + key)
             if let owner = settings.action(using: candidate), owner != action {
                 conflict = "Already used by “\(owner.label)”"
+                NSSound.beep()
+                return nil
+            }
+            if !settings.disableMacScreenshotShortcuts,
+               let macConflict = MacScreenshotShortcuts.macOSConflictDescription(for: candidate) {
+                conflict = macConflict
                 NSSound.beep()
                 return nil
             }

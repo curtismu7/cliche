@@ -90,12 +90,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         registerHotkeys()
+        applyMacScreenshotShortcutSetting()
         ScreenCapturePermission.warnAboutDuplicateInstallsIfNeeded()
         NotificationCenter.default.addObserver(
             forName: AppSettings.hotkeysChanged, object: nil, queue: .main
         ) { [weak self] _ in
             self?.registerHotkeys()
         }
+        NotificationCenter.default.addObserver(
+            forName: AppSettings.macScreenshotShortcutsChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.applyMacScreenshotShortcutSetting()
+        }
+    }
+
+    private func applyMacScreenshotShortcutSetting() {
+        MacScreenshotShortcuts.apply(
+            disabled: settings.disableMacScreenshotShortcuts,
+            settingsDefaults: UserDefaults.standard)
     }
 
     /// (Re)binds every global hotkey from settings.

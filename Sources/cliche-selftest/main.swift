@@ -565,7 +565,20 @@ do {
     let defaults = UserDefaults(suiteName: suite)!
     expect(AppSettings(defaults: defaults).pasteIntoFocusedField,
         "paste into focused field defaults to on")
+    expect(AppSettings(defaults: defaults).disableMacScreenshotShortcuts,
+        "disable macOS screenshot shortcuts defaults to on")
     defaults.removePersistentDomain(forName: suite)
+}
+
+// macScreenshotShortcutConflicts
+do {
+    let screen = UInt32(shiftKey) | UInt32(cmdKey)
+    let combo = HotkeyCombo(
+        keyCode: UInt32(kVK_ANSI_3), carbonModifiers: screen, display: "⌘⇧3")
+    expect(MacScreenshotShortcuts.macOSConflictDescription(for: combo) != nil,
+        "detects macOS conflict for ⌘⇧3")
+    expect(MacScreenshotShortcuts.screenshotHotkeyIDs.contains(28),
+        "tracks macOS full-screen shortcut id")
 }
 
 // screenCapturePermission
