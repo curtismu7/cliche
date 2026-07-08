@@ -18,7 +18,7 @@ enum CaptureBoundsOverlay {
         completion: (() -> Void)? = nil
     ) {
         hide()
-        let overlay = PreviewWindow(
+        let overlay = BoundsPreviewWindow(
             screen: screen,
             pixelRect: pixelRect,
             frozen: frozen,
@@ -104,7 +104,7 @@ enum CaptureBoundsOverlay {
 
 // MARK: - Preview window
 
-private final class PreviewWindow: NSWindow {
+private final class BoundsPreviewWindow: NSWindow {
     init(screen: NSScreen, pixelRect: CGRect?, frozen: CGImage?, label: String) {
         super.init(
             contentRect: screen.frame,
