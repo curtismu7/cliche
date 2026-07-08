@@ -156,7 +156,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         closeAllPopovers()
-        previousApp = NSWorkspace.shared.frontmostApplication
+        rememberPasteTarget()
         let layout = PanelLayout.clipboardOnly
         let size = HistoryView.preferredPanelSize(layout: layout, items: store.items)
         FloatingListWindow.show(
@@ -325,7 +325,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if popover.isShown {
             popover.performClose(nil)
         } else if let button = clipboardItem?.button {
-            previousApp = NSWorkspace.shared.frontmostApplication
+            rememberPasteTarget()
             let layout: PanelLayout = settings.menuBarStyle == .combined ? .full : .clipboardOnly
             refreshPopoverSize(popover, layout: layout, anchor: button)
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
@@ -363,7 +363,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
             if let button = clipboardItem?.button, button.window != nil {
-                previousApp = NSWorkspace.shared.frontmostApplication
+                rememberPasteTarget()
                 let layout: PanelLayout = settings.menuBarStyle == .combined ? .full : .clipboardOnly
                 refreshPopoverSize(popover, layout: layout, anchor: button)
                 popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
@@ -388,13 +388,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: Paste
 
-    /// Puts content on the clipboard, then synthesizes ⌘V in the app that was
-    /// frontmost before the panel opened. Requests the Accessibility
-    /// permission lazily on first use.
+    /// Puts content on the clipboard, then pastes into the field that was
+    /// focused before the panel opened (HTML inputs, password fields, etc.).
     private func paste(_ populateClipboard: () -> Void) {
         populateClipboard()
         popover.performClose(nil)
         FloatingListWindow.close()
+
+        if let text = NSPasteboard.general.string(forType: .string) {
+            PasteService.pasteText(text, into: previousApp)
+            return
+        }
+
         guard PasteService.isTrusted else {
             PasteService.requestTrust()
             return
@@ -403,6 +408,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             PasteService.synthesizePaste()
         }
+    }
+
+    /// Records the frontmost app and its focused field before the panel opens.
+    private func rememberPasteTarget() {
+        previousApp = NSWorkspace.shared.frontmostApplication
+        PasteService.capturePasteTarget()
     }
 
     private func setPasteboardString(_ text: String) {

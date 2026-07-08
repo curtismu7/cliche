@@ -44,8 +44,8 @@ enum FloatingListWindow {
             y: min(max(mouse.y - size.height, visible.minY + 8),
                    visible.maxY - size.height - 8))
         listPanel.setFrameOrigin(origin)
-        listPanel.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        listPanel.orderFrontRegardless()
+        listPanel.makeKey()
         panel = listPanel
 
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in

@@ -551,6 +551,14 @@ do {
     defaults.removePersistentDomain(forName: suite)
 }
 
+// pasteTargetCapture
+do {
+    PasteService.clearPasteTarget()
+    PasteService.capturePasteTarget()
+    PasteService.clearPasteTarget()
+    expect(true, "paste target capture helpers do not crash")
+}
+
 // screenCapturePermission
 do {
     let excluded = "/Applications/Cliche.app"
