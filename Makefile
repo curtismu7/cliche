@@ -19,7 +19,7 @@ install: app
 	-pkill -f 'Cliche.app/Contents/MacOS/Cliche'
 	sleep 1
 	rm -rf $(HOME)/Applications/Cliche.app
-	rm -rf $(INSTALL_PATH)
+	rm -rf $(INSTALL_PATH) || sudo rm -rf $(INSTALL_PATH)
 	ditto build/Cliche.app $(INSTALL_PATH) || sudo ditto build/Cliche.app $(INSTALL_PATH)
 	open $(INSTALL_PATH)
 
