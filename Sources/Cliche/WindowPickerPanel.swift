@@ -26,8 +26,13 @@ enum WindowPickerPanel {
             }
             let view = WindowPickerView(
                 windows: candidates,
-                onCancel: { window?.close(); window = nil },
+                onCancel: {
+                    CaptureBoundsOverlay.hideWindowHighlights()
+                    window?.close()
+                    window = nil
+                },
                 onCapture: { selected in
+                    CaptureBoundsOverlay.hideWindowHighlights()
                     window?.close()
                     window = nil
                     // One display per capture: pick the display overlapping
@@ -131,6 +136,9 @@ private struct WindowPickerView: View {
                 .disabled(selectedIDs.isEmpty)
             }
             .padding(12)
+        }
+        .onChange(of: selectedIDs) { _, ids in
+            CaptureBoundsOverlay.showWindowHighlights(windows: windows, selectedIDs: ids)
         }
     }
 }

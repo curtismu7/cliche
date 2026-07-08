@@ -433,7 +433,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Close the panels first so they aren't part of the screenshot.
         closeAllPopovers()
         let screen = Self.screenUnderMouse()
+        if mode == .fullScreen, settings.timerSeconds > 0 {
+            CaptureBoundsOverlay.show(
+                pixelRect: nil, on: screen, label: "Capturing full screen")
+        }
         CountdownPanel.show(seconds: settings.timerSeconds, on: screen) { [weak self] in
+            CaptureBoundsOverlay.hide()
             self?.performCapture(mode, on: screen)
         }
     }
@@ -448,7 +453,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func performCapture(_ mode: CaptureMode, on screen: NSScreen) {
         switch mode {
         case .fullScreen:
-            captureWithEngine(screen: screen, rect: nil, cliFallback: .fullScreen)
+            if settings.timerSeconds == 0 {
+                CaptureBoundsOverlay.show(
+                    pixelRect: nil, on: screen, label: "Capturing full screen",
+                    duration: 0.35
+                ) { [weak self] in
+                    self?.captureWithEngine(
+                        screen: screen, rect: nil, cliFallback: .fullScreen)
+                }
+            } else {
+                captureWithEngine(screen: screen, rect: nil, cliFallback: .fullScreen)
+            }
         case .region:
             startRegionCapture(on: screen)
         case .window:
@@ -465,8 +480,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let screen = Self.screenUnderMouse()
         switch preset.mode {
         case .fullScreen:
-            captureWithEngine(screen: screen, rect: nil,
-                              cliFallback: .fullScreen, preset: preset)
+            CaptureBoundsOverlay.show(
+                pixelRect: nil, on: screen, label: "Capturing full screen",
+                duration: 0.35
+            ) { [weak self] in
+                self?.captureWithEngine(
+                    screen: screen, rect: nil,
+                    cliFallback: .fullScreen, preset: preset)
+            }
         case .region:
             startRegionCapture(on: screen, preset: preset)
         case .window:
@@ -495,7 +516,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     guard let self, let pixelRect else { return }
                     self.settings.lastRegion = (pixelRect, displayID)
                     if let cropped = frozen.cropping(to: pixelRect) {
-                        self.deliver(cropped, preset: preset)
+                        self.deliver(
+                            cropped, preset: preset,
+                            flashPixelRect: pixelRect, on: screen)
                     }
                 }
             } catch {
@@ -529,7 +552,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         switch mode {
                         case .region:
                             self.settings.lastRegion = (pixelRect, displayID)
-                            self.deliver(cropped)
+                            self.deliver(
+                                cropped, flashPixelRect: pixelRect, on: screen)
                         case .ocr:
                             let text = (try? OCRService.recognizeText(in: cropped)) ?? ""
                             if text.isEmpty {
@@ -587,8 +611,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     displayID: last.displayID, scale: screen.backingScaleFactor,
                     showsCursor: settings.showCursor,
                     hideDesktopIcons: settings.hideDesktopIcons)
-                if let cropped = frozen.cropping(to: last.rect) {
-                    self.deliver(cropped)
+                CaptureBoundsOverlay.show(
+                    pixelRect: last.rect, on: screen, frozen: frozen,
+                    duration: 0.45
+                ) { [weak self] in
+                    guard let self else { return }
+                    if let cropped = frozen.cropping(to: last.rect) {
+                        self.deliver(
+                            cropped, flashPixelRect: last.rect, on: screen)
+                    }
                 }
             } catch {
                 NSLog("Cliche: repeat-area capture failed: \(error)")
@@ -612,7 +643,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     displayID: displayID, sourceRect: rect, scale: scale,
                     showsCursor: settings.showCursor,
                     hideDesktopIcons: settings.hideDesktopIcons)
-                self.deliver(image, preset: preset)
+                self.deliver(image, preset: preset, flashPixelRect: nil, on: screen)
             } catch {
                 NSLog("Cliche: ScreenCaptureKit failed (\(error)); using screencapture CLI")
                 self.captureWithCLI(cliFallback, preset: preset)
@@ -649,7 +680,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Common post-capture step: file + clipboard already handled; index it,
     /// scan for QR codes, and show the Quick Access Overlay. A preset
     /// overrides format, clipboard behavior, destination, and naming.
-    private func deliver(_ image: CGImage, preset: CapturePreset? = nil) {
+    private func deliver(
+        _ image: CGImage,
+        preset: CapturePreset? = nil,
+        flashPixelRect: CGRect? = nil,
+        on screen: NSScreen? = nil
+    ) {
         guard let url = CaptureDelivery.deliver(
             image,
             format: preset?.format ?? settings.captureFormat,
@@ -659,6 +695,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         else { return }
         capturesStore.add(path: url.path)
         showOverlay(for: url, image: image)
+        let flashScreen = screen ?? Self.screenUnderMouse()
+        CaptureBoundsOverlay.flash(pixelRect: flashPixelRect, on: flashScreen)
     }
 
     private func showOverlay(for url: URL, image: CGImage?) {
