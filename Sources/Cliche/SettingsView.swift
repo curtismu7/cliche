@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Bindable var settings: AppSettings
     let ignoreRulesURL: URL
     var historyStore: HistoryStore? = nil
+    var onDone: (() -> Void)? = nil
 
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var importMessage: String?
@@ -13,18 +14,33 @@ struct SettingsView: View {
     @State private var headerBarColor = Color.red
     @Environment(\.dismiss) private var dismiss
 
+    init(
+        settings: AppSettings,
+        ignoreRulesURL: URL,
+        historyStore: HistoryStore? = nil,
+        onDone: (() -> Void)? = nil
+    ) {
+        self.settings = settings
+        self.ignoreRulesURL = ignoreRulesURL
+        self.historyStore = historyStore
+        self.onDone = onDone
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("Settings")
                     .font(.headline)
                 Spacer()
-                Button("Done") { dismiss() }
-                    .keyboardShortcut(.defaultAction)
+                Button("Done") {
+                    if let onDone { onDone() } else { dismiss() }
+                }
+                .keyboardShortcut(.defaultAction)
             }
             .padding(12)
             Divider()
-            Form {
+            ScrollView {
+                Form {
                 Section("Screenshots") {
                     Picker("Image format", selection: $settings.captureFormat) {
                         ForEach(AppSettings.ImageFormat.allCases, id: \.self) { format in
@@ -182,10 +198,11 @@ struct SettingsView: View {
                         }
                     }
                 }
+                }
+                .formStyle(.grouped)
             }
-            .formStyle(.grouped)
         }
-        .frame(width: 360, height: 940)
+        .frame(width: 360)
         .background(PanelTheme.panelBackground(settings))
         .environment(\.colorScheme, PanelTheme.swiftUIColorScheme(settings))
         .onAppear {

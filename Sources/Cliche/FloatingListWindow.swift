@@ -59,12 +59,13 @@ enum FloatingListWindow {
             forName: NSWindow.didResignKeyNotification,
             object: listPanel, queue: .main
         ) { _ in
-            // Don't close under our own sheets (settings/help/edit).
+            // Keep the floating panel open while settings (or a sheet) has focus.
             DispatchQueue.main.async {
                 let newKey = NSApp.keyWindow
-                if newKey == nil || (newKey !== panel && newKey?.isSheet != true) {
-                    close()
-                }
+                if newKey === panel { return }
+                if newKey?.isSheet == true { return }
+                if SettingsWindow.isVisible { return }
+                close()
             }
         }
     }

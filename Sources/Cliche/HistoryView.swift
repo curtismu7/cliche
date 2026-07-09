@@ -189,7 +189,6 @@ struct HistoryView: View {
     @State private var query = ""
     @State private var selectedIndex = 0
     @State private var showingHelp = false
-    @State private var showingSettings = false
     @State private var showingNewPreset = false
     @State private var editingItem: ClipItem?
     @State private var editText = ""
@@ -403,9 +402,6 @@ struct HistoryView: View {
         .onChange(of: query) { syncPanelSize() }
         .onChange(of: tab) { syncPanelSize() }
         .sheet(isPresented: $showingHelp) { HelpView(settings: settings) }
-        .sheet(isPresented: $showingSettings) {
-            SettingsView(settings: settings, ignoreRulesURL: ignoreRulesURL, historyStore: store)
-        }
         .sheet(item: $editingItem) { item in
             VStack(alignment: .leading, spacing: 10) {
                 Text("Edit Clip")
@@ -710,7 +706,10 @@ struct HistoryView: View {
     private var footer: some View {
         HStack {
             Button {
-                showingSettings = true
+                SettingsWindow.show(
+                    settings: settings,
+                    ignoreRulesURL: ignoreRulesURL,
+                    historyStore: store)
             } label: {
                 Image(systemName: "gearshape")
             }
