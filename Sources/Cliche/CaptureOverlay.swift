@@ -119,6 +119,12 @@ private struct OverlayThumbnail: View {
                         Image(systemName: "pencil.tip.crop.circle")
                     }
                     .help("Annotate")
+                    Button {
+                        NSWorkspace.shared.activateFileViewerSelecting([fileURL])
+                    } label: {
+                        Image(systemName: "folder")
+                    }
+                    .help("Show in Finder")
                     Button(action: onDismiss) {
                         Image(systemName: "xmark.circle.fill")
                     }
@@ -136,6 +142,6 @@ private struct OverlayThumbnail: View {
             isHovering = hovering
             onHoverChanged(hovering)
         }
-        .help("Click to annotate · drag into another app")
+        .help("Click to annotate · drag into another app · folder icon shows in Finder")
     }
 }

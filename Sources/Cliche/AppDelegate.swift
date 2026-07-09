@@ -665,13 +665,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func captureWithCLI(_ mode: CaptureMode, preset: CapturePreset? = nil) {
         let format = preset?.format ?? settings.captureFormat
+        let saveToDisk = preset != nil || settings.saveCapturesToDisk
+        let directory = preset?.destinationURL ?? settings.captureSaveDirectoryURL
         var explicitURL: URL?
-        if let preset {
-            try? FileManager.default.createDirectory(
-                at: preset.destinationURL, withIntermediateDirectories: true)
+        if saveToDisk {
+            if let preset {
+                try? FileManager.default.createDirectory(
+                    at: preset.destinationURL, withIntermediateDirectories: true)
+                explicitURL = CaptureNaming.uniqueOutputURL(
+                    directory: preset.destinationURL,
+                    pattern: preset.filenamePattern,
+                    fileExtension: format.fileExtension)
+            } else {
+                try? FileManager.default.createDirectory(
+                    at: directory, withIntermediateDirectories: true)
+                explicitURL = CaptureNaming.uniqueOutputURL(
+                    directory: directory,
+                    pattern: CaptureNaming.defaultPattern,
+                    fileExtension: format.fileExtension)
+            }
+        } else {
             explicitURL = CaptureNaming.uniqueOutputURL(
-                directory: preset.destinationURL,
-                pattern: preset.filenamePattern,
+                directory: FileManager.default.temporaryDirectory,
+                pattern: "cliche-temp",
                 fileExtension: format.fileExtension)
         }
         captureService.capture(
@@ -680,12 +696,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             copyToClipboard: preset?.copyToClipboard ?? settings.copyCapturesToClipboard,
             showCursor: settings.showCursor,
             windowShadow: settings.windowShadow,
+            directory: directory,
             outputURL: explicitURL
         ) { [weak self] url in
-            self?.capturesStore.add(path: url.path)
-            let image = NSImage(contentsOf: url)?
-                .cgImage(forProposedRect: nil, context: nil, hints: nil)
-            self?.showOverlay(for: url, image: image)
+            guard let self else { return }
+            if saveToDisk {
+                self.capturesStore.add(path: url.path)
+                let image = NSImage(contentsOf: url)?
+                    .cgImage(forProposedRect: nil, context: nil, hints: nil)
+                self.showOverlay(for: url, image: image)
+                InfoHUD.show("Saved to \(url.deletingLastPathComponent().lastPathComponent)/\(url.lastPathComponent)")
+            } else {
+                try? FileManager.default.removeItem(at: url)
+                if self.settings.copyCapturesToClipboard {
+                    InfoHUD.show("Copied to clipboard")
+                }
+            }
         }
     }
 
@@ -698,15 +724,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         flashPixelRect: CGRect? = nil,
         on screen: NSScreen? = nil
     ) {
-        guard let url = CaptureDelivery.deliver(
+        let saveToDisk = preset != nil || settings.saveCapturesToDisk
+        let directory = preset?.destinationURL ?? settings.captureSaveDirectoryURL
+        let url = CaptureDelivery.deliver(
             image,
             format: preset?.format ?? settings.captureFormat,
             copyToClipboard: preset?.copyToClipboard ?? settings.copyCapturesToClipboard,
-            directory: preset.map(\.destinationURL),
+            saveToDisk: saveToDisk,
+            directory: directory,
             pattern: preset?.filenamePattern ?? CaptureNaming.defaultPattern)
-        else { return }
-        capturesStore.add(path: url.path)
-        showOverlay(for: url, image: image)
+        if let url {
+            capturesStore.add(path: url.path)
+            showOverlay(for: url, image: image)
+            InfoHUD.show("Saved to \(url.deletingLastPathComponent().lastPathComponent)/\(url.lastPathComponent)")
+        } else if settings.copyCapturesToClipboard || preset?.copyToClipboard == true {
+            InfoHUD.show("Copied to clipboard")
+        }
         let flashScreen = screen ?? Self.screenUnderMouse()
         CaptureBoundsOverlay.flash(pixelRect: flashPixelRect, on: flashScreen)
     }

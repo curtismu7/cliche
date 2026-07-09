@@ -22,6 +22,27 @@ public final class AppSettings {
         didSet { defaults.set(copyCapturesToClipboard, forKey: "copyCapturesToClipboard") }
     }
 
+    /// When on, each capture is written as a file (folder below). When off,
+    /// only the clipboard is updated (if copyCapturesToClipboard is on).
+    public var saveCapturesToDisk: Bool {
+        didSet { defaults.set(saveCapturesToDisk, forKey: "saveCapturesToDisk") }
+    }
+
+    /// Empty = Desktop. Supports ~ paths.
+    public var captureSaveDirectoryPath: String {
+        didSet { defaults.set(captureSaveDirectoryPath, forKey: "captureSaveDirectoryPath") }
+    }
+
+    /// Resolved folder for screenshot files when no preset overrides it.
+    public var captureSaveDirectoryURL: URL {
+        if captureSaveDirectoryPath.isEmpty {
+            return FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
+        }
+        return URL(
+            fileURLWithPath: (captureSaveDirectoryPath as NSString).expandingTildeInPath,
+            isDirectory: true)
+    }
+
     /// Countdown before a capture starts (0 = off). For menus/tooltips.
     public var timerSeconds: Int {
         didSet { defaults.set(timerSeconds, forKey: "timerSeconds") }
@@ -162,6 +183,10 @@ public final class AppSettings {
             .flatMap(ImageFormat.init(rawValue:)) ?? .png
         self.copyCapturesToClipboard =
             defaults.object(forKey: "copyCapturesToClipboard") as? Bool ?? true
+        self.saveCapturesToDisk =
+            defaults.object(forKey: "saveCapturesToDisk") as? Bool ?? true
+        self.captureSaveDirectoryPath =
+            defaults.string(forKey: "captureSaveDirectoryPath") ?? ""
         self.timerSeconds = defaults.object(forKey: "timerSeconds") as? Int ?? 0
         self.showCursor = defaults.object(forKey: "showCursor") as? Bool ?? false
         self.windowShadow = defaults.object(forKey: "windowShadow") as? Bool ?? false

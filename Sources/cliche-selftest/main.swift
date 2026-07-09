@@ -425,15 +425,20 @@ do {
     let suite = "cliche-selftest-\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: suite)!
     let settings = AppSettings(defaults: defaults)
-    expect(settings.captureFormat == .png && settings.copyCapturesToClipboard,
-        "settings default to PNG + copy to clipboard")
+    expect(settings.captureFormat == .png && settings.copyCapturesToClipboard
+        && settings.saveCapturesToDisk,
+        "settings default to PNG + copy to clipboard + save to disk")
     settings.captureFormat = .jpeg
     settings.copyCapturesToClipboard = false
+    settings.saveCapturesToDisk = true
+    settings.captureSaveDirectoryPath = "~/Pictures/Cliche"
     settings.menuBarStyle = .split
     settings.showMenuBarIcons = false
     let reloaded = AppSettings(defaults: defaults)
     expect(reloaded.captureFormat == .jpeg && !reloaded.copyCapturesToClipboard
-        && reloaded.menuBarStyle == .split && !reloaded.showMenuBarIcons,
+        && reloaded.menuBarStyle == .split && !reloaded.showMenuBarIcons
+        && reloaded.saveCapturesToDisk
+        && reloaded.captureSaveDirectoryURL.path.hasSuffix("/Pictures/Cliche"),
         "settings persist across reload")
     defaults.removePersistentDomain(forName: suite)
 }

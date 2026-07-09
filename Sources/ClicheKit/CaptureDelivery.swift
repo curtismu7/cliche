@@ -1,8 +1,8 @@
 import AppKit
 
-/// Shared "what happens after a screenshot exists" step: a file on the
-/// Desktop plus (optionally) the image on the clipboard. Both the CLI and
-/// ScreenCaptureKit paths end here.
+/// Shared "what happens after a screenshot exists" step: a file on disk
+/// (configurable folder) plus (optionally) the image on the clipboard.
+/// Both the CLI and ScreenCaptureKit paths end here.
 public enum CaptureDelivery {
     public static func pngData(from image: CGImage) -> Data? {
         encode(image, as: .png)
@@ -18,36 +18,48 @@ public enum CaptureDelivery {
         }
     }
 
-    /// Returns the written file URL, or nil if encoding/writing failed.
-    /// `directory`/`pattern` default to the Desktop with the standard name.
+    /// Returns the written file URL, or nil if saving was skipped or failed.
     @discardableResult
     public static func deliver(
         _ image: CGImage,
         format: AppSettings.ImageFormat = .png,
         copyToClipboard: Bool = true,
+        saveToDisk: Bool = true,
         directory: URL? = nil,
         pattern: String = CaptureNaming.defaultPattern
     ) -> URL? {
         guard let data = encode(image, as: format) else { return nil }
-        let url: URL
-        if let directory {
-            try? FileManager.default.createDirectory(
-                at: directory, withIntermediateDirectories: true)
-            url = CaptureNaming.uniqueOutputURL(
-                directory: directory, pattern: pattern,
-                fileExtension: format.fileExtension)
-        } else {
-            url = CaptureService.outputURL(fileExtension: format.fileExtension)
+
+        if copyToClipboard {
+            ClipboardWriter.writeImage(pngData: data)
         }
+
+        guard saveToDisk else { return nil }
+
+        let folder = directory ?? defaultDesktopDirectory()
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let url = CaptureNaming.uniqueOutputURL(
+            directory: folder, pattern: pattern,
+            fileExtension: format.fileExtension)
         do {
             try data.write(to: url)
+            return url
         } catch {
             NSLog("Cliche: failed to write capture: \(error)")
             return nil
         }
-        if copyToClipboard {
-            ClipboardWriter.writeImage(pngData: data)
-        }
-        return url
+    }
+
+    public static func defaultDesktopDirectory() -> URL {
+        FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
+    }
+
+    public static func outputURL(
+        directory: URL,
+        fileExtension: String,
+        pattern: String = CaptureNaming.defaultPattern
+    ) -> URL {
+        CaptureNaming.uniqueOutputURL(
+            directory: directory, pattern: pattern, fileExtension: fileExtension)
     }
 }

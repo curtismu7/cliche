@@ -20,10 +20,13 @@ public final class CaptureService {
         copyToClipboard: Bool = true,
         showCursor: Bool = false,
         windowShadow: Bool = false,
+        directory: URL? = nil,
         outputURL explicitURL: URL? = nil,
         onSaved: ((URL) -> Void)? = nil
     ) {
-        let outputURL = explicitURL ?? Self.outputURL(fileExtension: format.fileExtension)
+        let outputURL = explicitURL ?? Self.outputURL(
+            directory: directory ?? defaultDesktopDirectory(),
+            fileExtension: format.fileExtension)
         var arguments: [String]
         switch mode {
         case .region: arguments = ["-i"]
@@ -55,10 +58,12 @@ public final class CaptureService {
         }
     }
 
-    public static func outputURL(fileExtension: String = "png") -> URL {
-        let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
-        return CaptureNaming.uniqueOutputURL(
-            directory: desktop, pattern: CaptureNaming.defaultPattern,
+    public static func outputURL(
+        directory: URL? = nil,
+        fileExtension: String = "png"
+    ) -> URL {
+        CaptureDelivery.outputURL(
+            directory: directory ?? CaptureDelivery.defaultDesktopDirectory(),
             fileExtension: fileExtension)
     }
 }

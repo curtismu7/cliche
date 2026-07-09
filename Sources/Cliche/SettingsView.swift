@@ -33,9 +33,14 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                     Toggle("Copy captures to clipboard", isOn: $settings.copyCapturesToClipboard)
-                    Text(settings.copyCapturesToClipboard
-                        ? "Screenshots (including whole-screen) go to the Desktop and the clipboard, ready to ⌘V."
-                        : "Screenshots are saved to the Desktop only — the clipboard is left untouched.")
+                    Toggle("Save captures to disk", isOn: $settings.saveCapturesToDisk)
+                    HStack {
+                        TextField("Save folder", text: $settings.captureSaveDirectoryPath)
+                            .disabled(!settings.saveCapturesToDisk)
+                        Button("Choose…") { chooseSaveFolder() }
+                            .disabled(!settings.saveCapturesToDisk)
+                    }
+                    Text(saveCapturesHelpText)
                         .font(.system(size: 12))
                         .foregroundStyle(Color.ink)
                     Picker("Capture timer", selection: $settings.timerSeconds) {
@@ -205,6 +210,35 @@ struct SettingsView: View {
             return Color(red: 0.78, green: 0.16, blue: 0.15)
         }
         return Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
+    }
+
+    private var saveCapturesHelpText: String {
+        let folder = settings.captureSaveDirectoryPath.isEmpty
+            ? "Desktop" : settings.captureSaveDirectoryPath
+        if settings.saveCapturesToDisk && settings.copyCapturesToClipboard {
+            return "Screenshots save to \(folder) and copy to the clipboard."
+        }
+        if settings.saveCapturesToDisk {
+            return "Screenshots save to \(folder) only."
+        }
+        if settings.copyCapturesToClipboard {
+            return "Screenshots copy to the clipboard only — nothing is saved to disk."
+        }
+        return "Enable save or clipboard — otherwise captures are discarded."
+    }
+
+    private func chooseSaveFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Choose"
+        panel.message = "Folder for saved screenshots"
+        if !settings.captureSaveDirectoryPath.isEmpty {
+            panel.directoryURL = settings.captureSaveDirectoryURL
+        }
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        settings.captureSaveDirectoryPath = url.path
     }
 
     @MainActor
