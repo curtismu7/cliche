@@ -32,8 +32,11 @@ enum PanelMetrics {
     enum Tab { case clipboard, captures, snippets }
 
     static func maxPanelHeight(on screen: NSScreen? = nil) -> CGFloat {
-        let visible = (screen ?? NSScreen.main ?? NSScreen.screens.first)?.visibleFrame.height ?? 800
-        return visible * 0.5
+        let screen = screen ?? NSScreen.main ?? NSScreen.screens.first!
+        // Half the physical display, clamped to fit above the Dock.
+        let half = screen.frame.height * 0.5
+        let maxFit = screen.visibleFrame.height - screenMargin
+        return max(minHeight, min(half, maxFit))
     }
 
     static func preferredSize(
@@ -198,7 +201,7 @@ struct HistoryView: View {
     }
 
     private var panelHeight: CGFloat {
-        preferredPanelSize(on: hostWindow?.screen).height
+        preferredPanelSize(on: hostWindow?.screen ?? NSScreen.main).height
     }
 
     private var listScrollHeight: CGFloat {
@@ -373,11 +376,18 @@ struct HistoryView: View {
             footer
         }
         .frame(width: PanelMetrics.width, height: panelHeight)
+        .fixedSize(horizontal: true, vertical: true)
         .background(PanelTheme.panelBackground(settings))
         .environment(\.colorScheme, PanelTheme.swiftUIColorScheme(settings))
         .background(shortcutButtons)
-        .background(WindowAccessor { hostWindow = $0 })
-        .onAppear(perform: installPinKeyMonitor)
+        .background(WindowAccessor { window in
+            hostWindow = window
+            syncPanelSize()
+        })
+        .onAppear {
+            installPinKeyMonitor()
+            syncPanelSize()
+        }
         .onDisappear(perform: removePinKeyMonitor)
         .onChange(of: store.items.count) { syncPanelSize() }
         .onChange(of: query) { syncPanelSize() }

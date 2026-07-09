@@ -1,17 +1,27 @@
 import AppKit
 import SwiftUI
 
-/// Maccy-style floating clipboard list: summoned by hotkey at the mouse
-/// position, keyboard-first (search is focused), closes on Esc or when it
-/// loses focus.
+/// Maccy-style floating panel: summoned from the menu bar or a hotkey,
+/// keyboard-first (search is focused), closes on Esc or when it loses focus.
 enum FloatingListWindow {
     private static var panel: NSPanel?
     private static var keyMonitor: Any?
     private static var focusObserver: NSObjectProtocol?
+    private static var shownLayout: PanelLayout?
 
     static var isVisible: Bool { panel != nil }
 
-    static func show<Content: View>(content: Content, size: NSSize, appearance: NSAppearance) {
+    static func isShowing(layout: PanelLayout) -> Bool {
+        panel != nil && shownLayout == layout
+    }
+
+    static func show<Content: View>(
+        content: Content,
+        size: NSSize,
+        appearance: NSAppearance,
+        layout: PanelLayout,
+        anchor: NSView? = nil
+    ) {
         close()
 
         let listPanel = KeyablePanel(
@@ -33,20 +43,12 @@ enum FloatingListWindow {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(Color.primary.opacity(0.2))))
 
-        // Appear at the mouse, clamped onto the screen.
-        let mouse = NSEvent.mouseLocation
-        let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) }
-            ?? NSScreen.main ?? NSScreen.screens[0]
-        let visible = screen.visibleFrame
-        let origin = NSPoint(
-            x: min(max(mouse.x - size.width / 2, visible.minX + 8),
-                   visible.maxX - size.width - 8),
-            y: min(max(mouse.y - size.height, visible.minY + 8),
-                   visible.maxY - size.height - 8))
+        let origin = panelOrigin(size: size, anchor: anchor)
         listPanel.setFrameOrigin(origin)
         listPanel.orderFrontRegardless()
         listPanel.makeKey()
         panel = listPanel
+        shownLayout = layout
 
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.keyCode == 53, panel?.isKeyWindow == true {  // Esc
@@ -59,7 +61,6 @@ enum FloatingListWindow {
             forName: NSWindow.didResignKeyNotification,
             object: listPanel, queue: .main
         ) { _ in
-            // Keep the floating panel open while settings (or a sheet) has focus.
             DispatchQueue.main.async {
                 let newKey = NSApp.keyWindow
                 if newKey === panel { return }
@@ -81,5 +82,33 @@ enum FloatingListWindow {
         focusObserver = nil
         panel?.orderOut(nil)
         panel = nil
+        shownLayout = nil
+    }
+
+    /// Below the menu-bar icon when anchored; otherwise at the mouse.
+    private static func panelOrigin(size: NSSize, anchor: NSView?) -> NSPoint {
+        if let anchor, let window = anchor.window {
+            let buttonRect = anchor.convert(anchor.bounds, to: nil)
+            let screenRect = window.convertToScreen(buttonRect)
+            let screen = window.screen ?? NSScreen.main ?? NSScreen.screens[0]
+            let visible = screen.visibleFrame
+            let x = min(
+                max(screenRect.midX - size.width / 2, visible.minX + 8),
+                visible.maxX - size.width - 8)
+            let y = min(
+                max(screenRect.minY - size.height - 4, visible.minY + 8),
+                visible.maxY - size.height - 8)
+            return NSPoint(x: x, y: y)
+        }
+
+        let mouse = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) }
+            ?? NSScreen.main ?? NSScreen.screens[0]
+        let visible = screen.visibleFrame
+        return NSPoint(
+            x: min(max(mouse.x - size.width / 2, visible.minX + 8),
+                   visible.maxX - size.width - 8),
+            y: min(max(mouse.y - size.height, visible.minY + 8),
+                   visible.maxY - size.height - 8))
     }
 }

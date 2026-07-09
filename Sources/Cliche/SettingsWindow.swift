@@ -16,6 +16,10 @@ enum SettingsWindow {
         historyStore: HistoryStore?
     ) {
         if let window, window.isVisible {
+            let screen = window.screen ?? NSScreen.main ?? NSScreen.screens[0]
+            let height = PanelMetrics.maxPanelHeight(on: screen)
+            window.setContentSize(NSSize(width: 380, height: height))
+            window.center()
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return

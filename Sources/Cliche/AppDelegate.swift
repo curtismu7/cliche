@@ -163,18 +163,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Maccy-style floating clipboard list at the mouse position.
     private func toggleFloatingList() {
-        if FloatingListWindow.isVisible {
+        let layout = PanelLayout.clipboardOnly
+        if FloatingListWindow.isShowing(layout: layout) {
             FloatingListWindow.close()
             return
         }
         closeAllPopovers()
         rememberPasteTarget()
-        let layout = PanelLayout.clipboardOnly
-        let size = HistoryView.preferredPanelSize(layout: layout, items: store.items)
+        showFloatingPanel(layout: layout, anchor: nil)
+    }
+
+    private func showFloatingPanel(layout: PanelLayout, anchor: NSView?) {
+        let screen = anchor?.window?.screen ?? Self.screenUnderMouse()
+        let size = panelSize(for: layout, on: screen)
         FloatingListWindow.show(
             content: makeHistoryView(layout: layout),
             size: size,
-            appearance: PanelTheme.nsAppearance(settings))
+            appearance: PanelTheme.nsAppearance(settings),
+            layout: layout,
+            anchor: anchor)
     }
 
     private func applyPanelAppearance() {
@@ -334,23 +341,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func togglePopover() {
-        if popover.isShown {
-            popover.performClose(nil)
-        } else if let button = clipboardItem?.button {
+        let layout: PanelLayout = settings.menuBarStyle == .combined ? .full : .clipboardOnly
+        if FloatingListWindow.isShowing(layout: layout) {
+            FloatingListWindow.close()
+            return
+        }
+        closeAllPopovers()
+        if let button = clipboardItem?.button {
             rememberPasteTarget()
-            let layout: PanelLayout = settings.menuBarStyle == .combined ? .full : .clipboardOnly
-            refreshPopoverSize(popover, layout: layout, anchor: button)
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
+            showFloatingPanel(layout: layout, anchor: button)
         }
     }
 
     @objc private func toggleCapturePopover() {
-        if capturePopover.isShown {
-            capturePopover.performClose(nil)
-        } else if let button = captureItem?.button {
-            refreshPopoverSize(capturePopover, layout: .captureOnly, anchor: button)
-            capturePopover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        let layout = PanelLayout.captureOnly
+        if FloatingListWindow.isShowing(layout: layout) {
+            FloatingListWindow.close()
+            return
+        }
+        closeAllPopovers()
+        if let button = captureItem?.button {
+            showFloatingPanel(layout: layout, anchor: button)
         }
     }
 
@@ -358,31 +369,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// is hidden (notched MacBooks).
     private func toggleCapturePanel() {
         FloatingListWindow.close()
+        let layout = PanelLayout.captureOnly
         if settings.menuBarStyle == .split {
-            if capturePopover.isShown {
-                capturePopover.performClose(nil)
-                return
-            }
             if let button = captureItem?.button, button.window != nil {
-                refreshPopoverSize(capturePopover, layout: .captureOnly, anchor: button)
-                capturePopover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+                showFloatingPanel(layout: layout, anchor: button)
             } else {
                 showCapturePanelAtCursor()
             }
+            return
+        }
+        if let button = clipboardItem?.button, button.window != nil {
+            rememberPasteTarget()
+            let panelLayout: PanelLayout = .full
+            showFloatingPanel(layout: panelLayout, anchor: button)
         } else {
-            if popover.isShown {
-                popover.performClose(nil)
-                return
-            }
-            if let button = clipboardItem?.button, button.window != nil {
-                rememberPasteTarget()
-                let layout: PanelLayout = settings.menuBarStyle == .combined ? .full : .clipboardOnly
-                refreshPopoverSize(popover, layout: layout, anchor: button)
-                popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-                popover.contentViewController?.view.window?.makeKey()
-            } else {
-                showCapturePanelAtCursor()
-            }
+            showCapturePanelAtCursor()
         }
     }
 
@@ -390,12 +391,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showCapturePanelAtCursor() {
         closeAllPopovers()
         previousApp = NSWorkspace.shared.frontmostApplication
-        let layout = PanelLayout.captureOnly
-        let size = panelSize(for: layout)
-        FloatingListWindow.show(
-            content: makeHistoryView(layout: layout),
-            size: size,
-            appearance: PanelTheme.nsAppearance(settings))
+        showFloatingPanel(layout: .captureOnly, anchor: nil)
     }
 
     // MARK: Paste
