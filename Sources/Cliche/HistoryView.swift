@@ -16,7 +16,8 @@ enum PanelLayout {
     case captureOnly
 }
 
-/// Shared sizing for the history panel — grows with content, capped to half the screen.
+/// Shared sizing for the history panel — fixed at half the screen height;
+/// lists scroll inside.
 enum PanelMetrics {
     static let width: CGFloat = 340
     static let minHeight: CGFloat = 280
@@ -44,21 +45,7 @@ enum PanelMetrics {
         snippetCount: Int = 0,
         screen: NSScreen? = nil
     ) -> NSSize {
-        let filtered = FuzzyMatcher.filter(items, query: query)
-        let textItems = filtered.filter { if case .text = $0.kind { return true }; return false }
-        let pinnedCount = textItems.prefix(while: \.pinned).count
-        let hasImageStrip = filtered.contains { if case .image = $0.kind { return true }; return false }
-        let tabCount = tabCount(for: layout)
-        let outerChrome = outerChromeHeight(layout: layout, tabCount: tabCount)
-        let content = tabContentHeight(
-            tab: tab,
-            textCount: textItems.count,
-            pinnedCount: pinnedCount,
-            hasImageStrip: hasImageStrip,
-            captureCount: captureCount,
-            snippetCount: snippetCount)
-        let ideal = outerChrome + content
-        let height = min(max(ideal, minHeight), maxPanelHeight(on: screen))
+        let height = max(minHeight, maxPanelHeight(on: screen))
         return NSSize(width: width, height: ceil(height))
     }
 
@@ -223,14 +210,6 @@ struct HistoryView: View {
             tabCount: availableTabs.count)
     }
 
-    private var clipboardListMaxHeight: CGFloat {
-        PanelMetrics.clipboardListMaxHeight(
-            panelHeight: panelHeight,
-            layout: layout,
-            hasImageStrip: !imageItems.isEmpty,
-            tabCount: availableTabs.count)
-    }
-
     static func preferredPanelSize(
         layout: PanelLayout,
         tab: PanelMetrics.Tab = .clipboard,
@@ -376,7 +355,9 @@ struct HistoryView: View {
             }
             Divider()
             switch effectiveTab {
-            case .clipboard: clipboardTab
+            case .clipboard:
+                clipboardTab
+                    .frame(maxHeight: listScrollHeight, alignment: .top)
             case .captures: CapturesGrid(
                 store: capturesStore,
                 regionHotkey: settings.combo(for: .captureRegion).display)
@@ -437,9 +418,10 @@ struct HistoryView: View {
             }
             if textItems.isEmpty && imageItems.isEmpty {
                 emptyState
+                    .frame(maxHeight: .infinity, alignment: .top)
             } else {
                 itemList
-                    .frame(maxHeight: clipboardListMaxHeight)
+                    .frame(maxHeight: .infinity)
             }
             Text("↩ paste into app · ⌥↩ copy only · ⌘1–9 quick paste · ⌘⌫ delete · ⌥P pin · ⌥U unpin")
                 .font(.system(size: 12))
