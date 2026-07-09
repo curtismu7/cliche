@@ -27,13 +27,16 @@ enum SettingsWindow {
             historyStore: historyStore,
             onDone: { close() })
 
+        let screen = NSScreen.main ?? NSScreen.screens[0]
+        let height = PanelMetrics.maxPanelHeight(on: screen)
+
         let settingsWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 380, height: 620),
+            contentRect: NSRect(x: 0, y: 0, width: 380, height: height),
             styleMask: [.titled, .closable, .resizable],
             backing: .buffered,
             defer: false)
         settingsWindow.title = "Cliché Settings"
-        settingsWindow.minSize = NSSize(width: 360, height: 420)
+        settingsWindow.minSize = NSSize(width: 360, height: PanelMetrics.minHeight)
         settingsWindow.isReleasedWhenClosed = false
         settingsWindow.contentViewController = NSHostingController(rootView: view)
 
