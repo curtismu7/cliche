@@ -15,20 +15,20 @@ Pin and search everything you copy · capture, mark up, redact, record, and meas
 
 ---
 
-## What's new
+## What's new in 0.1.14
 
-- **NEW: Panel appearance settings** — Settings → **Panel Appearance**: pick **Light** or **Dark** mode and customize the **header bar color** (title text adjusts for contrast). Reset restores the default brand red.
-- **NEW: Dynamic clipboard panel height** — the history popover grows with your items (pinned + recent) up to the screen height, then scrolls. No more getting stuck seeing only pinned clips.
-- **NEW: Show menu bar icons setting** — hide the menu bar icons on notched MacBooks while keeping hotkeys (⌥1 clipboard, ⌥2 capture). Icons render correctly on all displays.
-- **Fix: Screen Recording settings no longer auto-open on launch** — permission is requested only when you actually capture.
-- **Fix: Global hotkeys dispatch on the main thread** — ⌥1, ⌥2, and capture shortcuts are reliable again.
-- **NEW: Maccy-style paste into field** — **Return** or click pastes into the app you were using (e.g. a username field on a webpage). **⌥Return** / **⌥-click** copies only. First paste prompts for Accessibility permission.
-- **NEW: Import clipboard history from Maccy, Paste, Clipy, CopyClip, and CopyClip 2** — Settings → General → *Import from …*. Pinned items in the source app arrive pinned in Cliché; duplicates are skipped; nothing is changed in the source app. The button only appears for apps whose storage Cliché detects on your Mac.
-- **NEW: Import completion modal** — after each import, a summary modal reports how many text, image, and pinned items were imported (and how many were skipped as duplicates).
-- **NEW: Draggable Settings sheet** — grab anywhere on the Settings background to move it around your screen.
-- **NEW: Raised default history limits to 500 text / 200 images** (was 150/50) so imported history isn't silently evicted. Configurable in Settings → History Limits with options up to 2000 text / 1000 images.
-- **NEW: Screen Recording permission prompt fix** — Cliché now triggers the macOS system prompt on first capture instead of silently failing. If you had trouble getting Cliché to appear in the Screen Recording list, rebuild from source or grab the latest release.
-- Pinned items persist across restarts and never count against history limits.
+- **NEW: Save captures to disk** — Settings → Screenshots: toggle **Save captures to disk**, pick a **Save folder** (default Desktop), and use **Show in Finder** on the capture thumbnail.
+- **NEW: Disable macOS screenshot shortcuts** — Settings → Screenshots: turns off macOS **⌘⇧3/4/5** so Cliché's capture hotkeys work (on by default).
+- **NEW: Capture preview overlays** — full-screen, repeat-region, and multi-window picks show what will be captured; brief flash when the shot lands.
+- **NEW: Paste into focused field** — **Return** or click fills the field you were in when the panel opened (username, password, URL bar). Toggle in Settings → Clipboard. Requires Accessibility.
+- **NEW: Panel height cap** — clipboard/capture panels grow with content but never exceed **half the screen height**.
+- **Fix: Annotation editor** — captured image displays correctly in the editor canvas.
+- **Fix: `make install` cleanup** — quits Cliché, removes duplicate installs, resets Screen Recording TCC, then reinstalls.
+- **Fix: Paste into HTML form fields** — refocuses the saved field before AX write or **⌘V**.
+
+## Earlier releases
+
+- **0.1.13** — Panel appearance (light/dark, header color), dynamic panel height, menu bar icon toggle, Maccy import, Screen Recording permission fixes.
 
 ---
 

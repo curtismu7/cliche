@@ -16,7 +16,7 @@ enum PanelLayout {
     case captureOnly
 }
 
-/// Shared sizing for the history panel — grows with content, capped to the screen.
+/// Shared sizing for the history panel — grows with content, capped to half the screen.
 enum PanelMetrics {
     static let width: CGFloat = 340
     static let minHeight: CGFloat = 280
@@ -32,7 +32,7 @@ enum PanelMetrics {
 
     static func maxPanelHeight(on screen: NSScreen? = nil) -> CGFloat {
         let visible = (screen ?? NSScreen.main ?? NSScreen.screens.first)?.visibleFrame.height ?? 800
-        return visible - screenMargin
+        return visible * 0.5
     }
 
     static func preferredSize(
