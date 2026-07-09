@@ -25,7 +25,7 @@ public final class CaptureService {
         onSaved: ((URL) -> Void)? = nil
     ) {
         let outputURL = explicitURL ?? Self.outputURL(
-            directory: directory ?? defaultDesktopDirectory(),
+            directory: directory ?? CaptureDelivery.defaultDesktopDirectory(),
             fileExtension: format.fileExtension)
         var arguments: [String]
         switch mode {
