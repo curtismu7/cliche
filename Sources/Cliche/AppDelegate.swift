@@ -660,6 +660,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    @MainActor
     private func captureWithCLI(_ mode: CaptureMode, preset: CapturePreset? = nil) {
         guard guardScreenCaptureAccess() else { return }
         let format = preset?.format ?? settings.captureFormat
