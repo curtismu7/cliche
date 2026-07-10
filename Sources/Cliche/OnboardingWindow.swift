@@ -52,10 +52,7 @@ enum OnboardingWindow {
         hosting.view.autoresizingMask = [.width, .height]
         onboardingWindow.contentViewController = hosting
 
-        let windowDelegate = WindowDelegate {
-            settings.hasCompletedOnboarding = true
-            close()
-        }
+        let windowDelegate = WindowDelegate { close() }
         onboardingWindow.delegate = windowDelegate
         delegate = windowDelegate
 
@@ -167,11 +164,16 @@ private struct OnboardingView: View {
         }
         .frame(width: 440)
         .frame(maxHeight: .infinity, alignment: .top)
-        .onAppear {
-            screenGranted = ScreenCapturePermission.isGranted
-            accessibilityGranted = PasteService.isTrusted
+        .onAppear { refreshPermissionState() }
+        .onReceive(NotificationCenter.default.publisher(
+            for: NSApplication.didBecomeActiveNotification)) { _ in
+            refreshPermissionState()
         }
     }
+
+    private func refreshPermissionState() {
+        screenGranted = ScreenCapturePermission.isGranted
+        accessibilityGranted = PasteService.isTrusted
 
     private func permissionCard(
         title: String,

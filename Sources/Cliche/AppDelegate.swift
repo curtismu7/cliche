@@ -104,12 +104,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         DispatchQueue.main.async { [weak self] in
-            guard let self, !self.settings.hasCompletedOnboarding else { return }
-            OnboardingWindow.show(
-                settings: self.settings,
-                ignoreRulesURL: self.ignoreRulesURL,
-                historyStore: self.store)
+            self?.presentOnboardingIfNeeded()
         }
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        presentOnboardingIfNeeded()
+    }
+
+    /// Welcome stays up until the user clicks Get Started — closing the window
+    /// or quitting to flip permissions in System Settings should not dismiss it.
+    private func presentOnboardingIfNeeded() {
+        guard !settings.hasCompletedOnboarding else { return }
+        OnboardingWindow.show(
+            settings: settings,
+            ignoreRulesURL: ignoreRulesURL,
+            historyStore: store)
     }
 
     private func applyMacScreenshotShortcutSetting() {
