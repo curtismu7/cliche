@@ -660,9 +660,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    @MainActor
     private func captureWithCLI(_ mode: CaptureMode, preset: CapturePreset? = nil) {
-        guard guardScreenCaptureAccess() else { return }
+        guard ScreenCapturePermission.isGranted else {
+            DispatchQueue.main.async { [weak self] in
+                guard let self, ScreenCapturePermission.ensureGranted() else { return }
+                self.captureWithCLI(mode, preset: preset)
+            }
+            return
+        }
         let format = preset?.format ?? settings.captureFormat
         let saveToDisk = preset != nil || settings.saveCapturesToDisk
         let directory = preset?.destinationURL ?? settings.captureSaveDirectoryURL
