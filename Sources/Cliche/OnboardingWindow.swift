@@ -10,6 +10,9 @@ enum OnboardingWindow {
 
     static var isVisible: Bool { window?.isVisible == true }
 
+    /// Used to tile Settings beside Welcome during onboarding.
+    static var placementWindow: NSWindow? { window }
+
     @MainActor
     static func show(
         settings: AppSettings,
@@ -24,6 +27,10 @@ enum OnboardingWindow {
         }
 
         if let window {
+            if let settings = SettingsWindow.placementWindow, settings.isVisible {
+                WindowPlacement.placeSideBySide(window, settings, on: window.screen)
+                settings.orderFront(nil)
+            }
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -55,7 +62,6 @@ enum OnboardingWindow {
         onboardingWindow.minSize = NSSize(width: 400, height: 480)
         onboardingWindow.isReleasedWhenClosed = false
         onboardingWindow.canHide = false
-        onboardingWindow.level = .floating
         onboardingWindow.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         let hosting = NSHostingController(rootView: view)
         hosting.view.autoresizingMask = [.width, .height]
@@ -66,7 +72,7 @@ enum OnboardingWindow {
         delegate = windowDelegate
 
         window = onboardingWindow
-        onboardingWindow.center()
+        WindowPlacement.center(onboardingWindow, on: screen)
         onboardingWindow.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }

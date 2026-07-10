@@ -10,6 +10,8 @@ enum SettingsWindow {
 
     static var isVisible: Bool { window != nil }
 
+    static var placementWindow: NSWindow? { window }
+
     static func show(
         settings: AppSettings,
         ignoreRulesURL: URL,
@@ -17,11 +19,11 @@ enum SettingsWindow {
     ) {
         FloatingListWindow.suspendAutoClose = true
 
-        if let window, window.isVisible {
+        if let window {
             let screen = window.screen ?? NSScreen.main ?? NSScreen.screens[0]
             let height = PanelMetrics.maxPanelHeight(on: screen)
             window.setContentSize(NSSize(width: 440, height: height))
-            window.center()
+            placeBesideOnboardingIfNeeded(settingsWindow: window, on: screen)
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -52,10 +54,18 @@ enum SettingsWindow {
         delegate = windowDelegate
 
         window = settingsWindow
-        settingsWindow.center()
+        placeBesideOnboardingIfNeeded(settingsWindow: settingsWindow, on: screen)
         settingsWindow.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
+
+    private static func placeBesideOnboardingIfNeeded(settingsWindow: NSWindow, on screen: NSScreen) {
+        guard let welcome = OnboardingWindow.placementWindow, welcome.isVisible else {
+            WindowPlacement.center(settingsWindow, on: screen)
+            return
+        }
+        WindowPlacement.placeSideBySide(welcome, settingsWindow, on: screen)
+        welcome.orderFront(nil)
 
     static func close() {
         window?.orderOut(nil)
