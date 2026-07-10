@@ -106,7 +106,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(
             forName: PasteService.pasteRequiresAccessibilityNotification, object: nil, queue: .main
         ) { _ in
-            InfoHUD.show("Copied — enable Accessibility to auto-paste, or press ⌘V")
+            InfoHUD.show("Copied — press ⌘V if it did not paste automatically")
         }
 
         DispatchQueue.main.async { [weak self] in
@@ -431,20 +431,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.performClose(nil)
         FloatingListWindow.close()
 
-        if let text = NSPasteboard.general.string(forType: .string) {
+        if let text = NSPasteboard.general.string(forType: .string),
+           NSPasteboard.general.data(forType: .png) == nil,
+           NSPasteboard.general.data(forType: .tiff) == nil,
+           !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             PasteService.pasteText(
                 text, into: previousApp, useFocusedField: settings.pasteIntoFocusedField)
             return
         }
 
-        guard PasteService.isTrusted else {
-            PasteService.requestTrust()
-            return
-        }
-        previousApp?.activate(options: [.activateAllWindows])
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            PasteService.synthesizePaste()
-        }
+        PasteService.pasteClipboard(into: previousApp)
     }
 
     /// Records the frontmost app and its focused field before the panel opens.

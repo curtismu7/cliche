@@ -28,12 +28,29 @@ public enum PasteService {
     }
 
     public static var isTrusted: Bool {
-        let trusted = AXIsProcessTrusted()
-        if trusted {
+        if hasAccessibilityAccess() {
             noteTrustedExecutableIfNeeded()
             enableAttempted = false
+            return true
         }
-        return trusted
+        return false
+    }
+
+    /// AXIsProcessTrusted can lag after toggling in System Settings; probe the API.
+    private static func hasAccessibilityAccess() -> Bool {
+        if AXIsProcessTrusted() { return true }
+        let system = AXUIElementCreateSystemWide()
+        var appValue: CFTypeRef?
+        if AXUIElementCopyAttributeValue(
+            system, kAXFocusedApplicationAttribute as CFString, &appValue) == .success {
+            return true
+        }
+        var focusValue: CFTypeRef?
+        if AXUIElementCopyAttributeValue(
+            system, kAXFocusedUIElementAttribute as CFString, &focusValue) == .success {
+            return true
+        }
+        return false
     }
 
     /// Why Accessibility may still look off after enabling in System Settings.
@@ -58,7 +75,7 @@ public enum PasteService {
     }
 
     private static func noteTrustedExecutableIfNeeded() {
-        guard AXIsProcessTrusted(), let mod = executableModificationDate() else { return }
+        guard hasAccessibilityAccess(), let mod = executableModificationDate() else { return }
         UserDefaults.standard.set(mod.timeIntervalSince1970, forKey: trustedExecutableModKey)
     }
 
@@ -124,17 +141,36 @@ public enum PasteService {
                 return
             }
 
-            guard isTrusted else {
-                NotificationCenter.default.post(
-                    name: pasteRequiresAccessibilityNotification, object: nil)
-                return
-            }
-
-            if let focused {
+            if let focused, isTrusted {
                 focusElement(focused)
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 synthesizePaste()
+            }
+            if !isTrusted {
+                NotificationCenter.default.post(
+                    name: pasteRequiresAccessibilityNotification, object: nil)
+            }
+        }
+    }
+
+    /// Paste whatever is already on the pasteboard (images, files, rich content).
+    public static func pasteClipboard(into app: NSRunningApplication?) {
+        let targetApp = app ?? FrontmostAppTracker.lastApplication
+        savedFocusElement = nil
+
+        guard let targetApp else {
+            NotificationCenter.default.post(name: pasteFailedNotification, object: nil)
+            return
+        }
+
+        activate(targetApp) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                synthesizePaste()
+            }
+            if !isTrusted {
+                NotificationCenter.default.post(
+                    name: pasteRequiresAccessibilityNotification, object: nil)
             }
         }
     }
