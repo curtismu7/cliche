@@ -44,4 +44,7 @@ enum PanelTheme {
             ? Color.white.opacity(0.2)
             : Color.black.opacity(0.2)
     }
+
+    /// Brand red for the settings gear — hard to miss in the panel footer.
+    static let settingsIcon = Color(red: 0.78, green: 0.16, blue: 0.15)
 }

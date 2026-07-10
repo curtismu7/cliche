@@ -159,6 +159,11 @@ public final class AppSettings {
         didSet { Self.encode(capturePresets, to: defaults, key: "capturePresets") }
     }
 
+    /// First-run setup walkthrough has been shown and dismissed.
+    public var hasCompletedOnboarding: Bool {
+        didSet { defaults.set(hasCompletedOnboarding, forKey: "hasCompletedOnboarding") }
+    }
+
     private let defaults: UserDefaults
     /// Same store, exposed for the hotkeys extension.
     var hotkeysDefaults: UserDefaults { defaults }
@@ -215,6 +220,8 @@ public final class AppSettings {
         self.capturePresets = Self.decode(
             [CapturePreset].self, from: defaults,
             key: "capturePresets", default: [])
+        self.hasCompletedOnboarding =
+            defaults.object(forKey: "hasCompletedOnboarding") as? Bool ?? false
     }
 
     // MARK: Last capture region (for repeat-area capture)

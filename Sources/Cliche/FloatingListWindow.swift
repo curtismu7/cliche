@@ -9,6 +9,9 @@ enum FloatingListWindow {
     private static var focusObserver: NSObjectProtocol?
     private static var shownLayout: PanelLayout?
 
+    /// While a child window (settings, onboarding) is opening — panel must not auto-close.
+    static var suspendAutoClose = false
+
     static var isVisible: Bool { panel != nil }
 
     static func isShowing(layout: PanelLayout) -> Bool {
@@ -65,7 +68,9 @@ enum FloatingListWindow {
                 let newKey = NSApp.keyWindow
                 if newKey === panel { return }
                 if newKey?.isSheet == true { return }
+                if suspendAutoClose { return }
                 if SettingsWindow.isVisible { return }
+                if OnboardingWindow.isVisible { return }
                 close()
             }
         }

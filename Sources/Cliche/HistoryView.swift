@@ -698,15 +698,16 @@ struct HistoryView: View {
     private var footer: some View {
         HStack {
             Button {
+                FloatingListWindow.suspendAutoClose = true
                 SettingsWindow.show(
                     settings: settings,
                     ignoreRulesURL: ignoreRulesURL,
                     historyStore: store)
             } label: {
-                Image(systemName: "gearshape")
+                Image(systemName: "gearshape.fill")
             }
             .buttonStyle(.plain)
-            .foregroundStyle(Color.ink)
+            .foregroundStyle(PanelTheme.settingsIcon)
             .help("Settings")
 
             Button {

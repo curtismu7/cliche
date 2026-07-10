@@ -15,6 +15,8 @@ enum SettingsWindow {
         ignoreRulesURL: URL,
         historyStore: HistoryStore?
     ) {
+        FloatingListWindow.suspendAutoClose = true
+
         if let window, window.isVisible {
             let screen = window.screen ?? NSScreen.main ?? NSScreen.screens[0]
             let height = PanelMetrics.maxPanelHeight(on: screen)
@@ -48,16 +50,19 @@ enum SettingsWindow {
         settingsWindow.delegate = windowDelegate
         delegate = windowDelegate
 
+        window = settingsWindow
         settingsWindow.center()
         settingsWindow.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        window = settingsWindow
     }
 
     static func close() {
         window?.orderOut(nil)
         window = nil
         delegate = nil
+        if !OnboardingWindow.isVisible {
+            FloatingListWindow.suspendAutoClose = false
+        }
     }
 
     private final class WindowDelegate: NSObject, NSWindowDelegate {

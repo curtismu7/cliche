@@ -102,6 +102,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ) { [weak self] _ in
             self?.applyMacScreenshotShortcutSetting()
         }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self, !self.settings.hasCompletedOnboarding else { return }
+            OnboardingWindow.show(
+                settings: self.settings,
+                ignoreRulesURL: self.ignoreRulesURL,
+                historyStore: self.store)
+        }
     }
 
     private func applyMacScreenshotShortcutSetting() {
