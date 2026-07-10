@@ -66,6 +66,7 @@ enum SettingsWindow {
         }
         WindowPlacement.placeSideBySide(welcome, settingsWindow, on: screen)
         welcome.orderFront(nil)
+    }
 
     static func close() {
         window?.orderOut(nil)
