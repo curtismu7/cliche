@@ -165,7 +165,8 @@ private struct OnboardingView: View {
             }
             .padding(16)
         }
-        .frame(width: 440, maxHeight: .infinity, alignment: .top)
+        .frame(width: 440)
+        .frame(maxHeight: .infinity, alignment: .top)
         .onAppear {
             screenGranted = ScreenCapturePermission.isGranted
             accessibilityGranted = PasteService.isTrusted
