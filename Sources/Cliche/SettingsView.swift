@@ -43,6 +43,13 @@ struct SettingsView: View {
             Divider()
             ScrollView {
                 Form {
+                Section("General") {
+                    Toggle("Launch at login", isOn: $launchAtLogin)
+                        .onChange(of: launchAtLogin) { _, wanted in
+                            let actual = LoginItem.setEnabled(wanted)
+                            if actual != wanted { launchAtLogin = actual }
+                        }
+                }
                 Section("Screenshots") {
                     Picker("Image format", selection: $settings.captureFormat) {
                         ForEach(AppSettings.ImageFormat.allCases, id: \.self) { format in
@@ -219,12 +226,7 @@ struct SettingsView: View {
                         .font(.system(size: 12))
                         .foregroundStyle(Color.ink)
                 }
-                Section("General") {
-                    Toggle("Launch at login", isOn: $launchAtLogin)
-                        .onChange(of: launchAtLogin) { _, wanted in
-                            let actual = LoginItem.setEnabled(wanted)
-                            if actual != wanted { launchAtLogin = actual }
-                        }
+                Section("Import & Rules") {
                     Button("Edit Ignore Rules…") {
                         NSWorkspace.shared.open(ignoreRulesURL)
                     }
