@@ -654,12 +654,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.deliver(image, preset: preset, flashPixelRect: nil, on: screen)
             } catch {
                 NSLog("Cliche: ScreenCaptureKit failed (\(error)); using screencapture CLI")
+                guard ScreenCapturePermission.isGranted else { return }
                 self.captureWithCLI(cliFallback, preset: preset)
             }
         }
     }
 
     private func captureWithCLI(_ mode: CaptureMode, preset: CapturePreset? = nil) {
+        guard guardScreenCaptureAccess() else { return }
         let format = preset?.format ?? settings.captureFormat
         let saveToDisk = preset != nil || settings.saveCapturesToDisk
         let directory = preset?.destinationURL ?? settings.captureSaveDirectoryURL

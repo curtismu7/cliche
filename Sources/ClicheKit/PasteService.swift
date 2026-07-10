@@ -7,14 +7,19 @@ import Carbon.HIToolbox
 /// password, URL bar, etc.) when possible; falls back to synthesized ⌘V.
 public enum PasteService {
     private static var savedFocusElement: AXUIElement?
+    /// AXIsProcessTrustedWithOptions(prompt:true) opens System Settings on every call.
+    private static var didPromptTrustThisSession = false
 
     public static var isTrusted: Bool {
         AXIsProcessTrusted()
     }
 
-    /// Shows the system Accessibility prompt (once) if not yet trusted.
+    /// Shows the system Accessibility prompt at most once per session.
     @discardableResult
     public static func requestTrust() -> Bool {
+        if isTrusted { return true }
+        guard !didPromptTrustThisSession else { return false }
+        didPromptTrustThisSession = true
         let options = [
             kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true
         ] as CFDictionary
@@ -47,7 +52,6 @@ public enum PasteService {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             guard isTrusted, let target else {
-                if !isTrusted { requestTrust() }
                 synthesizePaste()
                 return
             }

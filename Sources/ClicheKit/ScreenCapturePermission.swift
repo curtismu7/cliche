@@ -130,14 +130,15 @@ public enum ScreenCapturePermission {
         let alert = NSAlert()
         alert.messageText = "Screen Recording permission needed"
         alert.informativeText = detail
-        alert.addButton(withTitle: "Open Settings")
         alert.addButton(withTitle: "Show Permission Prompt")
+        alert.addButton(withTitle: "Open Settings")
         alert.addButton(withTitle: "Not Now")
+        alert.buttons.last?.keyEquivalent = "\u{1b}"  // Esc
         let response = alert.runModal()
         if response == .alertFirstButtonReturn {
-            openSettings()
-        } else if response == .alertSecondButtonReturn {
             _ = requestAccessUserInitiated()
+        } else if response == .alertSecondButtonReturn {
+            openSettings()
         }
         return false
     }
