@@ -174,6 +174,7 @@ private struct OnboardingView: View {
     private func refreshPermissionState() {
         screenGranted = ScreenCapturePermission.isGranted
         accessibilityGranted = PasteService.isTrusted
+    }
 
     private func permissionCard(
         title: String,
