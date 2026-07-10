@@ -12,6 +12,7 @@ struct SettingsView: View {
     @State private var importMessage: String?
     @State private var screenRecordingGranted = ScreenCapturePermission.isGranted
     @State private var accessibilityGranted = PasteService.isTrusted
+    @State private var accessibilitySetupStarted = false
     @State private var headerBarColor = Color.red
     @Environment(\.dismiss) private var dismiss
 
@@ -166,10 +167,14 @@ struct SettingsView: View {
                             if accessibilityGranted {
                                 Label("Enabled", systemImage: "checkmark.circle.fill")
                                     .foregroundStyle(.green)
+                            } else if accessibilitySetupStarted {
+                                Label("Quit & reopen", systemImage: "arrow.clockwise.circle")
+                                    .foregroundStyle(.orange)
                             } else {
                                 Button("Enable…") {
+                                    accessibilitySetupStarted = true
                                     _ = PasteService.requestTrust()
-                                    accessibilityGranted = PasteService.isTrusted
+                                    refreshAccessibilityState()
                                     if !accessibilityGranted {
                                         PasteService.openSettings()
                                     }
@@ -177,7 +182,7 @@ struct SettingsView: View {
                             }
                         }
                         if !accessibilityGranted {
-                            Text("Required for direct paste into the field you were typing in. If Cliché is missing from the list, click Enable… — macOS opens Accessibility — then click + and choose /Applications/Cliche.app, or toggle Cliché ON if it appears.")
+                            Text(accessibilityHelpText)
                                 .font(.system(size: 12))
                                 .foregroundStyle(Color.ink)
                         }
@@ -232,10 +237,29 @@ struct SettingsView: View {
         .onAppear {
             headerBarColor = Self.color(fromHex: settings.headerBarColorHex)
             screenRecordingGranted = ScreenCapturePermission.isGranted
-            accessibilityGranted = PasteService.isTrusted
+            refreshAccessibilityState()
+        }
+        .onReceive(NotificationCenter.default.publisher(
+            for: NSApplication.didBecomeActiveNotification)) { _ in
+            screenRecordingGranted = ScreenCapturePermission.isGranted
+            refreshAccessibilityState()
         }
         .onChange(of: settings.headerBarColorHex) { _, hex in
             headerBarColor = Self.color(fromHex: hex)
+        }
+    }
+
+    private var accessibilityHelpText: String {
+        if accessibilitySetupStarted {
+            return "Cliché is ON in System Settings. Quit Cliché completely (⌘Q) and reopen — macOS applies Accessibility on restart."
+        }
+        return "Required for direct paste into the field you were typing in. If Cliché is missing from the list, click Enable… — macOS opens Accessibility — then click + and choose /Applications/Cliche.app, or toggle Cliché ON if it appears."
+    }
+
+    private func refreshAccessibilityState() {
+        accessibilityGranted = PasteService.isTrusted
+        if accessibilityGranted {
+            accessibilitySetupStarted = false
         }
     }
 

@@ -99,6 +99,11 @@ private struct OnboardingView: View {
 
     @State private var screenGranted = ScreenCapturePermission.isGranted
     @State private var accessibilityGranted = PasteService.isTrusted
+    @State private var accessibilitySetupStarted = false
+
+    private var accessibilityNeedsRestart: Bool {
+        accessibilitySetupStarted && !accessibilityGranted
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -132,15 +137,20 @@ private struct OnboardingView: View {
                             title: "Accessibility",
                             required: false,
                             granted: accessibilityGranted,
-                            detail: "Optional — lets Cliché paste directly into the field you were typing in. Click + in Accessibility and choose /Applications/Cliche.app if it is missing.",
+                            pendingRestart: accessibilityNeedsRestart,
+                            detail: accessibilityDetail,
                             onEnable: {
+                                accessibilitySetupStarted = true
                                 _ = PasteService.requestTrust()
-                                accessibilityGranted = PasteService.isTrusted
+                                refreshPermissionState()
                                 if !accessibilityGranted {
                                     PasteService.openSettings()
                                 }
                             },
-                            onOpenSettings: PasteService.openSettings)
+                            onOpenSettings: {
+                                accessibilitySetupStarted = true
+                                PasteService.openSettings()
+                            })
                     }
 
                     GroupBox {
@@ -190,11 +200,27 @@ private struct OnboardingView: View {
             for: NSApplication.didBecomeActiveNotification)) { _ in
             refreshPermissionState()
         }
+        .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
+            refreshPermissionState()
+        }
+    }
+
+    private var accessibilityDetail: String {
+        if accessibilityGranted {
+            return "Direct paste into the focused field is active."
+        }
+        if accessibilityNeedsRestart {
+            return "Cliché is ON in System Settings. Quit Cliché completely (⌘Q) and reopen — macOS applies Accessibility on restart."
+        }
+        return "Optional — lets Cliché paste directly into the field you were typing in. Click + in Accessibility and choose /Applications/Cliche.app if it is missing."
     }
 
     private func refreshPermissionState() {
         screenGranted = ScreenCapturePermission.isGranted
         accessibilityGranted = PasteService.isTrusted
+        if accessibilityGranted {
+            accessibilitySetupStarted = false
+        }
     }
 
     private var menuBarHint: String {
@@ -211,6 +237,7 @@ private struct OnboardingView: View {
         title: String,
         required: Bool,
         granted: Bool,
+        pendingRestart: Bool = false,
         detail: String,
         onEnable: @escaping () -> Void,
         onOpenSettings: @escaping () -> Void
@@ -232,6 +259,10 @@ private struct OnboardingView: View {
                     if granted {
                         Label("Enabled", systemImage: "checkmark.circle.fill")
                             .foregroundStyle(.green)
+                            .font(.system(size: 12))
+                    } else if pendingRestart {
+                        Label("Quit & reopen", systemImage: "arrow.clockwise.circle")
+                            .foregroundStyle(.orange)
                             .font(.system(size: 12))
                     }
                 }
