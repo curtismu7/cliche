@@ -6,6 +6,7 @@ import SwiftUI
 enum OnboardingWindow {
     private static var window: NSWindow?
     private static var delegate: WindowDelegate?
+    private static var appSettings: AppSettings?
 
     static var isVisible: Bool { window?.isVisible == true }
 
@@ -15,7 +16,12 @@ enum OnboardingWindow {
         ignoreRulesURL: URL,
         historyStore: HistoryStore?
     ) {
+        appSettings = settings
         FloatingListWindow.suspendAutoClose = true
+        NSApp.setActivationPolicy(.regular)
+        if !settings.showMenuBarIcons {
+            settings.showMenuBarIcons = true
+        }
 
         if let window {
             window.makeKeyAndOrderFront(nil)
@@ -71,6 +77,10 @@ enum OnboardingWindow {
         delegate = nil
         if !SettingsWindow.isVisible {
             FloatingListWindow.suspendAutoClose = false
+        }
+        if appSettings?.hasCompletedOnboarding == true {
+            NSApp.setActivationPolicy(.accessory)
+            appSettings = nil
         }
     }
 
@@ -142,7 +152,11 @@ private struct OnboardingView: View {
                                 .font(.system(size: 12))
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
-                            Text("Look for the scissors icon in the menu bar (top right). On notched MacBooks it may hide under ◂ — hotkeys still work.")
+                            Text("Cliché appears in the Dock while you finish setup.")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(menuBarHint)
                                 .font(.system(size: 12))
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -181,6 +195,16 @@ private struct OnboardingView: View {
     private func refreshPermissionState() {
         screenGranted = ScreenCapturePermission.isGranted
         accessibilityGranted = PasteService.isTrusted
+    }
+
+    private var menuBarHint: String {
+        let overflow = "On notched MacBooks, icons may hide under ◂ in the menu bar."
+        switch settings.menuBarStyle {
+        case .combined:
+            return "Look for the scissors icon in the menu bar (top right). \(overflow)"
+        case .split:
+            return "Look for the clipboard and camera icons in the menu bar (top right). \(overflow)"
+        }
     }
 
     private func permissionCard(
