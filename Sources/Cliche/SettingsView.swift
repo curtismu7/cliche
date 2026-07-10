@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var importMessage: String?
     @State private var screenRecordingGranted = ScreenCapturePermission.isGranted
+    @State private var accessibilityGranted = PasteService.isTrusted
     @State private var headerBarColor = Color.red
     @Environment(\.dismiss) private var dismiss
 
@@ -158,8 +159,31 @@ struct SettingsView: View {
                 }
                 Section("Clipboard") {
                     Toggle("Paste into focused field", isOn: $settings.pasteIntoFocusedField)
+                    if settings.pasteIntoFocusedField {
+                        HStack {
+                            Text("Accessibility")
+                            Spacer()
+                            if accessibilityGranted {
+                                Label("Enabled", systemImage: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                            } else {
+                                Button("Enable…") {
+                                    _ = PasteService.requestTrust()
+                                    accessibilityGranted = PasteService.isTrusted
+                                    if !accessibilityGranted {
+                                        PasteService.openSettings()
+                                    }
+                                }
+                            }
+                        }
+                        if !accessibilityGranted {
+                            Text("Required for direct paste into the field you were typing in. If Cliché is missing from the list, click Enable… — macOS opens Accessibility — then click + and choose /Applications/Cliche.app, or toggle Cliché ON if it appears.")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color.ink)
+                        }
+                    }
                     Text(settings.pasteIntoFocusedField
-                        ? "Return or click fills the text field you were in when the panel opened (username, password, URL bar, etc.). Requires Accessibility permission."
+                        ? "Return or click fills the text field you were in when the panel opened (username, password, URL bar, etc.)."
                         : "Return or click copies to the clipboard and sends ⌘V to the previous app — classic paste behavior.")
                         .font(.system(size: 12))
                         .foregroundStyle(Color.ink)
@@ -207,6 +231,8 @@ struct SettingsView: View {
         .environment(\.colorScheme, PanelTheme.swiftUIColorScheme(settings))
         .onAppear {
             headerBarColor = Self.color(fromHex: settings.headerBarColorHex)
+            screenRecordingGranted = ScreenCapturePermission.isGranted
+            accessibilityGranted = PasteService.isTrusted
         }
         .onChange(of: settings.headerBarColorHex) { _, hex in
             headerBarColor = Self.color(fromHex: hex)
