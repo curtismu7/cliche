@@ -37,17 +37,20 @@ enum OnboardingWindow {
             })
 
         let screen = NSScreen.main ?? NSScreen.screens[0]
-        let height = PanelMetrics.maxPanelHeight(on: screen)
+        let maxHeight = PanelMetrics.maxPanelHeight(on: screen)
+        let height = min(580, max(480, maxHeight))
 
         let onboardingWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 440, height: height),
-            styleMask: [.titled, .closable],
+            styleMask: [.titled, .closable, .resizable],
             backing: .buffered,
             defer: false)
         onboardingWindow.title = "Welcome to Cliché"
-        onboardingWindow.minSize = NSSize(width: 400, height: 420)
+        onboardingWindow.minSize = NSSize(width: 400, height: 480)
         onboardingWindow.isReleasedWhenClosed = false
-        onboardingWindow.contentViewController = NSHostingController(rootView: view)
+        let hosting = NSHostingController(rootView: view)
+        hosting.view.autoresizingMask = [.width, .height]
+        onboardingWindow.contentViewController = hosting
 
         let windowDelegate = WindowDelegate {
             settings.hasCompletedOnboarding = true
@@ -94,6 +97,7 @@ private struct OnboardingView: View {
                 Text("Clipboard history and screen capture in one place. Two quick permissions get you started.")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(16)
 
@@ -136,16 +140,20 @@ private struct OnboardingView: View {
                             Text("⌥1 opens clipboard history · ⌥2 opens capture · ⌘⇧6 captures a region")
                                 .font(.system(size: 12))
                                 .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
                             Text("Look for the scissors icon in the menu bar (top right). On notched MacBooks it may hide under ◂ — hotkeys still work.")
                                 .font(.system(size: 12))
                                 .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(4)
                     }
                 }
                 .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             Divider()
 
@@ -157,7 +165,7 @@ private struct OnboardingView: View {
             }
             .padding(16)
         }
-        .frame(width: 440)
+        .frame(width: 440, maxHeight: .infinity, alignment: .top)
         .onAppear {
             screenGranted = ScreenCapturePermission.isGranted
             accessibilityGranted = PasteService.isTrusted
@@ -195,6 +203,7 @@ private struct OnboardingView: View {
                 Text(detail)
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 HStack {
                     if !granted {
                         Button("Enable…", action: onEnable)
