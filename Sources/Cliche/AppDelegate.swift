@@ -421,7 +421,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             PasteService.requestTrust()
             return
         }
-        previousApp?.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
+        previousApp?.activate(options: [.activateAllWindows])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             PasteService.synthesizePaste()
         }
@@ -587,11 +587,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     onSwitchAway: { [weak self] mode in
                         guard let self else { return }
                         switch mode {
-                        case .window: self.performCapture(.window, on: screen)
+                        case .window:
+                            let target = NSScreen.screens.first { $0.displayID == displayID }
+                                ?? NSScreen.main!
+                            self.performCapture(.window, on: target)
                         case .fullScreen:
                             // Slight delay so the overlay is fully gone.
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                                self.performCapture(.fullScreen, on: screen)
+                                let target = NSScreen.screens.first { $0.displayID == displayID }
+                                    ?? NSScreen.main!
+                                self.performCapture(.fullScreen, on: target)
                             }
                         case .region, .ocr: break
                         }

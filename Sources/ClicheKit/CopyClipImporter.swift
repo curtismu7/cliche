@@ -133,7 +133,7 @@ public struct CopyClipImporter: ClipboardImporter {
     /// Decode it and convert to PNG.
     private func decodeImage(_ blob: Data) -> Data? {
         guard !blob.isEmpty,
-              let root = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(blob)
+              let root = LegacyKeyedUnarchiver.topLevelObject(from: blob)
         else { return nil }
         // The archived object is often an NSData wrapping the image bytes.
         if let raw = root as? Data, let nsImage = NSImage(data: raw),

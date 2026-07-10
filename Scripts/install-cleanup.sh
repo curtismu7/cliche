@@ -24,5 +24,5 @@ if [ -z "$KEEP_INSTALL" ] && [ -d "$INSTALL_PATH" ]; then
     rm -rf "$INSTALL_PATH" 2>/dev/null || sudo rm -rf "$INSTALL_PATH"
 fi
 
-echo "Resetting Screen Recording permission for $BUNDLE_ID…"
+echo "Resetting Screen Recording permission for ${BUNDLE_ID}..."
 tccutil reset ScreenCapture "$BUNDLE_ID" 2>/dev/null || true

@@ -60,7 +60,7 @@ public struct ClipyImporter: ClipboardImporter {
         // generic NSDictionary if the class isn't available (Clipy not
         // linked): the archive still decodes plist types.
         guard let data = try? Data(contentsOf: url),
-              let root = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data)
+              let root = LegacyKeyedUnarchiver.topLevelObject(from: data)
         else { return .skipped }
 
         // Pin state lives in Clipy's Realm DB (CPYClip.isPinned), not in the

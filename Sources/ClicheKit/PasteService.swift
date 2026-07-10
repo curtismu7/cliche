@@ -55,7 +55,7 @@ public enum PasteService {
         let target = useFocusedField ? savedFocusElement : nil
         savedFocusElement = nil
 
-        app?.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
+        app?.activate(options: [.activateAllWindows])
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             guard isTrusted, let target else {
