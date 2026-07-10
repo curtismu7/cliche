@@ -20,7 +20,7 @@ enum SettingsWindow {
         if let window, window.isVisible {
             let screen = window.screen ?? NSScreen.main ?? NSScreen.screens[0]
             let height = PanelMetrics.maxPanelHeight(on: screen)
-            window.setContentSize(NSSize(width: 380, height: height))
+            window.setContentSize(NSSize(width: 440, height: height))
             window.center()
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
@@ -37,13 +37,14 @@ enum SettingsWindow {
         let height = PanelMetrics.maxPanelHeight(on: screen)
 
         let settingsWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 380, height: height),
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: height),
             styleMask: [.titled, .closable, .resizable],
             backing: .buffered,
             defer: false)
         settingsWindow.title = "Cliché Settings"
-        settingsWindow.minSize = NSSize(width: 360, height: PanelMetrics.minHeight)
+        settingsWindow.minSize = NSSize(width: 400, height: PanelMetrics.minHeight)
         settingsWindow.isReleasedWhenClosed = false
+        settingsWindow.canHide = false
         settingsWindow.contentViewController = NSHostingController(rootView: view)
 
         let windowDelegate = WindowDelegate { close() }
@@ -68,6 +69,7 @@ enum SettingsWindow {
     private final class WindowDelegate: NSObject, NSWindowDelegate {
         let onClose: () -> Void
         init(onClose: @escaping () -> Void) { self.onClose = onClose }
+        func windowShouldClose(_ sender: NSWindow) -> Bool { true }
         func windowWillClose(_ notification: Notification) { onClose() }
     }
 }

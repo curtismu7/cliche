@@ -52,12 +52,25 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                     Toggle("Copy captures to clipboard", isOn: $settings.copyCapturesToClipboard)
                     Toggle("Save captures to disk", isOn: $settings.saveCapturesToDisk)
-                    HStack {
-                        TextField("Save folder", text: $settings.captureSaveDirectoryPath)
-                            .disabled(!settings.saveCapturesToDisk)
-                        Button("Choose…") { chooseSaveFolder() }
-                            .disabled(!settings.saveCapturesToDisk)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Save folder")
+                            .font(.system(size: 13, weight: .medium))
+                        Text(displaySaveFolderPath)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(Color.ink)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack {
+                            Button("Choose…") { chooseSaveFolder() }
+                            if !settings.captureSaveDirectoryPath.isEmpty {
+                                Button("Use Desktop") {
+                                    settings.captureSaveDirectoryPath = ""
+                                }
+                            }
+                        }
                     }
+                    .disabled(!settings.saveCapturesToDisk)
+                    .opacity(settings.saveCapturesToDisk ? 1 : 0.45)
                     Text(saveCapturesHelpText)
                         .font(.system(size: 12))
                         .foregroundStyle(Color.ink)
@@ -167,11 +180,12 @@ struct SettingsView: View {
                             if accessibilityGranted {
                                 Label("Enabled", systemImage: "checkmark.circle.fill")
                                     .foregroundStyle(.green)
-                            } else if accessibilitySetupStarted {
+                            } else if accessibilityNeedsRestart {
                                 Label("Quit & reopen", systemImage: "arrow.clockwise.circle")
                                     .foregroundStyle(.orange)
                             } else {
                                 Button("Enable…") {
+                                    PasteService.enableAttempted = true
                                     accessibilitySetupStarted = true
                                     _ = PasteService.requestTrust()
                                     refreshAccessibilityState()
@@ -185,6 +199,18 @@ struct SettingsView: View {
                             Text(accessibilityHelpText)
                                 .font(.system(size: 12))
                                 .foregroundStyle(Color.ink)
+                            if let diagnostics = PasteService.trustDiagnostics {
+                                Text(diagnostics)
+                                    .font(.system(size: 11, design: .monospaced))
+                                    .foregroundStyle(Color.ink)
+                                    .textSelection(.enabled)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Button("Open Accessibility Settings") {
+                                PasteService.enableAttempted = true
+                                accessibilitySetupStarted = true
+                                PasteService.openSettings()
+                            }
                         }
                     }
                     Text(settings.pasteIntoFocusedField
@@ -231,12 +257,13 @@ struct SettingsView: View {
                 .formStyle(.grouped)
             }
         }
-        .frame(width: 360)
+        .frame(width: 420)
         .background(PanelTheme.panelBackground(settings))
         .environment(\.colorScheme, PanelTheme.swiftUIColorScheme(settings))
         .onAppear {
             headerBarColor = Self.color(fromHex: settings.headerBarColorHex)
             screenRecordingGranted = ScreenCapturePermission.isGranted
+            accessibilitySetupStarted = PasteService.enableAttempted
             refreshAccessibilityState()
         }
         .onReceive(NotificationCenter.default.publisher(
@@ -249,8 +276,16 @@ struct SettingsView: View {
         }
     }
 
+    private var displaySaveFolderPath: String {
+        settings.captureSaveDirectoryURL.path
+    }
+
+    private var accessibilityNeedsRestart: Bool {
+        (accessibilitySetupStarted || PasteService.enableAttempted) && !accessibilityGranted
+    }
+
     private var accessibilityHelpText: String {
-        if accessibilitySetupStarted {
+        if accessibilityNeedsRestart {
             return "Cliché is ON in System Settings. Quit Cliché completely (⌘Q) and reopen — macOS applies Accessibility on restart."
         }
         return "Required for direct paste into the field you were typing in. If Cliché is missing from the list, click Enable… — macOS opens Accessibility — then click + and choose /Applications/Cliche.app, or toggle Cliché ON if it appears."
@@ -280,8 +315,7 @@ struct SettingsView: View {
     }
 
     private var saveCapturesHelpText: String {
-        let folder = settings.captureSaveDirectoryPath.isEmpty
-            ? "Desktop" : settings.captureSaveDirectoryPath
+        let folder = displaySaveFolderPath
         if settings.saveCapturesToDisk && settings.copyCapturesToClipboard {
             return "Screenshots save to \(folder) and copy to the clipboard."
         }

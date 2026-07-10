@@ -9,14 +9,69 @@ public enum PasteService {
     private static var savedFocusElement: AXUIElement?
     /// AXIsProcessTrustedWithOptions(prompt:true) opens System Settings on every call.
     private static var didPromptTrustThisSession = false
+    private static let trustedExecutableModKey = "accessibilityGrantedExecutableMod"
+    private static let enableAttemptedKey = "accessibilityEnableAttempted"
+
+    public static var applicationPath: String { Bundle.main.bundlePath }
+
+    public static var standardInstallPath: String {
+        ScreenCapturePermission.standardInstallPath
+    }
+
+    public static var isRunningFromStandardInstall: Bool {
+        applicationPath == standardInstallPath
+    }
+
+    public static var enableAttempted: Bool {
+        get { UserDefaults.standard.bool(forKey: enableAttemptedKey) }
+        set { UserDefaults.standard.set(newValue, forKey: enableAttemptedKey) }
+    }
 
     public static var isTrusted: Bool {
-        AXIsProcessTrusted()
+        let trusted = AXIsProcessTrusted()
+        if trusted {
+            noteTrustedExecutableIfNeeded()
+            enableAttempted = false
+        }
+        return trusted
+    }
+
+    /// Why Accessibility may still look off after enabling in System Settings.
+    public static var trustDiagnostics: String? {
+        guard !isTrusted else { return nil }
+        var lines: [String] = ["Running: \(applicationPath)"]
+        if !isRunningFromStandardInstall {
+            lines.append("Open only \(standardInstallPath) and enable that copy in Accessibility.")
+        }
+        if executableWasRebuiltSinceLastTrust {
+            lines.append("This build changed since Accessibility last worked — toggle Cliché OFF then ON.")
+        } else if enableAttempted {
+            lines.append("If Cliché is ON in System Settings, quit completely (⌘Q) and reopen.")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    public static var executableWasRebuiltSinceLastTrust: Bool {
+        let stored = UserDefaults.standard.double(forKey: trustedExecutableModKey)
+        guard stored > 0, let current = executableModificationDate() else { return false }
+        return current.timeIntervalSince1970 > stored + 1
+    }
+
+    private static func noteTrustedExecutableIfNeeded() {
+        guard AXIsProcessTrusted(), let mod = executableModificationDate() else { return }
+        UserDefaults.standard.set(mod.timeIntervalSince1970, forKey: trustedExecutableModKey)
+    }
+
+    private static func executableModificationDate() -> Date? {
+        guard let url = Bundle.main.executableURL else { return nil }
+        return (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?
+            .contentModificationDate
     }
 
     /// Shows the system Accessibility prompt at most once per session.
     @discardableResult
     public static func requestTrust() -> Bool {
+        enableAttempted = true
         if isTrusted { return true }
         guard !didPromptTrustThisSession else { return false }
         didPromptTrustThisSession = true

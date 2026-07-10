@@ -99,10 +99,10 @@ private struct OnboardingView: View {
 
     @State private var screenGranted = ScreenCapturePermission.isGranted
     @State private var accessibilityGranted = PasteService.isTrusted
-    @State private var accessibilitySetupStarted = false
+    @State private var accessibilitySetupStarted = PasteService.enableAttempted
 
     private var accessibilityNeedsRestart: Bool {
-        accessibilitySetupStarted && !accessibilityGranted
+        (accessibilitySetupStarted || PasteService.enableAttempted) && !accessibilityGranted
     }
 
     var body: some View {
@@ -140,6 +140,7 @@ private struct OnboardingView: View {
                             pendingRestart: accessibilityNeedsRestart,
                             detail: accessibilityDetail,
                             onEnable: {
+                                PasteService.enableAttempted = true
                                 accessibilitySetupStarted = true
                                 _ = PasteService.requestTrust()
                                 refreshPermissionState()
@@ -148,6 +149,7 @@ private struct OnboardingView: View {
                                 }
                             },
                             onOpenSettings: {
+                                PasteService.enableAttempted = true
                                 accessibilitySetupStarted = true
                                 PasteService.openSettings()
                             })
@@ -211,6 +213,9 @@ private struct OnboardingView: View {
         }
         if accessibilityNeedsRestart {
             return "Cliché is ON in System Settings. Quit Cliché completely (⌘Q) and reopen — macOS applies Accessibility on restart."
+        }
+        if let diagnostics = PasteService.trustDiagnostics {
+            return diagnostics
         }
         return "Optional — lets Cliché paste directly into the field you were typing in. Click + in Accessibility and choose /Applications/Cliche.app if it is missing."
     }
