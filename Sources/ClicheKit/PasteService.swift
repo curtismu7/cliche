@@ -107,27 +107,52 @@ public enum PasteService {
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
 
-        let target = useFocusedField ? savedFocusElement : nil
+        let targetApp = app ?? FrontmostAppTracker.lastApplication
+        let savedTarget = useFocusedField ? savedFocusElement : nil
         savedFocusElement = nil
 
-        app?.activate(options: [.activateAllWindows])
+        guard let targetApp else {
+            NotificationCenter.default.post(name: pasteFailedNotification, object: nil)
+            return
+        }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            guard isTrusted, let target else {
-                synthesizePaste()
+        activate(targetApp) {
+            let focused = savedTarget
+                ?? (useFocusedField ? focusedElement(in: targetApp) ?? focusedElement() : nil)
+
+            if isTrusted, let focused, insertText(text, into: focused) {
                 return
             }
 
-            focusElement(target)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
-                if insertText(text, into: target) {
-                    return
-                }
-                focusElement(target)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    synthesizePaste()
-                }
+            guard isTrusted else {
+                NotificationCenter.default.post(
+                    name: pasteRequiresAccessibilityNotification, object: nil)
+                return
             }
+
+            if let focused {
+                focusElement(focused)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                synthesizePaste()
+            }
+        }
+    }
+
+    public static let pasteRequiresAccessibilityNotification = Notification.Name(
+        "ClichePasteRequiresAccessibility")
+    public static let pasteFailedNotification = Notification.Name("ClichePasteFailed")
+
+    private static func activate(_ app: NSRunningApplication, then work: @escaping () -> Void) {
+        app.activate(options: [.activateAllWindows])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            if NSWorkspace.shared.frontmostApplication?.processIdentifier
+                != app.processIdentifier {
+                app.activate(options: [.activateAllWindows])
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: work)
+                return
+            }
+            work()
         }
     }
 

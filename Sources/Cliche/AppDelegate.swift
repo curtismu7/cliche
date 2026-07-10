@@ -91,6 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         registerHotkeys()
         applyMacScreenshotShortcutSetting()
+        FrontmostAppTracker.startMonitoring()
         ScreenCapturePermission.warnAboutDuplicateInstallsIfNeeded()
         NotificationCenter.default.addObserver(
             forName: AppSettings.hotkeysChanged, object: nil, queue: .main
@@ -101,6 +102,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             forName: AppSettings.macScreenshotShortcutsChanged, object: nil, queue: .main
         ) { [weak self] _ in
             self?.applyMacScreenshotShortcutSetting()
+        }
+        NotificationCenter.default.addObserver(
+            forName: PasteService.pasteRequiresAccessibilityNotification, object: nil, queue: .main
+        ) { _ in
+            InfoHUD.show("Copied — enable Accessibility to auto-paste, or press ⌘V")
         }
 
         DispatchQueue.main.async { [weak self] in
@@ -190,8 +196,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             FloatingListWindow.close()
             return
         }
-        closeAllPopovers()
         rememberPasteTarget()
+        closeAllPopovers()
         showFloatingPanel(layout: layout, anchor: nil)
     }
 
@@ -368,9 +374,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             FloatingListWindow.close()
             return
         }
+        rememberPasteTarget()
         closeAllPopovers()
         if let button = clipboardItem?.button {
-            rememberPasteTarget()
             showFloatingPanel(layout: layout, anchor: button)
         }
     }
@@ -443,7 +449,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Records the frontmost app and its focused field before the panel opens.
     private func rememberPasteTarget() {
-        previousApp = NSWorkspace.shared.frontmostApplication
+        previousApp = FrontmostAppTracker.lastApplication
+            ?? NSWorkspace.shared.frontmostApplication
         if settings.pasteIntoFocusedField {
             PasteService.capturePasteTarget(from: previousApp)
         } else {
