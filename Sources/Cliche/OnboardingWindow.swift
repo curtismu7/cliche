@@ -7,7 +7,7 @@ enum OnboardingWindow {
     private static var window: NSWindow?
     private static var delegate: WindowDelegate?
 
-    static var isVisible: Bool { window != nil }
+    static var isVisible: Bool { window?.isVisible == true }
 
     @MainActor
     static func show(
@@ -17,7 +17,7 @@ enum OnboardingWindow {
     ) {
         FloatingListWindow.suspendAutoClose = true
 
-        if let window, window.isVisible {
+        if let window {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -48,6 +48,9 @@ enum OnboardingWindow {
         onboardingWindow.title = "Welcome to Cliché"
         onboardingWindow.minSize = NSSize(width: 400, height: 480)
         onboardingWindow.isReleasedWhenClosed = false
+        onboardingWindow.canHide = false
+        onboardingWindow.level = .floating
+        onboardingWindow.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         let hosting = NSHostingController(rootView: view)
         hosting.view.autoresizingMask = [.width, .height]
         onboardingWindow.contentViewController = hosting
@@ -74,6 +77,7 @@ enum OnboardingWindow {
     private final class WindowDelegate: NSObject, NSWindowDelegate {
         let onClose: () -> Void
         init(onClose: @escaping () -> Void) { self.onClose = onClose }
+        func windowShouldClose(_ sender: NSWindow) -> Bool { false }
         func windowWillClose(_ notification: Notification) { onClose() }
     }
 }
@@ -157,6 +161,9 @@ private struct OnboardingView: View {
             HStack {
                 Button("Open Settings") { onOpenSettings() }
                 Spacer()
+                Text("Click Get Started when permissions are set")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
                 Button("Get Started") { onComplete() }
                     .keyboardShortcut(.defaultAction)
             }
