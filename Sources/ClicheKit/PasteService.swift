@@ -26,6 +26,13 @@ public enum PasteService {
         return AXIsProcessTrustedWithOptions(options)
     }
 
+    /// Opens the Accessibility pane in System Settings.
+    public static func openSettings() {
+        let url = URL(
+            string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Accessibility")!
+        NSWorkspace.shared.open(url)
+    }
+
     /// Remember the focused text field in `app` before the panel opens.
     public static func capturePasteTarget(from app: NSRunningApplication?) {
         savedFocusElement = focusedElement(in: app) ?? focusedElement()
