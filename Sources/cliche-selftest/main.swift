@@ -637,6 +637,10 @@ do {
 // availability + a dry run (it imports into a throwaway HistoryStore in
 // the system temp dir so the user's real history isn't polluted).
 copyClip2LiveImport: do {
+    if ProcessInfo.processInfo.environment["CLICHE_SKIP_LIVE_IMPORTS"] == "1" {
+        print("copyClip2LiveImport: SKIPPED (CLICHE_SKIP_LIVE_IMPORTS)")
+        break copyClip2LiveImport
+    }
     let importer = CopyClipImporter(isCopyClip2: true)
     expect(importer.isAvailable || !importer.isAvailable,
         "CopyClip 2 isAvailable does not crash")
@@ -659,6 +663,10 @@ copyClip2LiveImport: do {
 // this machine and prints a summary, into a throwaway HistoryStore in the
 // system temp dir so the user's real history isn't polluted.
 maccyLiveImport: do {
+    if ProcessInfo.processInfo.environment["CLICHE_SKIP_LIVE_IMPORTS"] == "1" {
+        print("maccyLiveImport: SKIPPED (CLICHE_SKIP_LIVE_IMPORTS)")
+        break maccyLiveImport
+    }
     let importer = MaccyImporter()
     expect(importer.isAvailable || !importer.isAvailable,
         "Maccy isAvailable does not crash")

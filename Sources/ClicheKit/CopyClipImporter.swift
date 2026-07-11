@@ -29,24 +29,17 @@ public struct CopyClipImporter: ClipboardImporter {
 
     /// Locates the SQLite store inside the sandboxed container. CopyClip 2
     /// keeps it at `Data/Library/Application Support/CopyClip/copyclip.sqlite`.
+    /// Uses direct path checks only — `contentsOfDirectory` can hang on some
+    /// CopyClip containers (iCloud placeholders, stale sandbox mounts).
     private var databaseURL: URL? {
         let fm = FileManager.default
         let support = containerURL.appendingPathComponent(
             "Data/Library/Application Support", isDirectory: true)
-        // Try the documented CopyClip 2 subfolder first, then a flat scan.
-        let copyclipSub = support.appendingPathComponent("CopyClip", isDirectory: true)
-        if let entries = try? fm.contentsOfDirectory(at: copyclipSub,
-                                                     includingPropertiesForKeys: nil) {
-            if let db = entries.first(where: { $0.pathExtension == "sqlite" }) {
-                return db
-            }
-        }
-        // Fall back to any *.sqlite file anywhere under Application Support.
-        if let entries = try? fm.contentsOfDirectory(at: support,
-                                                     includingPropertiesForKeys: nil) {
-            return entries.first { $0.pathExtension == "sqlite" }
-        }
-        return nil
+        let candidates = [
+            support.appendingPathComponent("CopyClip/copyclip.sqlite"),
+            support.appendingPathComponent("copyclip.sqlite"),
+        ]
+        return candidates.first { fm.isReadableFile(atPath: $0.path) }
     }
 
     @MainActor

@@ -18,7 +18,7 @@ fi
 
 echo "── Releasing Cliché $VERSION ──"
 echo "Running tests…"
-swift run cliche-selftest >/dev/null
+CLICHE_SKIP_LIVE_IMPORTS=1 swift run cliche-selftest
 
 Scripts/make-dist.sh
 
