@@ -283,7 +283,7 @@ struct SettingsView: View {
     }
 
     private var accessibilityNeedsRestart: Bool {
-        (accessibilitySetupStarted || PasteService.enableAttempted) && !accessibilityGranted
+        PasteService.accessibilityNeedsRestart
     }
 
     private var accessibilityHelpText: String {

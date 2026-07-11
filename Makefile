@@ -16,7 +16,7 @@ run: app
 INSTALL_PATH := /Applications/Cliche.app
 
 install: app
-	Scripts/install-cleanup.sh
+	Scripts/install-cleanup.sh keep
 	ditto build/Cliche.app $(INSTALL_PATH) || sudo ditto build/Cliche.app $(INSTALL_PATH)
 	xattr -dr com.apple.quarantine $(INSTALL_PATH) 2>/dev/null || true
 	open $(INSTALL_PATH)

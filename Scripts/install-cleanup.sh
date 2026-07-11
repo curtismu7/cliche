@@ -17,12 +17,10 @@ sleep 1
 if [ -d "$HOME_COPY" ]; then
     echo "Removing duplicate: $HOME_COPY"
     rm -rf "$HOME_COPY"
+    echo "Resetting Screen Recording permission for ${BUNDLE_ID} (duplicate removed)..."
+    tccutil reset ScreenCapture "$BUNDLE_ID" 2>/dev/null || true
 fi
 
 if [ -z "$KEEP_INSTALL" ] && [ -d "$INSTALL_PATH" ]; then
-    echo "Removing existing: $INSTALL_PATH"
-    rm -rf "$INSTALL_PATH" 2>/dev/null || sudo rm -rf "$INSTALL_PATH"
+    echo "Updating in place: $INSTALL_PATH (permissions preserved — toggle OFF/ON if capture breaks after update)"
 fi
-
-echo "Resetting Screen Recording permission for ${BUNDLE_ID}..."
-tccutil reset ScreenCapture "$BUNDLE_ID" 2>/dev/null || true

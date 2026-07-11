@@ -6,9 +6,6 @@ import CoreGraphics
 /// so keep one install at /Applications/Cliche.app and re-toggle after updates.
 public enum ScreenCapturePermission {
     private static var didShowHelpThisSession = false
-    /// CGRequestScreenCaptureAccess() reopens System Settings on repeat calls when
-    /// permission is stale — only invoke it from explicit user actions.
-    private static var didRequestAccessThisSession = false
     private static let grantedExecutableModKey = "screenCaptureGrantedExecutableMod"
 
     /// Where `make install` and the zip installer put the app.
@@ -70,29 +67,33 @@ public enum ScreenCapturePermission {
         return isGranted
     }
 
-    /// User clicked Enable / Show prompt — may invoke the one-time macOS dialog.
+    /// User clicked Enable / Show prompt — always asks macOS (not once per session).
     @MainActor
     @discardableResult
     public static func requestAccessUserInitiated() -> Bool {
+        didShowHelpThisSession = false
         if isGranted {
             noteGrantedExecutableIfNeeded()
             return true
         }
-        requestAccessOnce()
+        _ = CGRequestScreenCaptureAccess()
         if isGranted { noteGrantedExecutableIfNeeded() }
         return isGranted
     }
 
-    /// Returns true only when capture can proceed. Never auto-opens Settings;
-    /// shows a one-time help alert when permission is missing.
+    /// Returns true only when capture can proceed. Shows help when permission is missing.
     @MainActor
     public static func ensureGranted(appName: String = "Cliché") -> Bool {
         if isGranted {
             noteGrantedExecutableIfNeeded()
+            didShowHelpThisSession = false
             return true
         }
 
-        guard !didShowHelpThisSession else { return false }
+        if didShowHelpThisSession {
+            openSettings()
+            return false
+        }
         didShowHelpThisSession = true
 
         let appPath = Bundle.main.bundlePath
@@ -141,13 +142,6 @@ public enum ScreenCapturePermission {
             openSettings()
         }
         return false
-    }
-
-    /// Triggers the one-time macOS registration dialog when the user asks for it.
-    private static func requestAccessOnce() {
-        guard !didRequestAccessThisSession else { return }
-        didRequestAccessThisSession = true
-        _ = CGRequestScreenCaptureAccess()
     }
 
     /// Remember which executable build had permission so we can spot ad-hoc re-signs.

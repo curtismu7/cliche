@@ -8,7 +8,8 @@ public enum FrontmostAppTracker {
     public static func startMonitoring() {
         guard observer == nil else { return }
         cachedApplication = otherApp(from: NSWorkspace.shared.frontmostApplication)
-        observer = NSWorkspace.shared.notificationCenter.addObserver(
+        let center = NSWorkspace.shared.notificationCenter
+        observer = center.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification,
             object: nil, queue: .main
         ) { note in
@@ -16,7 +17,24 @@ public enum FrontmostAppTracker {
                 as? NSRunningApplication,
                   let other = otherApp(from: app) else { return }
             cachedApplication = other
+            PasteService.capturePasteTarget(from: other)
         }
+        center.addObserver(
+            forName: NSWorkspace.didDeactivateApplicationNotification,
+            object: nil, queue: .main
+        ) { note in
+            guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey]
+                as? NSRunningApplication,
+                  let other = otherApp(from: app) else { return }
+            cachedApplication = other
+            PasteService.capturePasteTarget(from: other)
+        }
+    }
+
+    public static func captureNow() {
+        guard let other = otherApp(from: NSWorkspace.shared.frontmostApplication) else { return }
+        cachedApplication = other
+        PasteService.capturePasteTarget(from: other, appOnly: true)
     }
 
     public static var lastApplication: NSRunningApplication? {

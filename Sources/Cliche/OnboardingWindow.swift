@@ -108,7 +108,7 @@ private struct OnboardingView: View {
     @State private var accessibilitySetupStarted = PasteService.enableAttempted
 
     private var accessibilityNeedsRestart: Bool {
-        (accessibilitySetupStarted || PasteService.enableAttempted) && !accessibilityGranted
+        PasteService.accessibilityNeedsRestart
     }
 
     var body: some View {

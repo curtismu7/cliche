@@ -20,6 +20,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Previous pick for the contrast checker.
     private var lastPickedColor: NSColor?
 
+    /// Locked when the panel opens — ⌘1–9 paste back here, not the panel.
+    private var pasteTargetApp: NSRunningApplication?
+
     private let captureService = CaptureService()
     private let ocrService = OCRService()
     private let hotkeys = HotkeyManager()
@@ -106,7 +109,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(
             forName: PasteService.pasteRequiresAccessibilityNotification, object: nil, queue: .main
         ) { _ in
-            InfoHUD.show("Copied — press ⌘V if it did not paste automatically")
+            InfoHUD.show(
+                "Copied — click where you want to paste, then press ⌘V. "
+                    + "Enable Accessibility in Cliché Settings for automatic paste.")
+        }
+        NotificationCenter.default.addObserver(
+            forName: PasteService.pasteFailedNotification, object: nil, queue: .main
+        ) { _ in
+            InfoHUD.show("Could not find the app to paste into — click in the target field first.")
         }
 
         DispatchQueue.main.async { [weak self] in
@@ -152,6 +162,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+        registerQuickPasteHotkeys()
+    }
+
+    /// ⌃⌥1–9 paste a history slot without opening the panel (stay in the browser).
+    private func registerQuickPasteHotkeys() {
+        for slot in 1...9 {
+            let keyCode = Int(kVK_ANSI_1) + (slot - 1)
+            hotkeys.register(
+                keyCode: keyCode,
+                modifiers: UInt32(controlKey) | UInt32(optionKey)
+            ) { [weak self] in
+                DispatchQueue.main.async { self?.quickPaste(slot: slot) }
+            }
+        }
+    }
+
+    /// Paste history slot N into the app that is frontmost right now.
+    private func quickPaste(slot: Int) {
+        if FloatingListWindow.isVisible {
+            return
+        }
+        FrontmostAppTracker.captureNow()
+        pasteTargetApp = FrontmostAppTracker.lastApplication
+        previousApp = pasteTargetApp
+        let items = visibleTextItems()
+        let index = slot - 1
+        guard items.indices.contains(index) else { return }
+        paste { monitor.copyToPasteboard(items[index]) }
+    }
+
+    /// Text items in panel order (pinned first) — matches ⌘1–9 in the list.
+    private func visibleTextItems() -> [ClipItem] {
+        let filtered = store.items
+        let pinned = filtered.filter(\.pinned)
+        let recent = filtered.filter { !$0.pinned }
+        return (pinned + recent).filter {
+            if case .text = $0.kind { return true }
+            return false
+        }
     }
 
     private func perform(_ action: HotkeyAction) {
@@ -186,6 +235,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .ocr: captureText()
         case .repeatRegion: repeatLastRegion()
         case .panel: togglePopover()
+        case .permissions:
+            Task { @MainActor in self.requestPermissions() }
+        }
+    }
+
+    /// Registers Cliché with Screen Recording and Accessibility (macOS adds
+    /// the app to each privacy list when these run).
+    @MainActor
+    private func requestPermissions() {
+        _ = ScreenCapturePermission.requestAccessUserInitiated()
+        _ = PasteService.requestTrust()
+        if !ScreenCapturePermission.isGranted {
+            ScreenCapturePermission.openSettings()
+        }
+        if !PasteService.isTrusted {
+            PasteService.openSettings()
         }
     }
 
@@ -266,6 +331,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.button?.imagePosition = .imageOnly
         item.button?.action = action
         item.button?.target = self
+        item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
         if #available(macOS 13.0, *) {
             item.isVisible = true
         }
@@ -427,28 +493,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Puts content on the clipboard, then pastes into the field that was
     /// focused before the panel opened (HTML inputs, password fields, etc.).
     private func paste(_ populateClipboard: () -> Void) {
+        previousApp = pasteTargetApp ?? FrontmostAppTracker.lastApplication ?? previousApp
+
         populateClipboard()
         popover.performClose(nil)
         FloatingListWindow.close()
 
-        if let text = NSPasteboard.general.string(forType: .string),
-           NSPasteboard.general.data(forType: .png) == nil,
-           NSPasteboard.general.data(forType: .tiff) == nil,
-           !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            PasteService.pasteText(
-                text, into: previousApp, useFocusedField: settings.pasteIntoFocusedField)
-            return
-        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+            guard let self else { return }
+            if let text = NSPasteboard.general.string(forType: .string),
+               NSPasteboard.general.data(forType: .png) == nil,
+               NSPasteboard.general.data(forType: .tiff) == nil,
+               !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                PasteService.pasteText(
+                    text, into: self.previousApp,
+                    useFocusedField: self.settings.pasteIntoFocusedField)
+                return
+            }
 
-        PasteService.pasteClipboard(into: previousApp)
+            PasteService.pasteClipboard(into: self.previousApp)
+        }
     }
 
     /// Records the frontmost app and its focused field before the panel opens.
     private func rememberPasteTarget() {
-        previousApp = FrontmostAppTracker.lastApplication
-            ?? NSWorkspace.shared.frontmostApplication
+        FrontmostAppTracker.captureNow()
+        pasteTargetApp = FrontmostAppTracker.lastApplication
+        previousApp = pasteTargetApp
         if settings.pasteIntoFocusedField {
-            PasteService.capturePasteTarget(from: previousApp)
+            PasteService.capturePasteTarget(from: previousApp, appOnly: true)
         } else {
             PasteService.clearPasteTarget()
         }

@@ -3,11 +3,9 @@ import ApplicationServices
 import Carbon.HIToolbox
 
 /// Pastes clipboard history into the app that was frontmost before the panel
-/// opened. Uses Accessibility to write into the focused field (username,
-/// password, URL bar, etc.) when possible; falls back to synthesized ⌘V.
+/// opened. Closes the panel first, then synthesizes ⌘V into the target app.
 public enum PasteService {
     private static var savedFocusElement: AXUIElement?
-    /// AXIsProcessTrustedWithOptions(prompt:true) opens System Settings on every call.
     private static var didPromptTrustThisSession = false
     private static let trustedExecutableModKey = "accessibilityGrantedExecutableMod"
     private static let enableAttemptedKey = "accessibilityEnableAttempted"
@@ -28,32 +26,18 @@ public enum PasteService {
     }
 
     public static var isTrusted: Bool {
-        if hasAccessibilityAccess() {
+        let trusted = AXIsProcessTrusted()
+        if trusted {
             noteTrustedExecutableIfNeeded()
             enableAttempted = false
-            return true
         }
-        return false
+        return trusted
     }
 
-    /// AXIsProcessTrusted can lag after toggling in System Settings; probe the API.
-    private static func hasAccessibilityAccess() -> Bool {
-        if AXIsProcessTrusted() { return true }
-        let system = AXUIElementCreateSystemWide()
-        var appValue: CFTypeRef?
-        if AXUIElementCopyAttributeValue(
-            system, kAXFocusedApplicationAttribute as CFString, &appValue) == .success {
-            return true
-        }
-        var focusValue: CFTypeRef?
-        if AXUIElementCopyAttributeValue(
-            system, kAXFocusedUIElementAttribute as CFString, &focusValue) == .success {
-            return true
-        }
-        return false
+    public static var accessibilityNeedsRestart: Bool {
+        enableAttempted && !AXIsProcessTrusted()
     }
 
-    /// Why Accessibility may still look off after enabling in System Settings.
     public static var trustDiagnostics: String? {
         guard !isTrusted else { return nil }
         var lines: [String] = ["Running: \(applicationPath)"]
@@ -75,7 +59,7 @@ public enum PasteService {
     }
 
     private static func noteTrustedExecutableIfNeeded() {
-        guard hasAccessibilityAccess(), let mod = executableModificationDate() else { return }
+        guard AXIsProcessTrusted(), let mod = executableModificationDate() else { return }
         UserDefaults.standard.set(mod.timeIntervalSince1970, forKey: trustedExecutableModKey)
     }
 
@@ -85,7 +69,6 @@ public enum PasteService {
             .contentModificationDate
     }
 
-    /// Shows the system Accessibility prompt at most once per session.
     @discardableResult
     public static func requestTrust() -> Bool {
         enableAttempted = true
@@ -98,115 +81,130 @@ public enum PasteService {
         return AXIsProcessTrustedWithOptions(options)
     }
 
-    /// Opens the Accessibility pane in System Settings.
     public static func openSettings() {
         let url = URL(
             string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Accessibility")!
         NSWorkspace.shared.open(url)
     }
 
-    /// Remember the focused text field in `app` before the panel opens.
-    public static func capturePasteTarget(from app: NSRunningApplication?) {
-        savedFocusElement = focusedElement(in: app) ?? focusedElement()
+    public static func capturePasteTarget(
+        from app: NSRunningApplication?, appOnly: Bool = false
+    ) {
+        if let app, let element = focusedElement(in: app) {
+            savedFocusElement = element
+            return
+        }
+        if !appOnly {
+            savedFocusElement = focusedElement()
+        }
     }
 
     public static func clearPasteTarget() {
         savedFocusElement = nil
     }
 
-    /// Paste plain text into the saved target field, or synthesize ⌘V.
     public static func pasteText(
         _ text: String,
         into app: NSRunningApplication?,
         useFocusedField: Bool = true
     ) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
-
-        let targetApp = app ?? FrontmostAppTracker.lastApplication
-        let savedTarget = useFocusedField ? savedFocusElement : nil
-        savedFocusElement = nil
-
-        guard let targetApp else {
-            NotificationCenter.default.post(name: pasteFailedNotification, object: nil)
-            return
-        }
-
-        activate(targetApp) {
-            let focused = savedTarget
-                ?? (useFocusedField ? focusedElement(in: targetApp) ?? focusedElement() : nil)
-
-            if isTrusted, let focused, insertText(text, into: focused) {
-                return
-            }
-
-            if let focused, isTrusted {
-                focusElement(focused)
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                synthesizePaste()
-            }
-            if !isTrusted {
-                NotificationCenter.default.post(
-                    name: pasteRequiresAccessibilityNotification, object: nil)
-            }
-        }
+        writeTextToPasteboard(text)
+        deliverPaste(into: app, useFocusedField: useFocusedField)
     }
 
-    /// Paste whatever is already on the pasteboard (images, files, rich content).
     public static func pasteClipboard(into app: NSRunningApplication?) {
-        let targetApp = app ?? FrontmostAppTracker.lastApplication
-        savedFocusElement = nil
-
-        guard let targetApp else {
-            NotificationCenter.default.post(name: pasteFailedNotification, object: nil)
-            return
-        }
-
-        activate(targetApp) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                synthesizePaste()
-            }
-            if !isTrusted {
-                NotificationCenter.default.post(
-                    name: pasteRequiresAccessibilityNotification, object: nil)
-            }
-        }
+        deliverPaste(into: app, useFocusedField: false)
     }
 
     public static let pasteRequiresAccessibilityNotification = Notification.Name(
         "ClichePasteRequiresAccessibility")
     public static let pasteFailedNotification = Notification.Name("ClichePasteFailed")
+    public static let pasteCopiedNotification = Notification.Name("ClichePasteCopied")
 
-    private static func activate(_ app: NSRunningApplication, then work: @escaping () -> Void) {
+    private static func writeTextToPasteboard(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.declareTypes([.string], owner: nil)
+        pasteboard.setString(text, forType: .string)
+    }
+
+    private static func deliverPaste(
+        into app: NSRunningApplication?,
+        useFocusedField: Bool
+    ) {
+        guard isTrusted else {
+            NotificationCenter.default.post(
+                name: pasteRequiresAccessibilityNotification, object: nil)
+            return
+        }
+
+        let targetApp = app ?? FrontmostAppTracker.lastApplication
+        guard let targetApp else {
+            NotificationCenter.default.post(name: pasteFailedNotification, object: nil)
+            return
+        }
+
+        let savedTarget = useFocusedField ? savedFocusElement : nil
+        savedFocusElement = nil
+
+        NSApp.hide(nil)
+        runPaste(into: targetApp, focus: savedTarget, attempt: 0)
+    }
+
+    private static func runPaste(
+        into app: NSRunningApplication,
+        focus: AXUIElement?,
+        attempt: Int
+    ) {
         app.activate(options: [.activateAllWindows])
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            if NSWorkspace.shared.frontmostApplication?.processIdentifier
-                != app.processIdentifier {
-                app.activate(options: [.activateAllWindows])
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: work)
+
+        if let focus {
+            focusElement(focus)
+        }
+
+        let delay: TimeInterval = attempt == 0 ? 0.2 : 0.15
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            let frontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier
+            if frontmost != app.processIdentifier, attempt < 4 {
+                runPaste(into: app, focus: focus, attempt: attempt + 1)
                 return
             }
-            work()
+            synthesizePaste(to: app)
+            NotificationCenter.default.post(name: pasteCopiedNotification, object: nil)
         }
     }
 
-    /// Posts ⌘V key events to the session. The target app must already be
-    /// frontmost and the clipboard already populated.
-    public static func synthesizePaste() {
+    /// Sends ⌘V to the target process. `postToPid` works from menu-bar apps;
+    /// session taps are a fallback for native fields.
+    public static func synthesizePaste(to app: NSRunningApplication? = nil) {
+        let cmdFlag = CGEventFlags(rawValue: UInt64(cmdKey) | 0x000008)
         let source = CGEventSource(stateID: .combinedSessionState)
+        source?.setLocalEventsFilterDuringSuppressionState(
+            [.permitLocalMouseEvents, .permitSystemDefinedEvents],
+            state: .eventSuppressionStateSuppressionInterval)
+
         let keyDown = CGEvent(
-            keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: true)
+            keyboardEventSource: source,
+            virtualKey: CGKeyCode(kVK_ANSI_V),
+            keyDown: true)
         let keyUp = CGEvent(
-            keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: false)
-        keyDown?.flags = .maskCommand
-        keyUp?.flags = .maskCommand
+            keyboardEventSource: source,
+            virtualKey: CGKeyCode(kVK_ANSI_V),
+            keyDown: false)
+        keyDown?.flags = cmdFlag
+        keyUp?.flags = cmdFlag
+
+        if let pid = app?.processIdentifier {
+            keyDown?.postToPid(pid_t(pid))
+            keyUp?.postToPid(pid_t(pid))
+        }
+
         keyDown?.post(tap: .cgAnnotatedSessionEventTap)
         keyUp?.post(tap: .cgAnnotatedSessionEventTap)
+        keyDown?.post(tap: .cgSessionEventTap)
+        keyUp?.post(tap: .cgSessionEventTap)
     }
 
-    /// Focused control in a specific app (preferred over system-wide query).
     private static func focusedElement(in app: NSRunningApplication?) -> AXUIElement? {
         guard let pid = app?.processIdentifier else { return nil }
         let appElement = AXUIElementCreateApplication(pid)
@@ -226,31 +224,11 @@ public enum PasteService {
         return (value as! AXUIElement)
     }
 
-    /// Brings the saved field to the foreground before AX write or ⌘V.
     @discardableResult
     private static func focusElement(_ element: AXUIElement) -> Bool {
         _ = AXUIElementPerformAction(element, kAXRaiseAction as CFString)
         let focused = AXUIElementSetAttributeValue(
             element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
         return focused == .success
-    }
-
-    /// Writes text into a text field via Accessibility (HTML inputs, native fields).
-    private static func insertText(_ text: String, into element: AXUIElement) -> Bool {
-        focusElement(element)
-
-        // Selected text respects cursor position; value keys replace the whole field.
-        let attributeKeys: [CFString] = [
-            kAXSelectedTextAttribute as CFString,
-            kAXValueAttribute as CFString,
-            "AXValue" as CFString,
-            "AXText" as CFString,
-        ]
-        for key in attributeKeys {
-            if AXUIElementSetAttributeValue(element, key, text as CFTypeRef) == .success {
-                return true
-            }
-        }
-        return false
     }
 }

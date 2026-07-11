@@ -57,8 +57,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 
-# Ad-hoc signature — Screen Recording permission is tied to this hash, so
-# each rebuild requires re-toggling permission in System Settings.
+# Ad-hoc signature — toggling Screen Recording OFF/ON in Settings after
+# `make install` may be needed once; in-place updates preserve the TCC entry.
 codesign --force --sign - "$APP"
 
 echo "Built $APP"

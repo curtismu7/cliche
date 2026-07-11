@@ -4,7 +4,7 @@ import Foundation
 /// `open`). Parsing is total: anything unrecognized returns nil.
 public enum URLCommand: Equatable {
     case captureRegion, captureWindow, captureFullScreen,
-         allInOne, ocr, repeatRegion, panel
+         allInOne, ocr, repeatRegion, panel, permissions
 
     public static func parse(_ url: URL) -> URLCommand? {
         guard url.scheme?.lowercased() == "cliche" else { return nil }
@@ -23,6 +23,7 @@ public enum URLCommand: Equatable {
         case "ocr": return .ocr
         case "repeat": return .repeatRegion
         case "panel": return .panel
+        case "permissions", "setup": return .permissions
         default: return nil
         }
     }
