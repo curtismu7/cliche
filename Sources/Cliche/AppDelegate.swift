@@ -130,6 +130,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Finder, Dock, or `open -a Cliché` while already running — surface setup UI
+    /// when the menu bar icon is hidden or hard to reach.
+    func applicationShouldHandleReopen(
+        _ sender: NSApplication, hasVisibleWindows flag: Bool
+    ) -> Bool {
+        DispatchQueue.main.async { [weak self] in
+            Task { @MainActor in
+                self?.presentSetupWindowsOnUserReopen()
+            }
+        }
+        return true
+    }
+
     /// Welcome stays up until the user clicks Get Started — closing the window
     /// or quitting to flip permissions in System Settings should not dismiss it.
     private func presentOnboardingIfNeeded() {
@@ -140,6 +153,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 ignoreRulesURL: ignoreRulesURL,
                 historyStore: store)
         }
+    }
+
+    /// Re-open while Cliché is already running — show Welcome + Settings during
+    /// onboarding, or Settings alone afterward (e.g. menu bar overflow).
+    @MainActor
+    private func presentSetupWindowsOnUserReopen() {
+        if !settings.hasCompletedOnboarding {
+            OnboardingWindow.show(
+                settings: settings,
+                ignoreRulesURL: ignoreRulesURL,
+                historyStore: store)
+            SettingsWindow.show(
+                settings: settings,
+                ignoreRulesURL: ignoreRulesURL,
+                historyStore: store)
+            return
+        }
+        NSApp.setActivationPolicy(.regular)
+        SettingsWindow.show(
+            settings: settings,
+            ignoreRulesURL: ignoreRulesURL,
+            historyStore: store)
     }
 
     private func applyMacScreenshotShortcutSetting() {
