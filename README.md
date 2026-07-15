@@ -160,7 +160,7 @@ If you have an old copy at `~/Applications/Cliche.app`, delete it, then run `bre
 | `⌥2` | Open the capture panel (menu bar; cursor fallback if icon hidden) |
 | `⌃⌥⌘C` | Open clipboard list at cursor (alternate) |
 | `⌘⇧6` | Capture a region |
-| `⌘⇧R` | Repeat the last region |
+| `⌘⇧7` | Repeat the last region |
 | `⌘⇧5` | Capture a window |
 | `⌘⇧4` | Copy text from screen (OCR) |
 | `⌘⇧3` | All-in-one capture (mode strip) |
