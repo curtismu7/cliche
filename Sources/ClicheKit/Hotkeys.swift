@@ -77,7 +77,7 @@ extension AppSettings {
             .captureText: HotkeyCombo(
                 keyCode: UInt32(kVK_ANSI_4), carbonModifiers: screen, display: "⌘⇧4"),
             .repeatRegion: HotkeyCombo(
-                keyCode: UInt32(kVK_ANSI_R), carbonModifiers: screen, display: "⌘⇧R"),
+                keyCode: UInt32(kVK_ANSI_7), carbonModifiers: screen, display: "⌘⇧7"),
             .floatingList: HotkeyCombo(
                 keyCode: UInt32(kVK_ANSI_C), carbonModifiers: panel, display: "⌃⌥⌘C"),
             .allInOne: HotkeyCombo(

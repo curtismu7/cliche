@@ -707,7 +707,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// ⌘⇧R — recapture the exact previous region with no UI.
+    /// ⌘⇧7 — recapture the exact previous region with no UI.
     private func repeatLastRegion() {
         guard let last = settings.lastRegion else {
             InfoHUD.show("No previous region — use ⌘⇧6 first")
