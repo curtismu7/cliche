@@ -82,6 +82,14 @@ public enum ScreenCapturePermission {
     }
 
     /// Returns true only when capture can proceed. Shows help when permission is missing.
+    ///
+    /// Only opens System Settings / shows the help alert the *first* time
+    /// permission is missing in a given app session. Earlier code re-opened
+    /// System Settings on every subsequent capture attempt, which meant every
+    /// hotkey press while permission was missing yanked focus to System
+    /// Settings — the "constantly asking for system config" complaint.
+    /// Later attempts now fail quietly; callers should show a lightweight
+    /// in-app hint (e.g. `InfoHUD`) instead of forcing Settings back open.
     @MainActor
     public static func ensureGranted(appName: String = "Cliché") -> Bool {
         if isGranted {
@@ -91,7 +99,6 @@ public enum ScreenCapturePermission {
         }
 
         if didShowHelpThisSession {
-            openSettings()
             return false
         }
         didShowHelpThisSession = true

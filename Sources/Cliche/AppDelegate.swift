@@ -551,9 +551,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Gate ScreenCaptureKit paths so macOS doesn't loop opening Settings
     /// when permission was granted to a different copy of the app.
+    ///
+    /// `ensureGranted()` only shows the full help alert / Settings prompt the
+    /// first time in a session; on later attempts it fails quietly, so give a
+    /// quick reminder here instead of leaving the hotkey feel like a no-op.
     @MainActor
     private func guardScreenCaptureAccess() -> Bool {
-        ScreenCapturePermission.ensureGranted()
+        if ScreenCapturePermission.ensureGranted() { return true }
+        InfoHUD.show("Screen Recording permission needed — enable it in Cliché Settings")
+        return false
     }
 
     private func performCapture(_ mode: CaptureMode, on screen: NSScreen) {
@@ -766,7 +772,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func captureWithCLI(_ mode: CaptureMode, preset: CapturePreset? = nil) {
         guard ScreenCapturePermission.isGranted else {
             DispatchQueue.main.async { [weak self] in
-                guard let self, ScreenCapturePermission.ensureGranted() else { return }
+                guard let self, self.guardScreenCaptureAccess() else { return }
                 self.captureWithCLI(mode, preset: preset)
             }
             return
