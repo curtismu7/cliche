@@ -28,7 +28,8 @@ public final class AppSettings {
         didSet { defaults.set(saveCapturesToDisk, forKey: "saveCapturesToDisk") }
     }
 
-    /// Empty = Desktop. Supports ~ paths.
+    /// Empty = Desktop (the "Use Desktop" reset). Supports ~ paths.
+    /// Defaults to ~/Desktop/cliche for new installs (see `init`).
     public var captureSaveDirectoryPath: String {
         didSet { defaults.set(captureSaveDirectoryPath, forKey: "captureSaveDirectoryPath") }
     }
@@ -190,8 +191,10 @@ public final class AppSettings {
             defaults.object(forKey: "copyCapturesToClipboard") as? Bool ?? true
         self.saveCapturesToDisk =
             defaults.object(forKey: "saveCapturesToDisk") as? Bool ?? true
+        // Default save folder for every user is ~/Desktop/cliche; the
+        // "Use Desktop" button in Settings resets this back to "" (literal Desktop).
         self.captureSaveDirectoryPath =
-            defaults.string(forKey: "captureSaveDirectoryPath") ?? ""
+            defaults.string(forKey: "captureSaveDirectoryPath") ?? "~/Desktop/cliche"
         self.timerSeconds = defaults.object(forKey: "timerSeconds") as? Int ?? 0
         self.showCursor = defaults.object(forKey: "showCursor") as? Bool ?? false
         self.windowShadow = defaults.object(forKey: "windowShadow") as? Bool ?? false
